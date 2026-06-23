@@ -11,3 +11,9 @@ dist-ssr
 !.vscode/extensions.json
 *.log
 npm-debug.log*
+
+# Lokales Tooling (caveman / claude) — nicht ins öffentliche Repo
+.claude/
+.agents/
+agent/
+skills-lock.json
