@@ -1,0 +1,16 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6ea8fe"/>
+      <stop offset="1" stop-color="#8b7cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <!-- ▦ grid mark, white, im Safe-Zone-Bereich zentriert -->
+  <g fill="#ffffff">
+    <rect x="158" y="158" width="86" height="86" rx="20"/>
+    <rect x="268" y="158" width="86" height="86" rx="20"/>
+    <rect x="158" y="268" width="86" height="86" rx="20"/>
+    <rect x="268" y="268" width="86" height="86" rx="20"/>
+  </g>
+</svg>
