@@ -1378,6 +1378,174 @@ a {
   cursor: zoom-in;
 }
 
+/* ---------- Trading — P&L-Kalender ---------- */
+.cal {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 30%),
+    var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-6);
+  box-shadow: var(--sh-2);
+}
+
+.cal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.cal-month {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  min-width: 130px;
+  text-align: center;
+}
+
+.cal-net {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.cal-net strong {
+  font-size: var(--fs-md);
+  margin-left: 6px;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.cal-weekdays {
+  margin-bottom: 6px;
+}
+
+.cal-wd {
+  text-align: center;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--faint);
+  padding-bottom: 2px;
+}
+
+.cal-cell {
+  position: relative;
+  min-height: 74px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color var(--t), background var(--t);
+}
+
+.cal-cell.empty-cell {
+  background: transparent;
+  border-color: transparent;
+}
+
+.cal-daynum {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  align-self: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-cell.profit {
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.35);
+}
+.cal-cell.loss {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.cal-cell.is-today {
+  border-color: #fac775;
+  box-shadow: 0 0 0 1px #fac775;
+}
+
+.cal-pnl {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.cal-cell.profit .cal-pnl {
+  color: var(--pos);
+}
+.cal-cell.loss .cal-pnl {
+  color: var(--neg);
+}
+
+.cal-count {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.cal-legend {
+  display: flex;
+  gap: var(--sp-4);
+  justify-content: center;
+  margin-top: var(--sp-4);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+.cal-leg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.leg-box {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+}
+.leg-box.profit {
+  background: var(--pos);
+}
+.leg-box.loss {
+  background: var(--neg);
+}
+
+.leg-dot-today {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fac775;
+}
+
+@media (max-width: 560px) {
+  .cal-cell {
+    min-height: 54px;
+    padding: 4px 5px;
+  }
+  .cal-pnl {
+    font-size: var(--fs-xs);
+  }
+  .cal-count {
+    display: none;
+  }
+}
+
 /* =========================================================================
    Responsive
    ========================================================================= */

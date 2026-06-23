@@ -9,6 +9,7 @@ import {
   SETUP_PRESETS,
   SYMBOL_PRESETS,
 } from "../utils/trade";
+import TradeCalendar from "./TradeCalendar";
 import type { Entry, TradeMeta } from "../types";
 
 type SortKey = "date" | "pnl" | "symbol";
@@ -236,6 +237,9 @@ export default function TradesPage() {
           />
         </div>
       )}
+
+      {/* P&L-Kalender */}
+      <TradeCalendar trades={trades} />
 
       {/* Trade-Form */}
       <form className="trade-form" onSubmit={submit}>
