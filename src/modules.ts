@@ -20,4 +20,5 @@ export const MODULES: ModuleDef[] = [
   { path: "/weekly-review", label: "Weekly Review", type: "weeklyreview", icon: "📅" },
   { path: "/goals", label: "Goals", type: "goal", icon: "🎯" },
   { path: "/projects", label: "Projects", type: "project", icon: "📂" },
+  { path: "/focus", label: "Focus Mode", type: "focus", icon: "⏱️" },
 ];

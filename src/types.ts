@@ -11,7 +11,8 @@ export type EntryType =
   | "review"
   | "weeklyreview"
   | "goal"
-  | "project";
+  | "project"
+  | "focus";
 
 export interface Entry {
   id: string;
@@ -59,6 +60,17 @@ export interface ProjectMeta {
 export interface NoteMeta {
   projectId?: string;
   goalId?: string;
+}
+
+export interface FocusMeta {
+  plannedMin: number;
+  actualSec: number;
+  linkId?: string; // verknüpfte Task/Project/Goal
+  linkLabel?: string; // denormalisiert für Anzeige
+  focusScore: number; // 1-10
+  energyAfter: number; // 1-10
+  distractions: string;
+  note: string;
 }
 
 export interface HabitMeta {
@@ -120,4 +132,5 @@ export interface MetaByType {
   weeklyreview: WeeklyReviewMeta;
   goal: GoalMeta;
   project: ProjectMeta;
+  focus: FocusMeta;
 }

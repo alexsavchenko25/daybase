@@ -5,6 +5,7 @@ import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { addDaysIso, isoWeekNumber, mondayOfIso, todayIso } from "../utils/date";
 import { fmtUsd } from "../utils/trade";
+import { fmtDuration, focusMeta } from "../utils/focus";
 import type {
   Entry,
   HabitMeta,
@@ -115,10 +116,18 @@ export default function WeeklyReviewPage() {
     }
     const habitRate = expected ? Math.round((done / expected) * 100) : 0;
 
+    const focus = range.filter((e) => e.type === "focus");
+    const focusSec = focus.reduce((s, e) => s + focusMeta(e).actualSec, 0);
+    const focusScore = focus.length
+      ? focus.reduce((s, e) => s + focusMeta(e).focusScore, 0) / focus.length
+      : 0;
+
     return {
       tasksDone,
       tasksOpen,
       tasksTotal: tasks.length,
+      focusSec,
+      focusScore,
       trades: trades.length,
       pnl,
       reviews: reviews.length,
@@ -222,6 +231,14 @@ export default function WeeklyReviewPage() {
               {summary.habitDone}/{summary.habitExpected}
             </span>
           </span>
+        </div>
+        <div className="wr-stat">
+          <span className="wr-label">Fokuszeit</span>
+          <span className="wr-val">{fmtDuration(summary.focusSec)}</span>
+        </div>
+        <div className="wr-stat">
+          <span className="wr-label">Ø Fokus-Score</span>
+          <span className="wr-val">{fmt1(summary.focusScore)}</span>
         </div>
         <div className="wr-stat">
           <span className="wr-label">Trades</span>

@@ -1868,6 +1868,77 @@ a {
   }
 }
 
+/* ---------- Focus Mode ---------- */
+.focus-page {
+  max-width: 640px;
+}
+
+.focus-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-6);
+  margin-bottom: var(--sp-4);
+  box-shadow: var(--sh-2);
+}
+
+.focus-presets {
+  display: flex;
+  gap: var(--sp-2);
+}
+.focus-presets .chip {
+  flex: 1;
+  justify-content: center;
+}
+
+.btn.full {
+  width: 100%;
+}
+
+.focus-run {
+  align-items: center;
+  text-align: center;
+}
+.focus-sessiontitle {
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.focus-clock {
+  font-size: clamp(3.5rem, 14vw, 5.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.focus-clock.paused {
+  opacity: 0.5;
+}
+.focus-sub {
+  margin: 0;
+}
+.focus-controls {
+  display: flex;
+  gap: var(--sp-3);
+}
+.focus-done {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--pos);
+}
+.focus-dur {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
 /* ---------- Command Palette ---------- */
 .cmdk-overlay {
   position: fixed;

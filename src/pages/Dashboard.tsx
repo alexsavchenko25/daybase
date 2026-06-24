@@ -5,6 +5,7 @@ import { addDaysIso, isoWeekNumber, mondayOfIso, todayIso } from "../utils/date"
 import { isDoneForPeriod, habitMeta } from "../utils/habit";
 import { MODULES } from "../modules";
 import ProgressBar from "../components/ProgressBar";
+import { fmtDuration, focusMeta } from "../utils/focus";
 import { projectProgress } from "./ProjectsPage";
 import type {
   Entry,
@@ -46,6 +47,16 @@ export default function Dashboard() {
   const review = useLiveQuery(
     () => db.entries.where("[type+date]").equals(["review", today]).first(),
     [today],
+  );
+
+  // Heutige Fokuszeit (Summe der Focus-Sessions).
+  const focusToday = useLiveQuery(
+    async () => {
+      const s = await db.entries.where("[type+date]").equals(["focus", today]).toArray();
+      return s.reduce((sum: number, e: Entry) => sum + focusMeta(e).actualSec, 0);
+    },
+    [today],
+    0,
   );
 
   // Tagesfokus = gestern gesetzte "Tomorrow Priority".
@@ -178,6 +189,13 @@ export default function Dashboard() {
           <span className="dash-value">{openHabits}</span>
           <Link to="/habits" className="dash-link">
             zum Habit Tracker →
+          </Link>
+        </div>
+        <div className="dash-stat">
+          <span className="dash-label">Fokuszeit heute</span>
+          <span className="dash-value">{fmtDuration(focusToday)}</span>
+          <Link to="/focus" className="dash-link">
+            Focus Mode →
           </Link>
         </div>
         <div className="dash-stat">
