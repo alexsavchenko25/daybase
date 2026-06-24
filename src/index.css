@@ -418,12 +418,17 @@ a {
   padding: 6px 14px;
   font-size: var(--fs-sm);
   cursor: pointer;
-  transition: background var(--t), color var(--t), border-color var(--t);
+  transition: background var(--t), color var(--t), border-color var(--t),
+    transform var(--t);
 }
 
 .chip:hover {
   color: var(--text);
   border-color: var(--muted);
+}
+
+.chip:active {
+  transform: translateY(1px);
 }
 
 .chip-active {
@@ -2213,5 +2218,20 @@ input[type="range"]::-moz-range-thumb {
   .task-del,
   .entity-actions .chip {
     min-height: 40px;
+  }
+  /* Form-Submit-Bereiche stapeln, volle Breite */
+  .rv-actions,
+  .tf-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .rv-form .btn,
+  .rv-form > .rv-actions .chip,
+  .entity-form .btn,
+  .entity-form .rv-actions .chip,
+  .trade-form .btn,
+  .tf-actions .chip {
+    width: 100%;
   }
 }
