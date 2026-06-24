@@ -9,6 +9,37 @@ import type { Entry, FocusMeta } from "../types";
 const PRESETS = [25, 50, 90];
 type Phase = "setup" | "run" | "finish";
 
+// Laufende Session in localStorage (überlebt Reload/Navigation). Anchor =
+// Zeitstempel + Restzeit; echte verstrichene Zeit wird beim Laden neu berechnet.
+const LS_KEY = "daybase.focus.active";
+interface SavedFocus {
+  title: string;
+  planned: number;
+  linkId: string;
+  running: boolean;
+  leftAtAnchor: number;
+  actualAtAnchor: number;
+  anchorMs: number;
+}
+function saveFocus(s: SavedFocus) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(s));
+  } catch {
+    /* ponytail: Storage voll/blockiert → Persistenz best-effort */
+  }
+}
+function clearFocus() {
+  localStorage.removeItem(LS_KEY);
+}
+function loadFocus(): SavedFocus | null {
+  try {
+    const r = localStorage.getItem(LS_KEY);
+    return r ? (JSON.parse(r) as SavedFocus) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function FocusPage() {
   const today = todayIso();
 
@@ -62,7 +93,28 @@ export default function FocusPage() {
     [todaySessions],
   );
 
-  // ponytail: Timer lebt nur in dieser Seite (kein Persist über Reload/Navigation).
+  // Laufende Session beim Mount wiederherstellen (verstrichene Zeit aus Anchor).
+  useEffect(() => {
+    const s = loadFocus();
+    if (!s) return;
+    const elapsed = s.running ? Math.floor((Date.now() - s.anchorMs) / 1000) : 0;
+    const rem = s.leftAtAnchor - elapsed;
+    startTitle.current = s.title;
+    setPlanned(s.planned);
+    setLinkId(s.linkId);
+    if (rem <= 0) {
+      setActualSec(s.actualAtAnchor + s.leftAtAnchor);
+      setLeft(0);
+      setRunning(false);
+      setPhase("finish");
+    } else {
+      setLeft(rem);
+      setActualSec(s.actualAtAnchor + elapsed);
+      setRunning(s.running);
+      setPhase("run");
+    }
+  }, []);
+
   useEffect(() => {
     if (!running) return;
     const id = setInterval(() => {
@@ -76,6 +128,7 @@ export default function FocusPage() {
     if (phase === "run" && left <= 0 && running) {
       setRunning(false);
       setPhase("finish");
+      clearFocus();
     }
   }, [left, phase, running]);
 
@@ -86,11 +139,36 @@ export default function FocusPage() {
     setActualSec(0);
     setPhase("run");
     setRunning(true);
+    saveFocus({
+      title: startTitle.current,
+      planned,
+      linkId,
+      running: true,
+      leftAtAnchor: planned * 60,
+      actualAtAnchor: 0,
+      anchorMs: Date.now(),
+    });
+  }
+
+  // Pause/Weiter: neuen Anchor schreiben, damit Drift korrekt bleibt.
+  function togglePause() {
+    const nr = !running;
+    setRunning(nr);
+    saveFocus({
+      title: startTitle.current,
+      planned,
+      linkId,
+      running: nr,
+      leftAtAnchor: left,
+      actualAtAnchor: actualSec,
+      anchorMs: Date.now(),
+    });
   }
 
   function stop() {
     setRunning(false);
     setPhase("finish");
+    clearFocus();
   }
 
   async function saveSession() {
@@ -117,6 +195,7 @@ export default function FocusPage() {
   }
 
   function resetAll() {
+    clearFocus();
     setPhase("setup");
     setRunning(false);
     setLeft(0);
@@ -188,7 +267,7 @@ export default function FocusPage() {
             geplant {planned} min · gearbeitet {fmtDuration(actualSec)}
           </div>
           <div className="focus-controls">
-            <button className="btn" onClick={() => setRunning((r) => !r)}>
+            <button className="btn" onClick={togglePause}>
               {running ? "⏸ Pause" : "▶ Weiter"}
             </button>
             <button className="chip" onClick={stop}>
