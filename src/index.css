@@ -1868,6 +1868,11 @@ a {
   max-width: 880px;
 }
 
+/* Abstand zwischen Filter-Chips und Karten-Grid. */
+.goals-page .filter-row {
+  margin-bottom: var(--sp-4);
+}
+
 .entity-form {
   display: flex;
   flex-direction: column;
