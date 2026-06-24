@@ -23,7 +23,15 @@ interface DayAgg {
   count: number;
 }
 
-export default function TradeCalendar({ trades }: { trades: Entry[] }) {
+export default function TradeCalendar({
+  trades,
+  selected,
+  onPick,
+}: {
+  trades: Entry[];
+  selected?: string | null;
+  onPick?: (iso: string) => void;
+}) {
   const today = todayIso();
   const [ref, setRef] = useState(() => {
     const d = new Date(today + "T00:00:00");
@@ -118,11 +126,16 @@ export default function TradeCalendar({ trades }: { trades: Entry[] }) {
           if (c.day === null) return <div key={i} className="cal-cell empty-cell" />;
           const agg = byDate.get(c.iso!);
           const isToday = c.iso === today;
+          const isSel = c.iso === selected;
           const tone = agg ? (agg.pnl >= 0 ? "profit" : "loss") : "";
           return (
-            <div
+            <button
               key={i}
-              className={`cal-cell ${tone} ${isToday ? "is-today" : ""}`}
+              type="button"
+              className={`cal-cell ${tone} ${isToday ? "is-today" : ""} ${
+                isSel ? "is-selected" : ""
+              }`}
+              onClick={() => agg && onPick?.(c.iso!)}
             >
               <span className="cal-daynum">{c.day}</span>
               {agg && (
@@ -133,7 +146,7 @@ export default function TradeCalendar({ trades }: { trades: Entry[] }) {
                   </span>
                 </span>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
