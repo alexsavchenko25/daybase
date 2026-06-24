@@ -6,6 +6,7 @@ import { isDoneForPeriod, habitMeta } from "../utils/habit";
 import { MODULES } from "../modules";
 import ProgressBar from "../components/ProgressBar";
 import { fmtDuration, focusMeta } from "../utils/focus";
+import { daysSinceBackup } from "../utils/backup";
 import { projectProgress } from "./ProjectsPage";
 import type {
   Entry,
@@ -104,6 +105,11 @@ export default function Dashboard() {
   );
   const showWeeklyHint = (weekday === 0 || weekday === 1) && !weeklyDone;
 
+  // Backup-Reminder: Daten vorhanden + nie oder >7 Tage kein Export.
+  const totalEntries = useLiveQuery(() => db.entries.count(), [], 0);
+  const backupDays = daysSinceBackup();
+  const showBackupHint = totalEntries > 0 && (backupDays === null || backupDays >= 7);
+
   // Wochenfokus = Next Week Focus aus dem jüngsten Weekly Review.
   const weeklyFocus = useLiveQuery(
     async () => {
@@ -164,6 +170,21 @@ export default function Dashboard() {
         </h1>
         <p className="muted">{dateLabel}</p>
       </header>
+
+      {showBackupHint && (
+        <Link to="/settings" className="dash-weekly-hint dash-backup-hint">
+          <span className="dwh-icon">💾</span>
+          <span>
+            <strong>
+              {backupDays === null
+                ? "Noch kein Backup erstellt."
+                : `Letztes Backup vor ${backupDays} Tagen.`}
+            </strong>{" "}
+            Daten liegen nur lokal — jetzt exportieren.
+          </span>
+          <span className="dwh-arrow">→</span>
+        </Link>
+      )}
 
       {showWeeklyHint && (
         <Link to="/weekly-review" className="dash-weekly-hint">

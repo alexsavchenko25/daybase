@@ -3,12 +3,14 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { exportBackup, importBackup } from "../repository";
 import { todayIso } from "../utils/date";
+import { markBackup, lastBackup, daysSinceBackup } from "../utils/backup";
 
 export default function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<{ tone: "ok" | "err"; text: string } | null>(
     null,
   );
+  const [backupAt, setBackupAt] = useState(lastBackup());
 
   const count = useLiveQuery(() => db.entries.count(), [], 0);
 
@@ -23,6 +25,8 @@ export default function SettingsPage() {
     a.download = `daybase-backup-${todayIso()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    markBackup();
+    setBackupAt(lastBackup());
     setMsg({ tone: "ok", text: `Exportiert: ${backup.entries.length} Einträge.` });
   }
 
@@ -66,6 +70,13 @@ export default function SettingsPage() {
         <div className="set-title">Backup</div>
         <p className="muted set-sub">
           Aktuell: <strong>{count}</strong> Einträge auf diesem Gerät.
+          <br />
+          Letztes Backup:{" "}
+          <strong>
+            {backupAt
+              ? `${new Date(backupAt).toLocaleDateString("de-DE")} (vor ${daysSinceBackup()} Tagen)`
+              : "noch nie"}
+          </strong>
         </p>
         <div className="set-actions">
           <button className="btn" onClick={doExport}>

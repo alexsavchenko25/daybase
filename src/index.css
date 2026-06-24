@@ -760,6 +760,15 @@ a {
   font-weight: 700;
 }
 
+.dash-backup-hint {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.14), transparent 70%),
+    var(--surface);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+.dash-backup-hint .dwh-arrow {
+  color: var(--warn);
+}
+
 /* ---------- Tasks ---------- */
 .task-form {
   display: flex;
