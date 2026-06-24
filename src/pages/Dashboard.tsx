@@ -4,7 +4,7 @@ import { db } from "../db";
 import { addDaysIso, isoWeekNumber, mondayOfIso, todayIso } from "../utils/date";
 import { isDoneForPeriod, habitMeta } from "../utils/habit";
 import { MODULES } from "../modules";
-import type { Entry, TaskMeta, ReviewMeta } from "../types";
+import type { Entry, TaskMeta, ReviewMeta, WeeklyReviewMeta } from "../types";
 
 function nowHm(): string {
   const d = new Date();
@@ -85,6 +85,18 @@ export default function Dashboard() {
   );
   const showWeeklyHint = (weekday === 0 || weekday === 1) && !weeklyDone;
 
+  // Wochenfokus = Next Week Focus aus dem jüngsten Weekly Review.
+  const weeklyFocus = useLiveQuery(
+    async () => {
+      const all = await db.entries.where("type").equals("weeklyreview").toArray();
+      if (!all.length) return "";
+      all.sort((a, b) => b.date.localeCompare(a.date));
+      return (all[0].meta as WeeklyReviewMeta).nextWeekFocus || "";
+    },
+    [],
+    "",
+  );
+
   const dateLabel = new Date(today + "T00:00:00").toLocaleDateString("de-DE", {
     weekday: "long",
     day: "numeric",
@@ -102,7 +114,7 @@ export default function Dashboard() {
       </header>
 
       {showWeeklyHint && (
-        <Link to="/weekly" className="dash-weekly-hint">
+        <Link to="/weekly-review" className="dash-weekly-hint">
           <span className="dwh-icon">📅</span>
           <span>
             <strong>Weekly Review für KW {isoWeekNumber(monday)} steht an.</strong>{" "}
@@ -161,6 +173,16 @@ export default function Dashboard() {
             <span className="dash-focus">{focus}</span>
           ) : (
             <span className="muted">Kein Fokus gesetzt (gestriges Review).</span>
+          )}
+        </div>
+        <div className="dash-info">
+          <span className="dash-label">Wochenfokus</span>
+          {weeklyFocus ? (
+            <span className="dash-focus">{weeklyFocus}</span>
+          ) : (
+            <span className="muted">
+              Kein Wochenfokus. <Link to="/weekly-review">Weekly Review →</Link>
+            </span>
           )}
         </div>
       </div>

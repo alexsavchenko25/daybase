@@ -25,7 +25,7 @@ const PAGES: Record<string, React.ReactNode> = {
   "/weekplan": <WeekPlanPage />,
   "/trades": <TradesPage />,
   "/review": <ReviewPage />,
-  "/weekly": <WeeklyReviewPage />,
+  "/weekly-review": <WeeklyReviewPage />,
 };
 
 export default function App() {

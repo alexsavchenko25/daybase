@@ -17,8 +17,11 @@ const EMPTY: WeeklyReviewMeta = {
   wins: "",
   problems: "",
   lessons: "",
+  improve: "",
   nextWeekFocus: "",
   score: 5,
+  energy: 5,
+  discipline: 5,
 };
 
 export default function WeeklyReviewPage() {
@@ -61,6 +64,7 @@ export default function WeeklyReviewPage() {
   const summary = useMemo(() => {
     const tasks = range.filter((e) => e.type === "task");
     const tasksDone = tasks.filter((e) => (e.meta as TaskMeta).done).length;
+    const tasksOpen = tasks.length - tasksDone;
 
     const trades = range.filter((e) => e.type === "trade");
     const pnl = trades.reduce((s, e) => s + ((e.meta as TradeMeta).pnl ?? 0), 0);
@@ -91,6 +95,7 @@ export default function WeeklyReviewPage() {
 
     return {
       tasksDone,
+      tasksOpen,
       tasksTotal: tasks.length,
       trades: trades.length,
       pnl,
@@ -115,6 +120,7 @@ export default function WeeklyReviewPage() {
       wins: form.wins.trim(),
       problems: form.problems.trim(),
       lessons: form.lessons.trim(),
+      improve: form.improve.trim(),
       nextWeekFocus: form.nextWeekFocus.trim(),
     };
     if (existing) {
@@ -182,6 +188,10 @@ export default function WeeklyReviewPage() {
           </span>
         </div>
         <div className="wr-stat">
+          <span className="wr-label">Tasks offen</span>
+          <span className="wr-val">{summary.tasksOpen}</span>
+        </div>
+        <div className="wr-stat">
           <span className="wr-label">Habit Completion</span>
           <span className="wr-val">
             {summary.habitRate}%
@@ -218,21 +228,28 @@ export default function WeeklyReviewPage() {
       {/* Formular */}
       <div className="rv-form">
         <label className="rv-field">
-          <span>🏆 Wins</span>
+          <span>🏆 Top 3 Wins</span>
           <textarea value={form.wins} onChange={(e) => set("wins", e.target.value)} />
         </label>
         <label className="rv-field">
-          <span>⚠️ Problems</span>
+          <span>⚠️ Top 3 Problems</span>
           <textarea
             value={form.problems}
             onChange={(e) => set("problems", e.target.value)}
           />
         </label>
         <label className="rv-field">
-          <span>💡 Lessons</span>
+          <span>💡 Lessons learned</span>
           <textarea
             value={form.lessons}
             onChange={(e) => set("lessons", e.target.value)}
+          />
+        </label>
+        <label className="rv-field">
+          <span>🔧 What to improve next week</span>
+          <textarea
+            value={form.improve}
+            onChange={(e) => set("improve", e.target.value)}
           />
         </label>
         <label className="rv-field">
@@ -242,18 +259,29 @@ export default function WeeklyReviewPage() {
             onChange={(e) => set("nextWeekFocus", e.target.value)}
           />
         </label>
-        <label className="rv-slider">
-          <span>
-            ⭐ Weekly Score <strong>{form.score}</strong>/10
-          </span>
-          <input
-            type="range"
-            min={1}
-            max={10}
-            value={form.score}
-            onChange={(e) => set("score", Number(e.target.value))}
-          />
-        </label>
+
+        <div className="rv-sliders">
+          {(
+            [
+              ["score", "⭐ Weekly Score"],
+              ["energy", "⚡ Energy Ø"],
+              ["discipline", "🛡️ Discipline"],
+            ] as [keyof WeeklyReviewMeta, string][]
+          ).map(([key, label]) => (
+            <label key={key} className="rv-slider">
+              <span>
+                {label} <strong>{form[key] as number}</strong>/10
+              </span>
+              <input
+                type="range"
+                min={1}
+                max={10}
+                value={form[key] as number}
+                onChange={(e) => set(key, Number(e.target.value) as never)}
+              />
+            </label>
+          ))}
+        </div>
 
         <div className="rv-actions">
           <button className="btn" onClick={save}>

@@ -17,5 +17,5 @@ export const MODULES: ModuleDef[] = [
   { path: "/habits", label: "Habit Tracker", type: "habit", icon: "🔁" },
   { path: "/notes", label: "Notizen", type: "note", icon: "🗒️" },
   { path: "/review", label: "Daily Review", type: "review", icon: "📝" },
-  { path: "/weekly", label: "Weekly Review", type: "weeklyreview", icon: "📅" },
+  { path: "/weekly-review", label: "Weekly Review", type: "weeklyreview", icon: "📅" },
 ];

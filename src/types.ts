@@ -67,11 +67,14 @@ export interface ReviewMeta {
 }
 
 export interface WeeklyReviewMeta {
-  wins: string;
-  problems: string;
+  wins: string; // Top 3 Wins
+  problems: string; // Top 3 Problems
   lessons: string;
+  improve: string; // What to improve next week
   nextWeekFocus: string;
-  score: number; // 1-10
+  score: number; // Weekly Score 1-10
+  energy: number; // subjektiv 1-10
+  discipline: number; // subjektiv 1-10
 }
 
 // journal & note: keine zusätzlichen meta-Felder nötig.
