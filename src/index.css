@@ -1546,6 +1546,94 @@ a {
   }
 }
 
+/* ---------- Settings ---------- */
+.settings-page {
+  max-width: 720px;
+}
+
+.set-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  box-shadow: var(--sh-1);
+}
+
+.set-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.set-title {
+  font-weight: 600;
+  font-size: var(--fs-base);
+}
+
+.set-sub {
+  margin: 6px 0 var(--sp-3);
+}
+
+.set-version {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: var(--r-pill);
+  padding: 4px 12px;
+}
+
+.set-actions {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.set-msg {
+  margin: var(--sp-3) 0 0;
+  font-size: var(--fs-sm);
+}
+
+.set-note {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-xs);
+}
+
+.set-hint {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+}
+
+.set-hint p {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.set-hint-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+/* ---------- Mobile-Fixes ---------- */
+.content {
+  padding-left: max(clamp(var(--sp-4), 4vw, 56px), env(safe-area-inset-left));
+  padding-right: max(clamp(var(--sp-4), 4vw, 56px), env(safe-area-inset-right));
+}
+
+/* Wochenplan: auf schmalen Screens horizontal scrollen statt quetschen. */
+@media (max-width: 720px) {
+  .week-grid {
+    grid-template-columns: repeat(7, minmax(120px, 1fr));
+    overflow-x: auto;
+    padding-bottom: var(--sp-2);
+  }
+}
+
 /* =========================================================================
    Responsive
    ========================================================================= */

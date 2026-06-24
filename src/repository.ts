@@ -107,6 +107,46 @@ export const entriesRepo = {
   },
 };
 
+// ---- Backup (Export / Import) ----
+
+export interface Backup {
+  app: "daybase";
+  version: number;
+  exportedAt: string;
+  entries: Entry[];
+}
+
+// Alle Entries als Backup-Objekt. Reines Lesen, ändert nichts.
+export async function exportBackup(): Promise<Backup> {
+  const entries = await db.entries.toArray();
+  return {
+    app: "daybase",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    entries,
+  };
+}
+
+// Backup importieren. bulkPut = upsert nach id: vorhandene Einträge mit
+// gleicher id werden überschrieben, neue ergänzt. Bestehende, nicht im
+// Backup enthaltene Einträge bleiben erhalten (kein destruktives Replace).
+export async function importBackup(data: unknown): Promise<number> {
+  const obj = data as Partial<Backup>;
+  if (!obj || !Array.isArray(obj.entries)) {
+    throw new Error("Ungültige Backup-Datei: 'entries'-Array fehlt.");
+  }
+  const valid = obj.entries.filter(
+    (e): e is Entry =>
+      !!e &&
+      typeof e.id === "string" &&
+      typeof e.type === "string" &&
+      typeof e.date === "string",
+  );
+  if (valid.length === 0) throw new Error("Keine gültigen Einträge im Backup.");
+  await db.entries.bulkPut(valid);
+  return valid.length;
+}
+
 // Beim App-Load aufrufen: gespeicherte habit.streak gegen die echten
 // completedDates abgleichen. Verpasste Tage/Wochen brechen den Streak hier,
 // auch ohne dass der User abhakt.

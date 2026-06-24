@@ -9,6 +9,7 @@ import JournalPage from "./pages/JournalPage";
 import NotesPage from "./pages/NotesPage";
 import WeekPlanPage from "./pages/WeekPlanPage";
 import TradesPage from "./pages/TradesPage";
+import SettingsPage from "./pages/SettingsPage";
 import { MODULES } from "./modules";
 import { syncHabitStreaks } from "./repository";
 import { seedIfFirstRun, cleanupDuplicateWeekplan } from "./seed";
@@ -45,6 +46,7 @@ export default function App() {
               element={PAGES[m.path] ?? <ModulePlaceholder module={m} />}
             />
           ))}
+          <Route path="/settings" element={<SettingsPage />} />
           <Route
             path="*"
             element={<div className="page">Seite nicht gefunden.</div>}
