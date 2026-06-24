@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
-import { addDaysIso, todayIso } from "../utils/date";
+import { addDaysIso, isoWeekNumber, mondayOfIso, todayIso } from "../utils/date";
 import { isDoneForPeriod, habitMeta } from "../utils/habit";
 import { MODULES } from "../modules";
 import type { Entry, TaskMeta, ReviewMeta } from "../types";
@@ -74,6 +74,17 @@ export default function Dashboard() {
     null as null | { title: string; start: string; end: string },
   );
 
+  // Weekly-Review-Hinweis: nur So/Mo, wenn KW-Review fehlt.
+  const weekday = new Date(today + "T00:00:00").getDay(); // 0=So,1=Mo
+  const monday = mondayOfIso(today);
+  const weeklyDone = useLiveQuery(
+    async () =>
+      !!(await db.entries.where("[type+date]").equals(["weeklyreview", monday]).first()),
+    [monday],
+    false,
+  );
+  const showWeeklyHint = (weekday === 0 || weekday === 1) && !weeklyDone;
+
   const dateLabel = new Date(today + "T00:00:00").toLocaleDateString("de-DE", {
     weekday: "long",
     day: "numeric",
@@ -89,6 +100,17 @@ export default function Dashboard() {
         </h1>
         <p className="muted">{dateLabel}</p>
       </header>
+
+      {showWeeklyHint && (
+        <Link to="/weekly" className="dash-weekly-hint">
+          <span className="dwh-icon">📅</span>
+          <span>
+            <strong>Weekly Review für KW {isoWeekNumber(monday)} steht an.</strong>{" "}
+            Woche auswerten & nächste planen.
+          </span>
+          <span className="dwh-arrow">→</span>
+        </Link>
+      )}
 
       <div className="dash-grid">
         <div className="dash-stat">

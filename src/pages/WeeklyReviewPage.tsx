@@ -1,0 +1,271 @@
+import { useEffect, useMemo, useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../db";
+import { entriesRepo } from "../repository";
+import { addDaysIso, isoWeekNumber, mondayOfIso, todayIso } from "../utils/date";
+import { fmtUsd } from "../utils/trade";
+import type {
+  Entry,
+  HabitMeta,
+  ReviewMeta,
+  TaskMeta,
+  TradeMeta,
+  WeeklyReviewMeta,
+} from "../types";
+
+const EMPTY: WeeklyReviewMeta = {
+  wins: "",
+  problems: "",
+  lessons: "",
+  nextWeekFocus: "",
+  score: 5,
+};
+
+export default function WeeklyReviewPage() {
+  const today = todayIso();
+  const [monday, setMonday] = useState(() => mondayOfIso(today));
+  const sunday = addDaysIso(monday, 6);
+  const weekDates = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDaysIso(monday, i)),
+    [monday],
+  );
+  const weekNo = isoWeekNumber(monday);
+  const isCurrent = monday === mondayOfIso(today);
+
+  const [form, setForm] = useState<WeeklyReviewMeta>(EMPTY);
+  const [saved, setSaved] = useState(false);
+
+  const existing = useLiveQuery(
+    () => db.entries.where("[type+date]").equals(["weeklyreview", monday]).first(),
+    [monday],
+  );
+
+  // Einträge der Woche (Tasks/Trades/Daily-Reviews) + alle Habits.
+  const range = useLiveQuery(
+    () => db.entries.where("date").between(monday, sunday, true, true).toArray(),
+    [monday, sunday],
+    [] as Entry[],
+  );
+  const habits = useLiveQuery(
+    () => db.entries.where("type").equals("habit").toArray(),
+    [],
+    [] as Entry[],
+  );
+
+  useEffect(() => {
+    setForm(existing ? { ...EMPTY, ...(existing.meta as WeeklyReviewMeta) } : EMPTY);
+    setSaved(false);
+  }, [monday, existing?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---- Auto-Übersicht ----
+  const summary = useMemo(() => {
+    const tasks = range.filter((e) => e.type === "task");
+    const tasksDone = tasks.filter((e) => (e.meta as TaskMeta).done).length;
+
+    const trades = range.filter((e) => e.type === "trade");
+    const pnl = trades.reduce((s, e) => s + ((e.meta as TradeMeta).pnl ?? 0), 0);
+
+    const reviews = range.filter((e) => e.type === "review");
+    const avg = (key: keyof ReviewMeta) =>
+      reviews.length
+        ? reviews.reduce((s, e) => s + ((e.meta as ReviewMeta)[key] as number), 0) /
+          reviews.length
+        : 0;
+
+    // Habit-Completion: daily erwartet 7, weekly erwartet 1.
+    const wd = new Set(weekDates);
+    let done = 0;
+    let expected = 0;
+    for (const h of habits) {
+      const m = h.meta as HabitMeta;
+      const inWeek = (m.completedDates ?? []).filter((d) => wd.has(d));
+      if (m.frequency === "weekly") {
+        expected += 1;
+        if (inWeek.length > 0) done += 1;
+      } else {
+        expected += 7;
+        done += inWeek.length;
+      }
+    }
+    const habitRate = expected ? Math.round((done / expected) * 100) : 0;
+
+    return {
+      tasksDone,
+      tasksTotal: tasks.length,
+      trades: trades.length,
+      pnl,
+      reviews: reviews.length,
+      energy: avg("energy"),
+      focus: avg("focus"),
+      mood: avg("mood"),
+      habitDone: done,
+      habitExpected: expected,
+      habitRate,
+    };
+  }, [range, habits, weekDates]);
+
+  function set<K extends keyof WeeklyReviewMeta>(k: K, v: WeeklyReviewMeta[K]) {
+    setForm((f) => ({ ...f, [k]: v }));
+    setSaved(false);
+  }
+
+  async function save() {
+    const meta: WeeklyReviewMeta = {
+      ...form,
+      wins: form.wins.trim(),
+      problems: form.problems.trim(),
+      lessons: form.lessons.trim(),
+      nextWeekFocus: form.nextWeekFocus.trim(),
+    };
+    if (existing) {
+      await entriesRepo.update(existing.id, { meta });
+    } else {
+      await entriesRepo.create({
+        type: "weeklyreview",
+        date: monday, // Anker = Montag der KW → ein Review/Woche
+        title: `Weekly Review KW ${weekNo}`,
+        content: "",
+        tags: [],
+        meta,
+      });
+    }
+    setSaved(true);
+  }
+
+  async function remove() {
+    if (existing) await entriesRepo.remove(existing.id);
+    setForm(EMPTY);
+    setSaved(false);
+  }
+
+  const fmt1 = (n: number) => (n ? n.toFixed(1) : "–");
+
+  return (
+    <div className="page review-page">
+      <header className="page-head">
+        <h1>
+          <span className="page-icon">📅</span> Weekly Review
+        </h1>
+      </header>
+
+      <div className="week-nav rv-nav">
+        <button className="chip" onClick={() => setMonday(addDaysIso(monday, -7))}>
+          ← Woche
+        </button>
+        <span className="week-label">
+          KW {weekNo}
+          {isCurrent && <span className="week-now"> · aktuell</span>}
+        </span>
+        <button className="chip" onClick={() => setMonday(addDaysIso(monday, 7))}>
+          Woche →
+        </button>
+        {!isCurrent && (
+          <button className="chip" onClick={() => setMonday(mondayOfIso(today))}>
+            aktuelle
+          </button>
+        )}
+        <span className="rv-range">
+          {monday.slice(5)} – {sunday.slice(5)}
+        </span>
+        <span className={`rv-status ${existing ? "done" : "open"}`}>
+          {existing ? "✓ ausgefüllt" : "offen"}
+        </span>
+      </div>
+
+      {/* Auto-Übersicht */}
+      <div className="wr-summary">
+        <div className="wr-stat">
+          <span className="wr-label">Tasks erledigt</span>
+          <span className="wr-val">
+            {summary.tasksDone}
+            <span className="wr-sub">/{summary.tasksTotal}</span>
+          </span>
+        </div>
+        <div className="wr-stat">
+          <span className="wr-label">Habit Completion</span>
+          <span className="wr-val">
+            {summary.habitRate}%
+            <span className="wr-sub">
+              {summary.habitDone}/{summary.habitExpected}
+            </span>
+          </span>
+        </div>
+        <div className="wr-stat">
+          <span className="wr-label">Trades</span>
+          <span className="wr-val">{summary.trades}</span>
+        </div>
+        <div className="wr-stat">
+          <span className="wr-label">Trading PnL</span>
+          <span className={`wr-val ${summary.pnl >= 0 ? "pos" : "neg"}`}>
+            {fmtUsd(summary.pnl)}
+          </span>
+        </div>
+        <div className="wr-stat">
+          <span className="wr-label">Daily Reviews</span>
+          <span className="wr-val">
+            {summary.reviews}
+            <span className="wr-sub">/7</span>
+          </span>
+        </div>
+        <div className="wr-stat">
+          <span className="wr-label">Ø E / F / M</span>
+          <span className="wr-val wr-efm">
+            {fmt1(summary.energy)} / {fmt1(summary.focus)} / {fmt1(summary.mood)}
+          </span>
+        </div>
+      </div>
+
+      {/* Formular */}
+      <div className="rv-form">
+        <label className="rv-field">
+          <span>🏆 Wins</span>
+          <textarea value={form.wins} onChange={(e) => set("wins", e.target.value)} />
+        </label>
+        <label className="rv-field">
+          <span>⚠️ Problems</span>
+          <textarea
+            value={form.problems}
+            onChange={(e) => set("problems", e.target.value)}
+          />
+        </label>
+        <label className="rv-field">
+          <span>💡 Lessons</span>
+          <textarea
+            value={form.lessons}
+            onChange={(e) => set("lessons", e.target.value)}
+          />
+        </label>
+        <label className="rv-field">
+          <span>➡️ Next Week Focus</span>
+          <textarea
+            value={form.nextWeekFocus}
+            onChange={(e) => set("nextWeekFocus", e.target.value)}
+          />
+        </label>
+        <label className="rv-slider">
+          <span>
+            ⭐ Weekly Score <strong>{form.score}</strong>/10
+          </span>
+          <input
+            type="range"
+            min={1}
+            max={10}
+            value={form.score}
+            onChange={(e) => set("score", Number(e.target.value))}
+          />
+        </label>
+
+        <div className="rv-actions">
+          <button className="btn" onClick={save}>
+            {saved ? "Gespeichert ✓" : existing ? "Aktualisieren" : "Speichern"}
+          </button>
+          {existing && (
+            <button className="chip" onClick={remove}>
+              Löschen
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

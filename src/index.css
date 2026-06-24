@@ -679,6 +679,81 @@ a {
   align-items: center;
 }
 
+.rv-range {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Weekly Review — Auto-Summary ---------- */
+.wr-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.wr-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  box-shadow: var(--sh-1);
+}
+
+.wr-label {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.wr-val {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.wr-val.wr-efm {
+  font-size: var(--fs-md);
+}
+
+.wr-sub {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 3px;
+}
+
+/* ---------- Dashboard — Weekly-Hinweis ---------- */
+.dash-weekly-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  background: linear-gradient(135deg, var(--accent-soft), transparent 70%),
+    var(--surface);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-4);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  transition: transform var(--t);
+}
+.dash-weekly-hint:hover {
+  transform: translateY(-1px);
+}
+.dwh-icon {
+  font-size: 1.3rem;
+}
+.dwh-arrow {
+  margin-left: auto;
+  color: var(--accent);
+  font-weight: 700;
+}
+
 /* ---------- Tasks ---------- */
 .task-form {
   display: flex;

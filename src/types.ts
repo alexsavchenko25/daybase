@@ -8,7 +8,8 @@ export type EntryType =
   | "trade"
   | "habit"
   | "note"
-  | "review";
+  | "review"
+  | "weeklyreview";
 
 export interface Entry {
   id: string;
@@ -65,6 +66,14 @@ export interface ReviewMeta {
   tomorrowPriority: string;
 }
 
+export interface WeeklyReviewMeta {
+  wins: string;
+  problems: string;
+  lessons: string;
+  nextWeekFocus: string;
+  score: number; // 1-10
+}
+
 // journal & note: keine zusätzlichen meta-Felder nötig.
 
 // Mapping Typ -> meta-Shape (für späteren typsicheren Zugriff verfügbar).
@@ -76,4 +85,5 @@ export interface MetaByType {
   trade: TradeMeta;
   weekplan: WeekplanMeta;
   review: ReviewMeta;
+  weeklyreview: WeeklyReviewMeta;
 }
