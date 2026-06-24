@@ -68,6 +68,27 @@
   text-rendering: optimizeLegibility;
 }
 
+/* Light-Theme: überschreibt nur die Farb-Tokens. */
+html[data-theme="light"] {
+  --bg: #f3f4f7;
+  --surface: #ffffff;
+  --surface-2: #eef0f4;
+  --surface-3: #e6e9ee;
+  --border: #d8dce3;
+  --border-soft: #e7e9ee;
+  --text: #1a1d23;
+  --muted: #5b636f;
+  --faint: #8a92a0;
+  --accent: #2f6fe0;
+  --accent-2: #7c5cf0;
+  --accent-soft: rgba(47, 111, 224, 0.12);
+  --accent-line: rgba(47, 111, 224, 0.4);
+  --sh-1: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --sh-2: 0 4px 14px rgba(16, 24, 40, 0.08);
+  --sh-3: 0 12px 32px rgba(16, 24, 40, 0.12);
+  color-scheme: light;
+}
+
 /* ---------- Base ---------- */
 * {
   box-sizing: border-box;
@@ -235,8 +256,27 @@ a {
   font-size: 1.02em;
 }
 
-.sidebar-foot {
+.theme-toggle {
   margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  padding: 9px 12px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: color var(--t), border-color var(--t);
+}
+.theme-toggle:hover {
+  color: var(--text);
+  border-color: var(--accent-line);
+}
+
+.sidebar-foot {
   padding: var(--sp-3);
   font-size: var(--fs-xs);
   letter-spacing: 0.02em;
