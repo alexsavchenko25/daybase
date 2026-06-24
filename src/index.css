@@ -1868,9 +1868,12 @@ a {
   max-width: 880px;
 }
 
-/* Abstand zwischen Filter-Chips und Karten-Grid. */
-.goals-page .filter-row {
-  margin-bottom: var(--sp-4);
+/* Abstand zwischen Filter-Chips und Karten-Grid. .filter-row.wrap setzt sonst
+   margin-bottom:0 (gleiche Specificity) — hier explizit überschreiben. */
+.goals-page .filter-row,
+.goals-page .filter-row.wrap {
+  margin-top: var(--sp-2);
+  margin-bottom: var(--sp-5);
 }
 
 .entity-form {
