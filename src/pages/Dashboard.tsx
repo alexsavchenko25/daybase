@@ -4,7 +4,15 @@ import { db } from "../db";
 import { addDaysIso, isoWeekNumber, mondayOfIso, todayIso } from "../utils/date";
 import { isDoneForPeriod, habitMeta } from "../utils/habit";
 import { MODULES } from "../modules";
-import type { Entry, TaskMeta, ReviewMeta, WeeklyReviewMeta } from "../types";
+import ProgressBar from "../components/ProgressBar";
+import { projectProgress } from "./ProjectsPage";
+import type {
+  Entry,
+  TaskMeta,
+  ReviewMeta,
+  WeeklyReviewMeta,
+  GoalMeta,
+} from "../types";
 
 function nowHm(): string {
   const d = new Date();
@@ -97,6 +105,39 @@ export default function Dashboard() {
     "",
   );
 
+  // Top Goals (aktiv, nächste Deadline / höchster Fortschritt zuerst).
+  const topGoals = useLiveQuery(
+    async () => {
+      const gs = (await db.entries.where("type").equals("goal").toArray()).filter(
+        (g: Entry) => (g.meta as GoalMeta).status === "active",
+      );
+      gs.sort(
+        (a, b) =>
+          ((a.meta as GoalMeta).deadline || "9999").localeCompare(
+            (b.meta as GoalMeta).deadline || "9999",
+          ) || (b.meta as GoalMeta).progress - (a.meta as GoalMeta).progress,
+      );
+      return gs.slice(0, 3);
+    },
+    [],
+    [] as Entry[],
+  );
+
+  // Aktive Projects + Task-basierter Fortschritt.
+  const activeProjects = useLiveQuery(
+    async () => {
+      const ps = (await db.entries.where("type").equals("project").toArray()).filter(
+        (p: Entry) => (p.meta as { status?: string }).status === "active",
+      );
+      const tasks = await db.entries.where("type").equals("task").toArray();
+      return ps
+        .slice(0, 3)
+        .map((p: Entry) => ({ p, prog: projectProgress(p.id, tasks) }));
+    },
+    [],
+    [] as { p: Entry; prog: { done: number; total: number; pct: number } }[],
+  );
+
   const dateLabel = new Date(today + "T00:00:00").toLocaleDateString("de-DE", {
     weekday: "long",
     day: "numeric",
@@ -186,6 +227,52 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {(topGoals.length > 0 || activeProjects.length > 0) && (
+        <div className="dash-grid dash-grid-2">
+          <div className="dash-info">
+            <div className="dash-info-head">
+              <span className="dash-label">Top Goals</span>
+              <Link to="/goals" className="dash-link">
+                alle →
+              </Link>
+            </div>
+            {topGoals.length === 0 ? (
+              <span className="muted">Keine aktiven Ziele.</span>
+            ) : (
+              topGoals.map((g) => (
+                <div key={g.id} className="dash-prog-row">
+                  <span className="dash-prog-title">{g.title}</span>
+                  <ProgressBar value={(g.meta as GoalMeta).progress} />
+                </div>
+              ))
+            )}
+          </div>
+          <div className="dash-info">
+            <div className="dash-info-head">
+              <span className="dash-label">Aktive Projects</span>
+              <Link to="/projects" className="dash-link">
+                alle →
+              </Link>
+            </div>
+            {activeProjects.length === 0 ? (
+              <span className="muted">Keine aktiven Projekte.</span>
+            ) : (
+              activeProjects.map(({ p, prog }) => (
+                <div key={p.id} className="dash-prog-row">
+                  <span className="dash-prog-title">
+                    {p.title}
+                    <span className="dash-prog-sub">
+                      {prog.done}/{prog.total}
+                    </span>
+                  </span>
+                  <ProgressBar value={prog.pct} />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       <p className="section-label">Module</p>
       <div className="dash-modules">

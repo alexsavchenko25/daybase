@@ -11,6 +11,8 @@ import WeekPlanPage from "./pages/WeekPlanPage";
 import TradesPage from "./pages/TradesPage";
 import ReviewPage from "./pages/ReviewPage";
 import WeeklyReviewPage from "./pages/WeeklyReviewPage";
+import GoalsPage from "./pages/GoalsPage";
+import ProjectsPage from "./pages/ProjectsPage";
 import SettingsPage from "./pages/SettingsPage";
 import { MODULES } from "./modules";
 import { syncHabitStreaks } from "./repository";
@@ -26,6 +28,8 @@ const PAGES: Record<string, React.ReactNode> = {
   "/trades": <TradesPage />,
   "/review": <ReviewPage />,
   "/weekly-review": <WeeklyReviewPage />,
+  "/goals": <GoalsPage />,
+  "/projects": <ProjectsPage />,
 };
 
 export default function App() {

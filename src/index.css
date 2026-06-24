@@ -1862,6 +1862,221 @@ a {
   }
 }
 
+/* ---------- Goals & Projects ---------- */
+.goals-page {
+  max-width: 880px;
+}
+
+.entity-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  box-shadow: var(--sh-1);
+}
+
+.journal-textarea.sm {
+  min-height: 56px;
+}
+
+.ef-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-3);
+}
+.ef-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.ef-grid .task-select {
+  width: 100%;
+}
+.ef-wide {
+  grid-column: 1 / -1;
+  text-transform: none !important;
+}
+.ef-wide strong {
+  color: var(--accent);
+}
+.ef-wide input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+  margin-top: 4px;
+}
+
+.entity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-3);
+}
+
+.entity-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  box-shadow: var(--sh-1);
+  transition: border-color var(--t), transform var(--t);
+}
+.entity-card:hover {
+  border-color: var(--accent-line);
+  transform: translateY(-2px);
+}
+
+.entity-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.entity-title {
+  font-weight: 600;
+  font-size: var(--fs-md);
+}
+.entity-desc {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  line-height: 1.45;
+}
+.entity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.entity-dl {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pill {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+}
+.pill.ghost {
+  background: var(--surface-3);
+  color: var(--muted);
+}
+.status-active {
+  background: rgba(110, 168, 254, 0.16);
+  color: var(--accent);
+}
+.status-done {
+  background: rgba(74, 222, 128, 0.16);
+  color: var(--pos);
+}
+.status-paused {
+  background: rgba(251, 191, 36, 0.16);
+  color: var(--warn);
+}
+.status-dropped {
+  background: rgba(248, 113, 113, 0.16);
+  color: var(--neg);
+}
+
+.entity-prog {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.entity-prog-val {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.entity-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: 2px;
+}
+
+/* Fortschrittsbalken */
+.pbar {
+  flex: 1;
+  height: 8px;
+  background: var(--surface-3);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.pbar-fill {
+  height: 100%;
+  background: var(--grad);
+  border-radius: var(--r-pill);
+  transition: width 0.3s ease;
+}
+
+/* Verknüpfungs-Tag (Task/Note → Project/Goal) */
+.link-tag {
+  font-size: var(--fs-xs);
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+
+.note-links {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.note-links .task-select {
+  flex: 1;
+  min-width: 120px;
+}
+
+.wr-ref {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-1);
+}
+
+/* Dashboard Goals/Projects */
+.dash-info-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dash-prog-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dash-prog-title {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+.dash-prog-sub {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* =========================================================================
    Responsive
    ========================================================================= */

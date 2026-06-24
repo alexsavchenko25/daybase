@@ -3,7 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
-import type { Entry } from "../types";
+import type { Entry, NoteMeta } from "../types";
 
 type Sort = "date" | "title";
 
@@ -20,10 +20,22 @@ export default function NotesPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tagsRaw, setTagsRaw] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [goalId, setGoalId] = useState("");
   const [dirty, setDirty] = useState(false);
 
   const notes = useLiveQuery(
     () => db.entries.where("type").equals("note").toArray(),
+    [],
+    [] as Entry[],
+  );
+  const projects = useLiveQuery(
+    () => db.entries.where("type").equals("project").toArray(),
+    [],
+    [] as Entry[],
+  );
+  const goals = useLiveQuery(
+    () => db.entries.where("type").equals("goal").toArray(),
     [],
     [] as Entry[],
   );
@@ -38,6 +50,9 @@ export default function NotesPage() {
       setTitle(selected.title);
       setContent(selected.content);
       setTagsRaw(selected.tags.join(", "));
+      const m = selected.meta as NoteMeta;
+      setProjectId(m.projectId ?? "");
+      setGoalId(m.goalId ?? "");
       setDirty(false);
     }
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -79,10 +94,15 @@ export default function NotesPage() {
 
   async function save() {
     if (!selected) return;
+    const meta: NoteMeta = {
+      ...(projectId ? { projectId } : {}),
+      ...(goalId ? { goalId } : {}),
+    };
     await entriesRepo.update(selected.id, {
       title: title.trim(),
       content,
       tags: parseTags(tagsRaw),
+      meta,
     });
     setDirty(false);
   }
@@ -218,6 +238,38 @@ export default function NotesPage() {
                   setDirty(true);
                 }}
               />
+              <div className="note-links">
+                <select
+                  className="task-select"
+                  value={projectId}
+                  onChange={(e) => {
+                    setProjectId(e.target.value);
+                    setDirty(true);
+                  }}
+                >
+                  <option value="">— Projekt —</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="task-select"
+                  value={goalId}
+                  onChange={(e) => {
+                    setGoalId(e.target.value);
+                    setDirty(true);
+                  }}
+                >
+                  <option value="">— Goal —</option>
+                  {goals.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <button className="btn" onClick={save} disabled={!dirty}>
                 {dirty ? "Speichern" : "Gespeichert"}
               </button>

@@ -18,4 +18,6 @@ export const MODULES: ModuleDef[] = [
   { path: "/notes", label: "Notizen", type: "note", icon: "🗒️" },
   { path: "/review", label: "Daily Review", type: "review", icon: "📝" },
   { path: "/weekly-review", label: "Weekly Review", type: "weeklyreview", icon: "📅" },
+  { path: "/goals", label: "Goals", type: "goal", icon: "🎯" },
+  { path: "/projects", label: "Projects", type: "project", icon: "📂" },
 ];

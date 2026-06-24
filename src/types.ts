@@ -9,7 +9,9 @@ export type EntryType =
   | "habit"
   | "note"
   | "review"
-  | "weeklyreview";
+  | "weeklyreview"
+  | "goal"
+  | "project";
 
 export interface Entry {
   id: string;
@@ -31,6 +33,32 @@ export interface Entry {
 export interface TaskMeta {
   done: boolean;
   priority: "low" | "medium" | "high";
+  projectId?: string; // optionale Zuordnung
+  goalId?: string;
+}
+
+export type GoalPeriod = "weekly" | "monthly" | "yearly";
+export type GoalStatus = "active" | "done" | "paused" | "dropped";
+
+export interface GoalMeta {
+  category: string;
+  period: GoalPeriod;
+  deadline: string; // ISO date, optional ""
+  status: GoalStatus;
+  progress: number; // 0-100, manuell
+}
+
+export type ProjectStatus = "active" | "done" | "paused";
+
+export interface ProjectMeta {
+  category: string;
+  status: ProjectStatus;
+  deadline: string; // ISO date, optional ""
+}
+
+export interface NoteMeta {
+  projectId?: string;
+  goalId?: string;
 }
 
 export interface HabitMeta {
@@ -75,6 +103,7 @@ export interface WeeklyReviewMeta {
   score: number; // Weekly Score 1-10
   energy: number; // subjektiv 1-10
   discipline: number; // subjektiv 1-10
+  movedGoalsProjects: string; // welche Goals/Projects bewegt
 }
 
 // journal & note: keine zusätzlichen meta-Felder nötig.
@@ -89,4 +118,6 @@ export interface MetaByType {
   weekplan: WeekplanMeta;
   review: ReviewMeta;
   weeklyreview: WeeklyReviewMeta;
+  goal: GoalMeta;
+  project: ProjectMeta;
 }

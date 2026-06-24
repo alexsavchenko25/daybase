@@ -22,6 +22,7 @@ const EMPTY: WeeklyReviewMeta = {
   score: 5,
   energy: 5,
   discipline: 5,
+  movedGoalsProjects: "",
 };
 
 export default function WeeklyReviewPage() {
@@ -51,6 +52,19 @@ export default function WeeklyReviewPage() {
   );
   const habits = useLiveQuery(
     () => db.entries.where("type").equals("habit").toArray(),
+    [],
+    [] as Entry[],
+  );
+  // Aktive Goals/Projects als Bezugspunkt im Review.
+  const activeGP = useLiveQuery(
+    async () => {
+      const g = await db.entries.where("type").equals("goal").toArray();
+      const p = await db.entries.where("type").equals("project").toArray();
+      return [
+        ...g.filter((x: Entry) => (x.meta as { status?: string }).status === "active"),
+        ...p.filter((x: Entry) => (x.meta as { status?: string }).status === "active"),
+      ];
+    },
     [],
     [] as Entry[],
   );
@@ -122,6 +136,7 @@ export default function WeeklyReviewPage() {
       lessons: form.lessons.trim(),
       improve: form.improve.trim(),
       nextWeekFocus: form.nextWeekFocus.trim(),
+      movedGoalsProjects: form.movedGoalsProjects.trim(),
     };
     if (existing) {
       await entriesRepo.update(existing.id, { meta });
@@ -250,6 +265,23 @@ export default function WeeklyReviewPage() {
           <textarea
             value={form.improve}
             onChange={(e) => set("improve", e.target.value)}
+          />
+        </label>
+        <label className="rv-field">
+          <span>🎯 Welche Goals/Projects diese Woche bewegt?</span>
+          {activeGP.length > 0 && (
+            <div className="wr-ref">
+              {activeGP.map((x) => (
+                <span key={x.id} className="link-tag">
+                  {x.type === "goal" ? "🎯" : "📂"} {x.title}
+                </span>
+              ))}
+            </div>
+          )}
+          <textarea
+            value={form.movedGoalsProjects}
+            onChange={(e) => set("movedGoalsProjects", e.target.value)}
+            placeholder="Fortschritt an Zielen/Projekten…"
           />
         </label>
         <label className="rv-field">

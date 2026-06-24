@@ -31,6 +31,8 @@ export default function TasksPage() {
   const [viewDate, setViewDate] = useState(today);
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
+  const [projectId, setProjectId] = useState("");
+  const [goalId, setGoalId] = useState("");
   // Datum für neue Tasks. Folgt der Tagesansicht, bleibt manuell überschreibbar.
   const [formDate, setFormDate] = useState(today);
 
@@ -43,6 +45,22 @@ export default function TasksPage() {
     [],
     [] as Entry[],
   );
+  const projects = useLiveQuery(
+    () => db.entries.where("type").equals("project").toArray(),
+    [],
+    [] as Entry[],
+  );
+  const goals = useLiveQuery(
+    () => db.entries.where("type").equals("goal").toArray(),
+    [],
+    [] as Entry[],
+  );
+  const nameById = useMemo(() => {
+    const m = new Map<string, string>();
+    projects.forEach((p) => m.set(p.id, p.title));
+    goals.forEach((g) => m.set(g.id, g.title));
+    return m;
+  }, [projects, goals]);
 
   const tasks = useMemo(() => {
     let list = all;
@@ -82,10 +100,17 @@ export default function TasksPage() {
       title: t,
       content: "",
       tags: [],
-      meta: { done: false, priority } satisfies TaskMeta,
+      meta: {
+        done: false,
+        priority,
+        ...(projectId ? { projectId } : {}),
+        ...(goalId ? { goalId } : {}),
+      } satisfies TaskMeta,
     });
     setTitle("");
     setPriority("medium");
+    setProjectId("");
+    setGoalId("");
   }
 
   async function toggleDone(entry: Entry) {
@@ -134,6 +159,32 @@ export default function TasksPage() {
           <option value="high">Hoch</option>
           <option value="medium">Mittel</option>
           <option value="low">Niedrig</option>
+        </select>
+        <select
+          className="task-select"
+          value={projectId}
+          onChange={(e) => setProjectId(e.target.value)}
+          title="Projekt (optional)"
+        >
+          <option value="">— Projekt —</option>
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.title}
+            </option>
+          ))}
+        </select>
+        <select
+          className="task-select"
+          value={goalId}
+          onChange={(e) => setGoalId(e.target.value)}
+          title="Goal (optional)"
+        >
+          <option value="">— Goal —</option>
+          {goals.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.title}
+            </option>
+          ))}
         </select>
         <button className="btn" type="submit">
           Hinzufügen
@@ -203,6 +254,12 @@ export default function TasksPage() {
                   />
                   <span className="task-title">{entry.title}</span>
                 </label>
+                {m.projectId && nameById.has(m.projectId) && (
+                  <span className="link-tag">📂 {nameById.get(m.projectId)}</span>
+                )}
+                {m.goalId && nameById.has(m.goalId) && (
+                  <span className="link-tag">🎯 {nameById.get(m.goalId)}</span>
+                )}
                 {showDate && <span className="task-date">{entry.date}</span>}
                 <span className={`prio prio-${m.priority}`}>
                   {PRIO_LABEL[m.priority]}
