@@ -7,7 +7,8 @@ export type EntryType =
   | "weekplan"
   | "trade"
   | "habit"
-  | "note";
+  | "note"
+  | "review";
 
 export interface Entry {
   id: string;
@@ -54,6 +55,16 @@ export interface WeekplanMeta {
   dayOfWeek: number; // 0 = Sonntag ... 6 = Samstag
 }
 
+export interface ReviewMeta {
+  wins: string;
+  problems: string;
+  lessons: string;
+  energy: number; // 1-10
+  focus: number; // 1-10
+  mood: number; // 1-10
+  tomorrowPriority: string;
+}
+
 // journal & note: keine zusätzlichen meta-Felder nötig.
 
 // Mapping Typ -> meta-Shape (für späteren typsicheren Zugriff verfügbar).
@@ -64,4 +75,5 @@ export interface MetaByType {
   habit: HabitMeta;
   trade: TradeMeta;
   weekplan: WeekplanMeta;
+  review: ReviewMeta;
 }

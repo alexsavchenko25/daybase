@@ -9,6 +9,7 @@ import JournalPage from "./pages/JournalPage";
 import NotesPage from "./pages/NotesPage";
 import WeekPlanPage from "./pages/WeekPlanPage";
 import TradesPage from "./pages/TradesPage";
+import ReviewPage from "./pages/ReviewPage";
 import SettingsPage from "./pages/SettingsPage";
 import { MODULES } from "./modules";
 import { syncHabitStreaks } from "./repository";
@@ -22,6 +23,7 @@ const PAGES: Record<string, React.ReactNode> = {
   "/notes": <NotesPage />,
   "/weekplan": <WeekPlanPage />,
   "/trades": <TradesPage />,
+  "/review": <ReviewPage />,
 };
 
 export default function App() {

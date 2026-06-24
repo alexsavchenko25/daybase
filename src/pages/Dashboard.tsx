@@ -1,38 +1,77 @@
 import { Link } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
-import { todayIso } from "../utils/date";
+import { addDaysIso, todayIso } from "../utils/date";
 import { isDoneForPeriod, habitMeta } from "../utils/habit";
 import { MODULES } from "../modules";
-import type { Entry, TaskMeta } from "../types";
+import type { Entry, TaskMeta, ReviewMeta } from "../types";
 
-// Dashboard-Startseite. Tasks- und Habits-Zahl sind echt (live aus IndexedDB).
+function nowHm(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 export default function Dashboard() {
   const today = todayIso();
 
   const openTasks = useLiveQuery(
     async () => {
-      const tasks = await db.entries
-        .where("[type+date]")
-        .equals(["task", today])
-        .toArray();
-      return tasks.filter((e: Entry) => !(e.meta as TaskMeta).done).length;
+      const t = await db.entries.where("[type+date]").equals(["task", today]).toArray();
+      return t.filter((e: Entry) => !(e.meta as TaskMeta).done).length;
     },
     [today],
     0,
   );
 
-  // Habits heute noch offen: daily nicht heute, weekly nicht diese Woche.
   const openHabits = useLiveQuery(
     async () => {
       const habits = await db.entries.where("type").equals("habit").toArray();
-      return habits.filter((h: Entry) => {
-        const m = habitMeta(h);
-        return !isDoneForPeriod(m.completedDates, m.frequency, today);
-      }).length;
+      return habits.filter(
+        (h: Entry) => !isDoneForPeriod(habitMeta(h).completedDates, habitMeta(h).frequency, today),
+      ).length;
     },
     [today],
     0,
+  );
+
+  // Heutiges Review (Status).
+  const review = useLiveQuery(
+    () => db.entries.where("[type+date]").equals(["review", today]).first(),
+    [today],
+  );
+
+  // Tagesfokus = gestern gesetzte "Tomorrow Priority".
+  const focus = useLiveQuery(
+    async () => {
+      const y = await db.entries
+        .where("[type+date]")
+        .equals(["review", addDaysIso(today, -1)])
+        .first();
+      return (y?.meta as ReviewMeta | undefined)?.tomorrowPriority || "";
+    },
+    [today],
+    "",
+  );
+
+  // Nächster Wochenplan-Block heute (ab jetzt, sonst erster offener).
+  const nextBlock = useLiveQuery(
+    async () => {
+      const blocks = await db.entries
+        .where("[type+date]")
+        .equals(["weekplan", today])
+        .toArray();
+      const sorted = blocks
+        .map((b: Entry) => ({ b, m: b.meta as { startTime?: string; endTime?: string; done?: boolean } }))
+        .sort((a, z) => (a.m.startTime ?? "").localeCompare(z.m.startTime ?? ""));
+      const now = nowHm();
+      const upcoming = sorted.find((x) => (x.m.endTime ?? x.m.startTime ?? "") >= now);
+      const pick = upcoming ?? sorted[0];
+      return pick
+        ? { title: pick.b.title, start: pick.m.startTime ?? "", end: pick.m.endTime ?? "" }
+        : null;
+    },
+    [today],
+    null as null | { title: string; start: string; end: string },
   );
 
   const dateLabel = new Date(today + "T00:00:00").toLocaleDateString("de-DE", {
@@ -65,6 +104,42 @@ export default function Dashboard() {
           <Link to="/habits" className="dash-link">
             zum Habit Tracker →
           </Link>
+        </div>
+        <div className="dash-stat">
+          <span className="dash-label">Daily Review</span>
+          <span className={`dash-badge ${review ? "done" : "open"}`}>
+            {review ? "✓ erledigt" : "noch offen"}
+          </span>
+          <Link to="/review" className="dash-link">
+            {review ? "ansehen →" : "jetzt ausfüllen →"}
+          </Link>
+        </div>
+      </div>
+
+      <div className="dash-grid dash-grid-2">
+        <div className="dash-info">
+          <span className="dash-label">Nächster Block</span>
+          {nextBlock ? (
+            <div className="dash-next">
+              {nextBlock.start && (
+                <span className="dash-next-time">
+                  {nextBlock.start}
+                  {nextBlock.end && `–${nextBlock.end}`}
+                </span>
+              )}
+              <span className="dash-next-title">{nextBlock.title}</span>
+            </div>
+          ) : (
+            <span className="muted">Kein Block heute. <Link to="/weekplan">Planen →</Link></span>
+          )}
+        </div>
+        <div className="dash-info">
+          <span className="dash-label">Heutiger Fokus</span>
+          {focus ? (
+            <span className="dash-focus">{focus}</span>
+          ) : (
+            <span className="muted">Kein Fokus gesetzt (gestriges Review).</span>
+          )}
         </div>
       </div>
 

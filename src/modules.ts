@@ -16,4 +16,5 @@ export const MODULES: ModuleDef[] = [
   { path: "/trades", label: "Trading Journal", type: "trade", icon: "📈" },
   { path: "/habits", label: "Habit Tracker", type: "habit", icon: "🔁" },
   { path: "/notes", label: "Notizen", type: "note", icon: "🗒️" },
+  { path: "/review", label: "Daily Review", type: "review", icon: "📝" },
 ];
