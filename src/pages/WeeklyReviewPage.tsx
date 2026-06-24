@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
@@ -27,7 +28,14 @@ const EMPTY: WeeklyReviewMeta = {
 
 export default function WeeklyReviewPage() {
   const today = todayIso();
-  const [monday, setMonday] = useState(() => mondayOfIso(today));
+  const [params] = useSearchParams();
+  const [monday, setMonday] = useState(() =>
+    mondayOfIso(params.get("week") || today),
+  );
+  useEffect(() => {
+    const w = params.get("week");
+    if (w) setMonday(mondayOfIso(w));
+  }, [params]);
   const sunday = addDaysIso(monday, 6);
   const weekDates = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDaysIso(monday, i)),

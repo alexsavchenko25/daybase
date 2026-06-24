@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
@@ -27,8 +28,16 @@ function meta(e: Entry): TaskMeta {
 
 export default function TasksPage() {
   const today = todayIso();
+  const [params] = useSearchParams();
   const [view, setView] = useState<View>("day");
-  const [viewDate, setViewDate] = useState(today);
+  const [viewDate, setViewDate] = useState(() => params.get("date") || today);
+  useEffect(() => {
+    const d = params.get("date");
+    if (d) {
+      setView("day");
+      setViewDate(d);
+    }
+  }, [params]);
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
   const [projectId, setProjectId] = useState("");

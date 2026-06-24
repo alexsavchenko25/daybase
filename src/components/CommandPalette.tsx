@@ -37,13 +37,43 @@ const CREATE = [
   { icon: "🗒️", label: "Neue Notiz", path: "/notes", kw: "note notiz neu add" },
   { icon: "📈", label: "Neuer Trade", path: "/trades", kw: "trade neu add" },
 ];
-const SEARCH_GROUPS: { type: Entry["type"]; label: string; icon: string; path: string }[] =
-  [
-    { type: "task", label: "Tasks", icon: "✅", path: "/tasks" },
-    { type: "note", label: "Notizen", icon: "🗒️", path: "/notes" },
-    { type: "goal", label: "Goals", icon: "🎯", path: "/goals" },
-    { type: "project", label: "Projects", icon: "📂", path: "/projects" },
-  ];
+// Such-Typen + Deep-Link zur passenden Seite/Auswahl.
+const SEARCH_GROUPS: {
+  type: Entry["type"];
+  label: string;
+  icon: string;
+  to: (e: Entry) => string;
+}[] = [
+  { type: "task", label: "Tasks", icon: "✅", to: (e) => `/tasks?date=${e.date}` },
+  { type: "note", label: "Notizen", icon: "🗒️", to: (e) => `/notes?sel=${e.id}` },
+  { type: "journal", label: "Tagebuch", icon: "📓", to: (e) => `/journal?sel=${e.id}` },
+  { type: "review", label: "Daily Reviews", icon: "📝", to: (e) => `/review?date=${e.date}` },
+  {
+    type: "weeklyreview",
+    label: "Weekly Reviews",
+    icon: "📅",
+    to: (e) => `/weekly-review?week=${e.date}`,
+  },
+  { type: "goal", label: "Goals", icon: "🎯", to: () => "/goals" },
+  { type: "project", label: "Projects", icon: "📂", to: () => "/projects" },
+  { type: "trade", label: "Trading Journal", icon: "📈", to: () => "/trades" },
+];
+
+// Durchsuchbarer Text je Entry: Titel, Beschreibung, Tags, Datum, Kategorie.
+function haystack(e: Entry): string {
+  const m = e.meta as { category?: string; setupTag?: string; symbol?: string };
+  return [
+    e.title,
+    e.content,
+    e.tags.join(" "),
+    e.date,
+    m.category ?? "",
+    m.setupTag ?? "",
+    m.symbol ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
+}
 
 export default function CommandPalette() {
   const navigate = useNavigate();
@@ -74,7 +104,16 @@ export default function CommandPalette() {
     setActive(0);
     db.entries
       .where("type")
-      .anyOf(["task", "note", "goal", "project"])
+      .anyOf([
+        "task",
+        "note",
+        "journal",
+        "review",
+        "weeklyreview",
+        "goal",
+        "project",
+        "trade",
+      ])
       .toArray()
       .then(setData);
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -102,18 +141,14 @@ export default function CommandPalette() {
     if (q) {
       for (const sg of SEARCH_GROUPS) {
         const hits = data
-          .filter(
-            (e) =>
-              e.type === sg.type &&
-              (e.title.toLowerCase().includes(q) || e.content.toLowerCase().includes(q)),
-          )
-          .slice(0, 5)
+          .filter((e) => e.type === sg.type && haystack(e).includes(q))
+          .slice(0, 6)
           .map((e) => ({
             key: e.id,
             icon: sg.icon,
             title: e.title || "(ohne Titel)",
-            sub: e.content.slice(0, 60) || undefined,
-            run: () => go(sg.path),
+            sub: (e.content || e.date).slice(0, 60) || undefined,
+            run: () => go(sg.to(e)),
           }));
         if (hits.length) out.push({ label: sg.label, items: hits });
       }

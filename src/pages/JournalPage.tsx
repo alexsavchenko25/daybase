@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
@@ -10,7 +11,14 @@ function parseTags(raw: string): string[] {
 }
 
 export default function JournalPage() {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [params] = useSearchParams();
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => params.get("sel"),
+  );
+  useEffect(() => {
+    const s = params.get("sel");
+    if (s) setSelectedId(s);
+  }, [params]);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
 

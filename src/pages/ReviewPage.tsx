@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
@@ -23,7 +24,12 @@ const EMPTY: ReviewMeta = {
 
 export default function ReviewPage() {
   const today = todayIso();
-  const [date, setDate] = useState(today);
+  const [params] = useSearchParams();
+  const [date, setDate] = useState(() => params.get("date") || today);
+  useEffect(() => {
+    const d = params.get("date");
+    if (d) setDate(d);
+  }, [params]);
   const [form, setForm] = useState<ReviewMeta>(EMPTY);
   const [saved, setSaved] = useState(false);
 
