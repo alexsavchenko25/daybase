@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
+import CommandPalette from "./components/CommandPalette";
 import Dashboard from "./pages/Dashboard";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
 import TasksPage from "./pages/TasksPage";
@@ -44,6 +45,7 @@ export default function App() {
 
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+      <CommandPalette />
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
