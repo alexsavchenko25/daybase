@@ -55,6 +55,7 @@ export interface ProjectMeta {
   category: string;
   status: ProjectStatus;
   deadline: string; // ISO date, optional ""
+  goalId?: string; // optionale Zuordnung zu einem Goal
 }
 
 export interface NoteMeta {

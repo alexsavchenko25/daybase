@@ -4,7 +4,26 @@ import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
 import ProgressBar from "../components/ProgressBar";
+import { projectProgress } from "./ProjectsPage";
 import type { Entry, GoalMeta, GoalPeriod, GoalStatus } from "../types";
+
+// Auto-Progress: Mittel aus verknüpften Tasks (done = 100) + Projekt-Fortschritt.
+// Ohne Verknüpfungen → manueller Wert (Fallback).
+export function goalProgress(
+  goalId: string,
+  manual: number,
+  tasks: Entry[],
+  projects: Entry[],
+): { pct: number; auto: boolean } {
+  const lt = tasks.filter((t) => (t.meta as { goalId?: string }).goalId === goalId);
+  const lp = projects.filter((p) => (p.meta as { goalId?: string }).goalId === goalId);
+  if (lt.length + lp.length === 0) return { pct: manual, auto: false };
+  const scores = [
+    ...lt.map((t) => ((t.meta as { done?: boolean }).done ? 100 : 0)),
+    ...lp.map((p) => projectProgress(p.id, tasks).pct),
+  ];
+  return { pct: scores.reduce((a, b) => a + b, 0) / scores.length, auto: true };
+}
 
 const PERIODS: GoalPeriod[] = ["weekly", "monthly", "yearly"];
 const STATUSES: GoalStatus[] = ["active", "done", "paused", "dropped"];
@@ -41,6 +60,16 @@ export default function GoalsPage() {
 
   const goals = useLiveQuery(
     () => db.entries.where("type").equals("goal").toArray(),
+    [],
+    [] as Entry[],
+  );
+  const tasks = useLiveQuery(
+    () => db.entries.where("type").equals("task").toArray(),
+    [],
+    [] as Entry[],
+  );
+  const projects = useLiveQuery(
+    () => db.entries.where("type").equals("project").toArray(),
     [],
     [] as Entry[],
   );
@@ -236,6 +265,7 @@ export default function GoalsPage() {
         <ul className="entity-list">
           {shown.map((g) => {
             const m = gm(g);
+            const prog = goalProgress(g.id, m.progress, tasks, projects);
             return (
               <li key={g.id} className="entity-card">
                 <div className="entity-head">
@@ -254,9 +284,14 @@ export default function GoalsPage() {
                   )}
                 </div>
                 <div className="entity-prog">
-                  <ProgressBar value={m.progress} />
-                  <span className="entity-prog-val">{m.progress}%</span>
+                  <ProgressBar value={prog.pct} />
+                  <span className="entity-prog-val">{Math.round(prog.pct)}%</span>
                 </div>
+                {prog.auto && (
+                  <span className="entity-dl auto-prog">
+                    ⚡ Auto aus Tasks/Projects
+                  </span>
+                )}
                 <div className="entity-actions">
                   <button className="chip sm" onClick={() => setEditId(g.id)}>
                     Bearbeiten

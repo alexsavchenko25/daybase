@@ -19,6 +19,7 @@ const EMPTY = {
   category: "",
   status: "active" as ProjectStatus,
   deadline: "",
+  goalId: "",
 };
 
 function pm(e: Entry): ProjectMeta {
@@ -56,6 +57,11 @@ export default function ProjectsPage() {
     [],
     [] as Entry[],
   );
+  const goals = useLiveQuery(
+    () => db.entries.where("type").equals("goal").toArray(),
+    [],
+    [] as Entry[],
+  );
 
   const shown = useMemo(() => {
     const list =
@@ -75,6 +81,7 @@ export default function ProjectsPage() {
         category: pm(p).category,
         status: pm(p).status,
         deadline: pm(p).deadline,
+        goalId: pm(p).goalId ?? "",
       });
     }
   }, [editId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -94,6 +101,7 @@ export default function ProjectsPage() {
       category: form.category.trim(),
       status: form.status,
       deadline: form.deadline,
+      ...(form.goalId ? { goalId: form.goalId } : {}),
     };
     if (editId) {
       await entriesRepo.update(editId, {
@@ -172,6 +180,21 @@ export default function ProjectsPage() {
               value={form.deadline}
               onChange={(e) => set("deadline", e.target.value)}
             />
+          </label>
+          <label>
+            Goal (optional)
+            <select
+              className="task-select"
+              value={form.goalId}
+              onChange={(e) => set("goalId", e.target.value)}
+            >
+              <option value="">— kein Goal —</option>
+              {goals.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.title}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
         <div className="rv-actions">

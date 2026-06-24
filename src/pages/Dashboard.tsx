@@ -8,6 +8,7 @@ import ProgressBar from "../components/ProgressBar";
 import { fmtDuration, focusMeta } from "../utils/focus";
 import { daysSinceBackup } from "../utils/backup";
 import { projectProgress } from "./ProjectsPage";
+import { goalProgress } from "./GoalsPage";
 import type {
   Entry,
   TaskMeta,
@@ -122,22 +123,29 @@ export default function Dashboard() {
     "",
   );
 
-  // Top Goals (aktiv, nächste Deadline / höchster Fortschritt zuerst).
+  // Top Goals (aktiv) mit Auto-Progress aus verknüpften Tasks/Projects.
   const topGoals = useLiveQuery(
     async () => {
       const gs = (await db.entries.where("type").equals("goal").toArray()).filter(
         (g: Entry) => (g.meta as GoalMeta).status === "active",
       );
-      gs.sort(
-        (a, b) =>
-          ((a.meta as GoalMeta).deadline || "9999").localeCompare(
-            (b.meta as GoalMeta).deadline || "9999",
-          ) || (b.meta as GoalMeta).progress - (a.meta as GoalMeta).progress,
-      );
-      return gs.slice(0, 3);
+      const tasks = await db.entries.where("type").equals("task").toArray();
+      const projects = await db.entries.where("type").equals("project").toArray();
+      return gs
+        .map((g: Entry) => ({
+          g,
+          pct: goalProgress(g.id, (g.meta as GoalMeta).progress, tasks, projects).pct,
+        }))
+        .sort(
+          (a, b) =>
+            ((a.g.meta as GoalMeta).deadline || "9999").localeCompare(
+              (b.g.meta as GoalMeta).deadline || "9999",
+            ) || b.pct - a.pct,
+        )
+        .slice(0, 3);
     },
     [],
-    [] as Entry[],
+    [] as { g: Entry; pct: number }[],
   );
 
   // Aktive Projects + Task-basierter Fortschritt.
@@ -279,10 +287,13 @@ export default function Dashboard() {
             {topGoals.length === 0 ? (
               <span className="muted">Keine aktiven Ziele.</span>
             ) : (
-              topGoals.map((g) => (
+              topGoals.map(({ g, pct }) => (
                 <div key={g.id} className="dash-prog-row">
-                  <span className="dash-prog-title">{g.title}</span>
-                  <ProgressBar value={(g.meta as GoalMeta).progress} />
+                  <span className="dash-prog-title">
+                    {g.title}
+                    <span className="dash-prog-sub">{Math.round(pct)}%</span>
+                  </span>
+                  <ProgressBar value={pct} />
                 </div>
               ))
             )}
