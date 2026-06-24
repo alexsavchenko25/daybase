@@ -44,6 +44,21 @@ export default function GoalsPage() {
     [],
     [] as Entry[],
   );
+  // Verknüpfte Tasks + Notes je Goal zählen.
+  const links = useLiveQuery(
+    async () => {
+      const t = await db.entries.where("type").equals("task").toArray();
+      const n = await db.entries.where("type").equals("note").toArray();
+      const map = new Map<string, number>();
+      [...t, ...n].forEach((e) => {
+        const gid = (e.meta as { goalId?: string }).goalId;
+        if (gid) map.set(gid, (map.get(gid) ?? 0) + 1);
+      });
+      return map;
+    },
+    [],
+    new Map<string, number>(),
+  );
 
   const shown = useMemo(() => {
     const list = filter === "all" ? goals : goals.filter((g) => gm(g).status === filter);
@@ -234,6 +249,9 @@ export default function GoalsPage() {
                   <span className="pill ghost">{PERIOD_LABEL[m.period]}</span>
                   {m.category && <span className="pill ghost">{m.category}</span>}
                   {m.deadline && <span className="entity-dl">⏱ {m.deadline}</span>}
+                  {(links.get(g.id) ?? 0) > 0 && (
+                    <span className="entity-dl">🔗 {links.get(g.id)} verknüpft</span>
+                  )}
                 </div>
                 <div className="entity-prog">
                   <ProgressBar value={m.progress} />

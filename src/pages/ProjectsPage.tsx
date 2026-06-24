@@ -51,6 +51,11 @@ export default function ProjectsPage() {
     [],
     [] as Entry[],
   );
+  const notes = useLiveQuery(
+    () => db.entries.where("type").equals("note").toArray(),
+    [],
+    [] as Entry[],
+  );
 
   const shown = useMemo(() => {
     const list =
@@ -200,6 +205,9 @@ export default function ProjectsPage() {
           {shown.map((p) => {
             const m = pm(p);
             const prog = projectProgress(p.id, tasks);
+            const noteCount = notes.filter(
+              (n) => (n.meta as { projectId?: string }).projectId === p.id,
+            ).length;
             return (
               <li key={p.id} className="entity-card">
                 <div className="entity-head">
@@ -215,6 +223,9 @@ export default function ProjectsPage() {
                   <span className="entity-dl">
                     {prog.done}/{prog.total} Tasks
                   </span>
+                  {noteCount > 0 && (
+                    <span className="entity-dl">🔗 {noteCount} Notizen</span>
+                  )}
                 </div>
                 <div className="entity-prog">
                   <ProgressBar value={prog.pct} />
