@@ -11,6 +11,15 @@ export default function SettingsPage() {
     null,
   );
   const [backupAt, setBackupAt] = useState(lastBackup());
+  const [theme, setTheme] = useState(
+    () => document.documentElement.dataset.theme || "dark",
+  );
+
+  function setThemeMode(mode: "dark" | "light") {
+    document.documentElement.dataset.theme = mode;
+    localStorage.setItem("daybase.theme", mode);
+    setTheme(mode);
+  }
 
   const count = useLiveQuery(() => db.entries.count(), [], 0);
 
@@ -63,6 +72,25 @@ export default function SettingsPage() {
             <div className="muted">Daybase</div>
           </div>
           <span className="set-version">v{__APP_VERSION__}</span>
+        </div>
+      </section>
+
+      <section className="set-card">
+        <div className="set-title">Darstellung</div>
+        <p className="muted set-sub">Theme dieser App auf diesem Gerät.</p>
+        <div className="theme-switch">
+          <button
+            className={`chip ${theme === "dark" ? "chip-active" : ""}`}
+            onClick={() => setThemeMode("dark")}
+          >
+            🌙 Dark
+          </button>
+          <button
+            className={`chip ${theme === "light" ? "chip-active" : ""}`}
+            onClick={() => setThemeMode("light")}
+          >
+            ☀️ Light
+          </button>
         </div>
       </section>
 

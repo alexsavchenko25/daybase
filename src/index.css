@@ -256,31 +256,22 @@ a {
   font-size: 1.02em;
 }
 
-.theme-toggle {
-  margin-top: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  color: var(--muted);
-  padding: 9px 12px;
-  font-size: var(--fs-sm);
-  cursor: pointer;
-  transition: color var(--t), border-color var(--t);
-}
-.theme-toggle:hover {
-  color: var(--text);
-  border-color: var(--accent-line);
-}
-
 .sidebar-foot {
+  margin-top: auto;
   padding: var(--sp-3);
   font-size: var(--fs-xs);
   letter-spacing: 0.02em;
   color: var(--faint);
+}
+
+/* Theme-Auswahl in Settings */
+.theme-switch {
+  display: flex;
+  gap: var(--sp-2);
+}
+.theme-switch .chip {
+  flex: 1;
+  justify-content: center;
 }
 
 /* ---------- Typografie / Page head ---------- */
