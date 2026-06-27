@@ -800,6 +800,15 @@ a {
   color: var(--warn);
 }
 
+.dash-overdue-hint {
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.14), transparent 70%),
+    var(--surface);
+  border-color: rgba(248, 113, 113, 0.4);
+}
+.dash-overdue-hint .dwh-arrow {
+  color: var(--neg);
+}
+
 /* ---------- Tasks ---------- */
 .task-form {
   display: flex;
@@ -826,19 +835,75 @@ a {
 
 .task-item {
   display: flex;
-  align-items: center;
-  gap: var(--sp-3);
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  padding: var(--sp-3) var(--sp-4);
   box-shadow: var(--sh-1);
   transition: border-color var(--t), transform var(--t);
+  overflow: hidden;
 }
 
 .task-item:hover {
   border-color: var(--accent-line);
   transform: translateX(2px);
+}
+
+.task-item-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.subtask-toggle {
+  font-size: var(--fs-xs);
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+
+.subtask-panel {
+  border-top: 1px solid var(--border);
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.subtask-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+}
+
+.subtask-row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.subtask-text {
+  flex: 1;
+  color: var(--text);
+}
+
+.subtask-done {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.subtask-add {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+.subtask-add .task-input {
+  font-size: var(--fs-sm);
+  padding: 4px 8px;
 }
 
 .task-check {
@@ -864,6 +929,14 @@ a {
 
 .task-done {
   opacity: 0.55;
+}
+.task-overdue .task-date {
+  color: var(--neg);
+  font-weight: 600;
+}
+.task-overdue .task-item-row {
+  border-left: 3px solid var(--neg);
+  padding-left: calc(var(--sp-4) - 3px);
 }
 .task-done .task-title {
   text-decoration: line-through;
@@ -2139,6 +2212,40 @@ a {
   flex-wrap: wrap;
 }
 
+.import-preview {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+
+.import-preview-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  margin: 0 0 var(--sp-2);
+}
+
+.import-preview-list {
+  list-style: none;
+  margin: 0 0 var(--sp-4);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.import-preview-list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.import-preview-list li strong {
+  color: var(--text);
+}
+
 .set-msg {
   margin: var(--sp-3) 0 0;
   font-size: var(--fs-sm);
@@ -2782,4 +2889,197 @@ input[type="range"]::-moz-range-thumb {
   .tf-actions .chip {
     width: 100%;
   }
+
+  /* Habits: Week-Dots in eigene Zeile, sonst overflow */
+  .habit-item {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .habit-check {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .habit-week {
+    flex-basis: 100%;
+    order: 4;
+    padding-left: calc(17px + var(--sp-3));
+    margin-top: 4px;
+  }
+
+  /* Entity-Actions wrappen statt überlaufen */
+  .entity-actions {
+    flex-wrap: wrap;
+  }
+  .entity-actions .btn,
+  .entity-actions > .chip:not(.link-tag) {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Task-Row: Tags und Prio dürfen umbrechen */
+  .task-item-row {
+    flex-wrap: wrap;
+    row-gap: var(--sp-1);
+  }
+  .task-check {
+    flex-basis: 100%;
+  }
+
+  /* Dashboard Module: 3 Spalten statt 1 */
+  .dash-modules {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Focus Controls: stapeln für bessere Touch-Fläche */
+  .focus-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .focus-controls .btn,
+  .focus-controls .chip {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Settings: Action-Buttons volle Breite */
+  .set-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .set-actions .btn,
+  .set-actions .chip {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Sehr schmale Screens: Sidebar auf 48px, mehr Content-Fläche */
+@media (max-width: 480px) {
+  .app-shell {
+    grid-template-columns: 48px 1fr;
+  }
+  .nav-icon {
+    font-size: 1.1rem;
+  }
+  .content {
+    padding: var(--sp-4) var(--sp-3);
+  }
+}
+
+/* ---- Onboarding overlay ---- */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: var(--sp-4);
+}
+.onboarding-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-8);
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+.onboarding-icon {
+  font-size: 2.8rem;
+  line-height: 1;
+}
+.onboarding-title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.onboarding-body {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  margin: 0;
+}
+.onboarding-dots {
+  display: flex;
+  gap: var(--sp-2);
+}
+.onboarding-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  transition: background var(--t);
+}
+.onboarding-dot-active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.onboarding-actions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+.onboarding-actions .btn {
+  flex: 1;
+  min-width: 120px;
+}
+.onboarding-warn {
+  color: var(--warn);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  margin: 0;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: var(--r-md);
+  padding: var(--sp-2) var(--sp-3);
+}
+@media (max-width: 480px) {
+  .onboarding-card {
+    padding: var(--sp-6);
+  }
+  .onboarding-actions .btn,
+  .onboarding-actions .chip {
+    width: 100%;
+  }
+}
+
+/* Auth-Formular */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+/* PWA Update Banner */
+.pwa-update-banner {
+  position: fixed;
+  bottom: var(--sp-4);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  background: var(--surface-2);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  white-space: nowrap;
+}
+.pwa-update-banner span {
+  color: var(--text);
+  font-size: var(--fs-sm);
 }

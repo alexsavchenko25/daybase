@@ -121,13 +121,18 @@ export default function WeeklyReviewPage() {
     const focusScore = focus.length
       ? focus.reduce((s, e) => s + focusMeta(e).focusScore, 0) / focus.length
       : 0;
+    const focusEnergy = focus.length
+      ? focus.reduce((s, e) => s + focusMeta(e).energyAfter, 0) / focus.length
+      : 0;
 
     return {
       tasksDone,
       tasksOpen,
       tasksTotal: tasks.length,
       focusSec,
+      focusCount: focus.length,
       focusScore,
+      focusEnergy,
       trades: trades.length,
       pnl,
       reviews: reviews.length,
@@ -237,8 +242,16 @@ export default function WeeklyReviewPage() {
           <span className="wr-val">{fmtDuration(summary.focusSec)}</span>
         </div>
         <div className="wr-stat">
+          <span className="wr-label">Focus Sessions</span>
+          <span className="wr-val">{summary.focusCount}</span>
+        </div>
+        <div className="wr-stat">
           <span className="wr-label">Ø Fokus-Score</span>
           <span className="wr-val">{fmt1(summary.focusScore)}</span>
+        </div>
+        <div className="wr-stat">
+          <span className="wr-label">Ø Energie danach</span>
+          <span className="wr-val">{fmt1(summary.focusEnergy)}</span>
         </div>
         <div className="wr-stat">
           <span className="wr-label">Trades</span>

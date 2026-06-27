@@ -3,10 +3,10 @@ import { useSearchParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
-import { addDaysIso, todayIso } from "../utils/date";
-import type { Entry, TaskMeta } from "../types";
+import { addDaysIso, mondayOfIso, todayIso } from "../utils/date";
+import type { Entry, Recurrence, Subtask, TaskMeta } from "../types";
 
-type View = "day" | "open" | "done";
+type View = "today" | "week" | "later" | "all" | "done" | "day";
 type Priority = TaskMeta["priority"];
 
 const PRIO_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
@@ -26,10 +26,24 @@ function meta(e: Entry): TaskMeta {
   return e.meta as TaskMeta;
 }
 
+function nextRecurDate(date: string, recurrence: Recurrence): string {
+  if (recurrence === "daily") return addDaysIso(date, 1);
+  if (recurrence === "weekly") return addDaysIso(date, 7);
+  const d = new Date(date + "T00:00:00");
+  d.setMonth(d.getMonth() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+const RECUR_LABEL: Record<Recurrence, string> = {
+  daily: "Täglich",
+  weekly: "Wöchentlich",
+  monthly: "Monatlich",
+};
+
 export default function TasksPage() {
   const today = todayIso();
   const [params] = useSearchParams();
-  const [view, setView] = useState<View>("day");
+  const [view, setView] = useState<View>(() => (params.get("date") ? "day" : "today"));
   const [viewDate, setViewDate] = useState(() => params.get("date") || today);
   useEffect(() => {
     const d = params.get("date");
@@ -42,6 +56,7 @@ export default function TasksPage() {
   const [priority, setPriority] = useState<Priority>("medium");
   const [projectId, setProjectId] = useState("");
   const [goalId, setGoalId] = useState("");
+  const [recurrence, setRecurrence] = useState<Recurrence | "">("");
   // Datum für neue Tasks. Folgt der Tagesansicht, bleibt manuell überschreibbar.
   const [formDate, setFormDate] = useState(today);
 
@@ -71,22 +86,42 @@ export default function TasksPage() {
     return m;
   }, [projects, goals]);
 
+  const monday = mondayOfIso(today);
+  const sunday = addDaysIso(monday, 6);
+
   const tasks = useMemo(() => {
-    let list = all;
-    if (view === "day") list = list.filter((e) => e.date === viewDate);
-    else if (view === "open") list = list.filter((e) => !meta(e).done);
-    else list = list.filter((e) => meta(e).done);
+    let list: Entry[];
+    if (view === "today") list = all.filter((e) => e.date === today);
+    else if (view === "week") list = all.filter((e) => e.date >= monday && e.date <= sunday);
+    else if (view === "later") list = all.filter((e) => e.date > sunday && !meta(e).done);
+    else if (view === "all") list = all.filter((e) => !meta(e).done);
+    else if (view === "done") list = all.filter((e) => meta(e).done);
+    else list = all.filter((e) => e.date === viewDate); // "day"
 
     return [...list].sort((a, b) => {
-      const dn = Number(meta(a).done) - Number(meta(b).done);
+      const ma = meta(a), mb = meta(b);
+      // done immer ans Ende (außer in "done"-View)
+      const dn = Number(ma.done) - Number(mb.done);
       if (dn !== 0) return dn;
-      const dp = PRIO_ORDER[meta(a).priority] - PRIO_ORDER[meta(b).priority];
+      // in "all": überfällig zuerst
+      if (view === "all" || view === "week") {
+        const aOver = a.date < today ? 0 : a.date === today ? 1 : 2;
+        const bOver = b.date < today ? 0 : b.date === today ? 1 : 2;
+        if (aOver !== bOver) return aOver - bOver;
+      }
+      // nach Datum (ASC für zukunftsorientierte Views, DESC für erledigt)
+      const multiDay = view !== "today" && view !== "day";
+      if (multiDay && a.date !== b.date) {
+        return view === "done"
+          ? b.date.localeCompare(a.date)
+          : a.date.localeCompare(b.date);
+      }
+      // innerhalb gleichen Datums: Prio
+      const dp = PRIO_ORDER[ma.priority] - PRIO_ORDER[mb.priority];
       if (dp !== 0) return dp;
-      // bei tagübergreifenden Views nach Datum, sonst neueste zuerst
-      if (view !== "day" && a.date !== b.date) return b.date.localeCompare(a.date);
       return b.createdAt.localeCompare(a.createdAt);
     });
-  }, [all, view, viewDate]);
+  }, [all, view, viewDate, today, monday, sunday]);
 
   // Dashboard-Logik: immer echtes heute, unabhängig von viewDate.
   const openTodayCount = useMemo(
@@ -114,18 +149,66 @@ export default function TasksPage() {
         priority,
         ...(projectId ? { projectId } : {}),
         ...(goalId ? { goalId } : {}),
+        ...(recurrence ? { recurrence } : {}),
       } satisfies TaskMeta,
     });
     setTitle("");
     setPriority("medium");
     setProjectId("");
     setGoalId("");
+    setRecurrence("");
+  }
+
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [subInput, setSubInput] = useState<Record<string, string>>({});
+
+  function toggleExpand(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   }
 
   async function toggleDone(entry: Entry) {
     const m = meta(entry);
+    await entriesRepo.update(entry.id, { meta: { ...m, done: !m.done } });
+    if (!m.done && m.recurrence) {
+      await entriesRepo.create({
+        type: "task",
+        date: nextRecurDate(entry.date, m.recurrence),
+        title: entry.title,
+        content: entry.content,
+        tags: entry.tags,
+        meta: { ...m, done: false, subtasks: [] } satisfies TaskMeta,
+      });
+    }
+  }
+
+  async function addSubtask(entry: Entry, text: string) {
+    const m = meta(entry);
+    const sub: Subtask = { id: crypto.randomUUID(), text, done: false };
     await entriesRepo.update(entry.id, {
-      meta: { ...m, done: !m.done } satisfies TaskMeta,
+      meta: { ...m, subtasks: [...(m.subtasks ?? []), sub] },
+    });
+  }
+
+  async function toggleSubtask(entry: Entry, subId: string) {
+    const m = meta(entry);
+    await entriesRepo.update(entry.id, {
+      meta: {
+        ...m,
+        subtasks: (m.subtasks ?? []).map((s) =>
+          s.id === subId ? { ...s, done: !s.done } : s,
+        ),
+      },
+    });
+  }
+
+  async function removeSubtask(entry: Entry, subId: string) {
+    const m = meta(entry);
+    await entriesRepo.update(entry.id, {
+      meta: { ...m, subtasks: (m.subtasks ?? []).filter((s) => s.id !== subId) },
     });
   }
 
@@ -133,7 +216,7 @@ export default function TasksPage() {
     await entriesRepo.remove(id);
   }
 
-  const todayActive = view === "day" && viewDate === today;
+  const todayActive = view === "today" || (view === "day" && viewDate === today);
 
   return (
     <div className="page">
@@ -195,12 +278,23 @@ export default function TasksPage() {
             </option>
           ))}
         </select>
+        <select
+          className="task-select"
+          value={recurrence}
+          onChange={(e) => setRecurrence(e.target.value as Recurrence | "")}
+          title="Wiederholung (optional)"
+        >
+          <option value="">— Einmalig —</option>
+          <option value="daily">Täglich</option>
+          <option value="weekly">Wöchentlich</option>
+          <option value="monthly">Monatlich</option>
+        </select>
         <button className="btn" type="submit">
           Hinzufügen
         </button>
       </form>
 
-      {/* Tagesnavigation (nur in der Tagesansicht relevant) */}
+      {/* Tagesnavigation nur bei ?date= deep-links */}
       {view === "day" && (
         <div className="week-nav task-day-nav">
           <button className="chip" onClick={() => goDay(addDaysIso(viewDate, -1))}>
@@ -225,15 +319,27 @@ export default function TasksPage() {
       <div className="filter-row">
         <button
           className={`chip ${todayActive ? "chip-active" : ""}`}
-          onClick={() => goDay(today)}
+          onClick={() => setView("today")}
         >
           Heute
         </button>
         <button
-          className={`chip ${view === "open" ? "chip-active" : ""}`}
-          onClick={() => setView("open")}
+          className={`chip ${view === "week" ? "chip-active" : ""}`}
+          onClick={() => setView("week")}
         >
-          Alle offenen
+          Diese Woche
+        </button>
+        <button
+          className={`chip ${view === "later" ? "chip-active" : ""}`}
+          onClick={() => setView("later")}
+        >
+          Später
+        </button>
+        <button
+          className={`chip ${view === "all" ? "chip-active" : ""}`}
+          onClick={() => setView("all")}
+        >
+          Alle
         </button>
         <button
           className={`chip ${view === "done" ? "chip-active" : ""}`}
@@ -244,42 +350,118 @@ export default function TasksPage() {
       </div>
 
       {tasks.length === 0 ? (
-        <p className="muted empty">Keine Tasks.</p>
+        <p className="muted empty">
+          {view === "today" && "Keine Tasks für heute — neuen Task oben eintragen."}
+          {view === "week" && "Keine Tasks diese Woche."}
+          {view === "later" && "Keine zukünftigen Tasks."}
+          {view === "all" && "Alle Tasks erledigt."}
+          {view === "done" && "Noch keine Tasks abgehakt."}
+          {view === "day" && "Keine Tasks für diesen Tag."}
+        </p>
       ) : (
         <ul className="task-list">
           {tasks.map((entry) => {
             const m = meta(entry);
-            const showDate = view !== "day";
+            const showDate = view !== "today" && view !== "day";
+            const overdue = !m.done && entry.date < today;
+            const subs = m.subtasks ?? [];
+            const subsDone = subs.filter((s) => s.done).length;
+            const isExpanded = expanded.has(entry.id);
             return (
               <li
                 key={entry.id}
-                className={`task-item ${m.done ? "task-done" : ""}`}
+                className={`task-item ${m.done ? "task-done" : ""} ${overdue ? "task-overdue" : ""}`}
               >
-                <label className="task-check">
-                  <input
-                    type="checkbox"
-                    checked={m.done}
-                    onChange={() => toggleDone(entry)}
-                  />
-                  <span className="task-title">{entry.title}</span>
-                </label>
-                {m.projectId && nameById.has(m.projectId) && (
-                  <span className="link-tag">📂 {nameById.get(m.projectId)}</span>
+                <div className="task-item-row">
+                  <label className="task-check">
+                    <input
+                      type="checkbox"
+                      checked={m.done}
+                      onChange={() => toggleDone(entry)}
+                    />
+                    <span className="task-title">{entry.title}</span>
+                  </label>
+                  {m.projectId && nameById.has(m.projectId) && (
+                    <span className="link-tag">📂 {nameById.get(m.projectId)}</span>
+                  )}
+                  {m.goalId && nameById.has(m.goalId) && (
+                    <span className="link-tag">🎯 {nameById.get(m.goalId)}</span>
+                  )}
+                  {showDate && <span className="task-date">{entry.date}</span>}
+                  <span className={`prio prio-${m.priority}`}>
+                    {PRIO_LABEL[m.priority]}
+                  </span>
+                  {m.recurrence && (
+                    <span className="chip" title={RECUR_LABEL[m.recurrence]}>🔄</span>
+                  )}
+                  <button
+                    className={`chip subtask-toggle ${isExpanded ? "chip-active" : ""}`}
+                    title="Subtasks"
+                    onClick={() => toggleExpand(entry.id)}
+                  >
+                    {subs.length > 0 ? `${subsDone}/${subs.length}` : "⋯"}
+                  </button>
+                  <button
+                    className="task-del"
+                    title="Löschen"
+                    onClick={() => remove(entry.id)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                {isExpanded && (
+                  <div className="subtask-panel">
+                    {subs.map((s) => (
+                      <div key={s.id} className="subtask-row">
+                        <input
+                          type="checkbox"
+                          checked={s.done}
+                          onChange={() => toggleSubtask(entry, s.id)}
+                        />
+                        <span className={`subtask-text ${s.done ? "subtask-done" : ""}`}>
+                          {s.text}
+                        </span>
+                        <button
+                          className="task-del"
+                          onClick={() => removeSubtask(entry, s.id)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <div className="subtask-add">
+                      <input
+                        className="task-input"
+                        placeholder="Subtask hinzufügen…"
+                        value={subInput[entry.id] ?? ""}
+                        onChange={(e) =>
+                          setSubInput((p) => ({ ...p, [entry.id]: e.target.value }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const t = subInput[entry.id]?.trim();
+                            if (t) {
+                              addSubtask(entry, t);
+                              setSubInput((p) => ({ ...p, [entry.id]: "" }));
+                            }
+                          }
+                        }}
+                      />
+                      <button
+                        className="chip"
+                        onClick={() => {
+                          const t = subInput[entry.id]?.trim();
+                          if (t) {
+                            addSubtask(entry, t);
+                            setSubInput((p) => ({ ...p, [entry.id]: "" }));
+                          }
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
                 )}
-                {m.goalId && nameById.has(m.goalId) && (
-                  <span className="link-tag">🎯 {nameById.get(m.goalId)}</span>
-                )}
-                {showDate && <span className="task-date">{entry.date}</span>}
-                <span className={`prio prio-${m.priority}`}>
-                  {PRIO_LABEL[m.priority]}
-                </span>
-                <button
-                  className="task-del"
-                  title="Löschen"
-                  onClick={() => remove(entry.id)}
-                >
-                  ✕
-                </button>
               </li>
             );
           })}

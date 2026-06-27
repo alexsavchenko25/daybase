@@ -16,11 +16,12 @@ export default defineConfig({
   base,
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 10)),
   },
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       // Auto-Registrierung des Service Workers — kein Eingriff in App-Logik.
       injectRegister: "auto",
       includeAssets: ["icon.svg", "apple-touch-icon.png"],

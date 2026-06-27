@@ -33,6 +33,19 @@ export type UpdateEntryInput = Partial<
   Omit<Entry, "id" | "createdAt" | "updatedAt">
 >;
 
+// ---- Task-Sync-Hooks (optional, Supabase-agnostisch) ----
+// taskSync.ts registriert hier Callbacks. Sie feuern NUR für type === "task"
+// und sind no-ops, solange nichts registriert ist (= kein Cloud-Sync).
+let taskUpsertHook: ((e: Entry) => void) | null = null;
+let taskDeleteHook: ((id: string) => void) | null = null;
+export function setTaskSyncHooks(h: {
+  onUpsert: (e: Entry) => void;
+  onDelete: (id: string) => void;
+}): void {
+  taskUpsertHook = h.onUpsert;
+  taskDeleteHook = h.onDelete;
+}
+
 export const entriesRepo = {
   // CREATE
   async create(input: CreateEntryInput): Promise<Entry> {
@@ -49,6 +62,7 @@ export const entriesRepo = {
       updatedAt: ts,
     };
     await db.entries.add(entry);
+    if (entry.type === "task") taskUpsertHook?.(entry);
     return entry;
   },
 
@@ -65,12 +79,16 @@ export const entriesRepo = {
   // UPDATE (partielles Patch, setzt updatedAt automatisch)
   async update(id: string, patch: UpdateEntryInput): Promise<Entry | undefined> {
     await db.entries.update(id, { ...patch, updatedAt: nowIso() });
-    return db.entries.get(id);
+    const updated = await db.entries.get(id);
+    if (updated?.type === "task") taskUpsertHook?.(updated);
+    return updated;
   },
 
   // DELETE
   async remove(id: string): Promise<void> {
+    const existing = await db.entries.get(id);
     await db.entries.delete(id);
+    if (existing?.type === "task") taskDeleteHook?.(id);
   },
 
   // QUERY by type (indexiert)
@@ -127,24 +145,53 @@ export async function exportBackup(): Promise<Backup> {
   };
 }
 
+export interface BackupSummary {
+  total: number;
+  byType: Partial<Record<string, number>>;
+}
+
+type ValidateOk = { ok: true; backup: Backup; summary: BackupSummary };
+type ValidateErr = { ok: false; error: string };
+
+export function validateBackup(data: unknown): ValidateOk | ValidateErr {
+  if (!data || typeof data !== "object")
+    return { ok: false, error: "Keine gültige JSON-Datei." };
+  const obj = data as Record<string, unknown>;
+  if (obj.app !== "daybase")
+    return { ok: false, error: "Kein Daybase-Backup — fehlendes oder falsches 'app'-Feld." };
+  if (!Array.isArray(obj.entries))
+    return { ok: false, error: "Ungültiges Format: 'entries'-Array fehlt." };
+  const valid = (obj.entries as unknown[]).filter(
+    (e): e is Entry =>
+      !!e &&
+      typeof (e as Entry).id === "string" &&
+      typeof (e as Entry).type === "string" &&
+      typeof (e as Entry).date === "string",
+  );
+  if (valid.length === 0)
+    return { ok: false, error: "Backup enthält keine gültigen Einträge." };
+  const byType: Partial<Record<string, number>> = {};
+  for (const e of valid) byType[e.type] = (byType[e.type] ?? 0) + 1;
+  return {
+    ok: true,
+    backup: {
+      app: "daybase",
+      version: typeof obj.version === "number" ? obj.version : 1,
+      exportedAt: typeof obj.exportedAt === "string" ? obj.exportedAt : "",
+      entries: valid,
+    },
+    summary: { total: valid.length, byType },
+  };
+}
+
 // Backup importieren. bulkPut = upsert nach id: vorhandene Einträge mit
 // gleicher id werden überschrieben, neue ergänzt. Bestehende, nicht im
 // Backup enthaltene Einträge bleiben erhalten (kein destruktives Replace).
 export async function importBackup(data: unknown): Promise<number> {
-  const obj = data as Partial<Backup>;
-  if (!obj || !Array.isArray(obj.entries)) {
-    throw new Error("Ungültige Backup-Datei: 'entries'-Array fehlt.");
-  }
-  const valid = obj.entries.filter(
-    (e): e is Entry =>
-      !!e &&
-      typeof e.id === "string" &&
-      typeof e.type === "string" &&
-      typeof e.date === "string",
-  );
-  if (valid.length === 0) throw new Error("Keine gültigen Einträge im Backup.");
-  await db.entries.bulkPut(valid);
-  return valid.length;
+  const result = validateBackup(data);
+  if (!result.ok) throw new Error(result.error);
+  await db.entries.bulkPut(result.backup.entries);
+  return result.backup.entries.length;
 }
 
 // Beim App-Load aufrufen: gespeicherte habit.streak gegen die echten

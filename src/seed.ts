@@ -68,6 +68,219 @@ async function doSeed(): Promise<void> {
   localStorage.setItem(SEED_KEY, "1");
 }
 
+// Demo-Daten: Beispiel-Einträge für alle Module. Additiv (neue IDs) —
+// überschreibt nie bestehende Nutzerdaten, fügt nur hinzu (Merge).
+// Gibt die Anzahl der erstellten Demo-Einträge zurück.
+export async function loadDemoData(): Promise<number> {
+  const today = todayIso();
+  const yest = addDaysIso(today, -1);
+  const ereyest = addDaysIso(today, -2);
+  const lastMon = addDaysIso(mondayOfIso(today), -7);
+  let n = 0;
+  const add = async (...args: Parameters<typeof entriesRepo.create>) => {
+    const e = await entriesRepo.create(...args);
+    n++;
+    return e;
+  };
+
+  // Goal + verknüpftes Project
+  const goal = await add({
+    type: "goal",
+    date: today,
+    title: "Trading-Konto auf 10k bringen",
+    content: "Konsistent profitabel über 3 Monate.",
+    tags: [],
+    meta: {
+      category: "Finanzen",
+      period: "yearly",
+      deadline: addDaysIso(today, 180),
+      status: "active",
+      progress: 35,
+    },
+  });
+  const project = await add({
+    type: "project",
+    date: today,
+    title: "Trading-Strategie dokumentieren",
+    content: "Setups, Regeln und Risiko-Management festhalten.",
+    tags: [],
+    meta: {
+      category: "Trading",
+      status: "active",
+      deadline: addDaysIso(today, 30),
+      goalId: goal.id,
+    },
+  });
+
+  // Tasks (teils verknüpft, einer mit Subtasks + Recurrence)
+  await add({
+    type: "task",
+    date: today,
+    title: "Marktanalyse NQ vor Open",
+    content: "",
+    tags: [],
+    meta: { done: false, priority: "high", projectId: project.id },
+  });
+  await add({
+    type: "task",
+    date: today,
+    title: "Journal-Einträge nachtragen",
+    content: "",
+    tags: [],
+    meta: { done: true, priority: "medium", goalId: goal.id },
+  });
+  await add({
+    type: "task",
+    date: addDaysIso(today, 1),
+    title: "Wochenrückblick vorbereiten",
+    content: "",
+    tags: [],
+    meta: {
+      done: false,
+      priority: "low",
+      recurrence: "weekly",
+      subtasks: [
+        { id: crypto.randomUUID(), text: "Trades durchgehen", done: false },
+        { id: crypto.randomUUID(), text: "Stats berechnen", done: false },
+      ],
+    },
+  });
+
+  // Habits (daily mit Streak + weekly)
+  await add({
+    type: "habit",
+    date: today,
+    title: "Morgenroutine",
+    content: "",
+    tags: [],
+    meta: {
+      frequency: "daily",
+      streak: 3,
+      completedDates: [ereyest, yest, today],
+    },
+  });
+  await add({
+    type: "habit",
+    date: today,
+    title: "Wochenplanung",
+    content: "",
+    tags: [],
+    meta: { frequency: "weekly", streak: 1, completedDates: [today] },
+  });
+
+  // Daily Reviews
+  await add({
+    type: "review",
+    date: yest,
+    title: "Daily Review",
+    content: "",
+    tags: [],
+    meta: {
+      wins: "Diszipliniert nach Plan getradet.",
+      problems: "Zu früh aus Gewinner-Trade raus.",
+      lessons: "Targets vorher fixieren.",
+      energy: 7,
+      focus: 6,
+      mood: 8,
+      tomorrowPriority: "Nur A+ Setups nehmen.",
+    },
+  });
+
+  // Weekly Review (letzte Woche, kollidiert nicht mit aktueller)
+  await add({
+    type: "weeklyreview",
+    date: lastMon,
+    title: `Weekly Review KW ${isoWeekNumber(lastMon)}`,
+    content: "",
+    tags: [],
+    meta: {
+      wins: "3 grüne Tage, Regeln eingehalten.",
+      problems: "Mittwoch übertradet.",
+      lessons: "Nach 2 Verlusten Pause machen.",
+      improve: "Tageslimit strikt einhalten.",
+      nextWeekFocus: "Geduld bei Einstiegen.",
+      score: 7,
+      energy: 6,
+      discipline: 7,
+      movedGoalsProjects: "Trading-Strategie dokumentiert.",
+    },
+  });
+
+  // Trades (ein Gewinner, ein Verlierer)
+  await add({
+    type: "trade",
+    date: yest,
+    title: "NQ Long",
+    content: "",
+    tags: [],
+    meta: {
+      symbol: "NQ",
+      direction: "long",
+      entryPrice: 20100,
+      exitPrice: 20180,
+      size: 1,
+      pointValue: 20,
+      pnl: 1600,
+      setupTag: "Breakout",
+    },
+  });
+  await add({
+    type: "trade",
+    date: ereyest,
+    title: "ES Short",
+    content: "",
+    tags: [],
+    meta: {
+      symbol: "ES",
+      direction: "short",
+      entryPrice: 5300,
+      exitPrice: 5310,
+      size: 1,
+      pointValue: 50,
+      pnl: -500,
+      setupTag: "Failed Breakdown",
+    },
+  });
+
+  // Focus Sessions
+  await add({
+    type: "focus",
+    date: today,
+    title: "Marktanalyse",
+    content: "",
+    tags: [],
+    meta: {
+      plannedMin: 25,
+      actualSec: 1500,
+      linkId: project.id,
+      linkLabel: project.title,
+      focusScore: 8,
+      energyAfter: 7,
+      distractions: "Handy 1x",
+      note: "Guter Flow.",
+    },
+  });
+  await add({
+    type: "focus",
+    date: yest,
+    title: "Deep Work",
+    content: "",
+    tags: [],
+    meta: {
+      plannedMin: 50,
+      actualSec: 3000,
+      focusScore: 6,
+      energyAfter: 5,
+      distractions: "",
+      note: "",
+    },
+  });
+
+  // Default-Woche + Regeln (nur falls noch nie geseedet)
+  await seedIfFirstRun();
+  return n;
+}
+
 // Einmalige Aufräum-Migration: bestehende Duplikate aus dem alten Race löschen.
 // Dup-Key = date + title + startTime + endTime. Behält den ältesten (createdAt),
 // löscht nur die Kopien. Idempotent — bei jedem Load gefahrlos aufrufbar.

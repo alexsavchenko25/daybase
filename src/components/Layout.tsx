@@ -19,6 +19,9 @@ export default function Layout() {
               <span className="nav-icon">{m.icon}</span> {m.label}
             </NavLink>
           ))}
+          <NavLink to="/auth" className="nav-link">
+            <span className="nav-icon">🔐</span> Konto
+          </NavLink>
           <NavLink to="/settings" className="nav-link">
             <span className="nav-icon">⚙️</span> Einstellungen
           </NavLink>

@@ -45,20 +45,32 @@ export default function Dashboard() {
     0,
   );
 
+  // Überfällige Tasks: offen + Datum vor heute.
+  const overdueTasks = useLiveQuery(
+    async () => {
+      const t = await db.entries.where("type").equals("task").toArray();
+      return t.filter((e: Entry) => !(e.meta as TaskMeta).done && e.date < today).length;
+    },
+    [today],
+    0,
+  );
+
   // Heutiges Review (Status).
   const review = useLiveQuery(
     () => db.entries.where("[type+date]").equals(["review", today]).first(),
     [today],
   );
 
-  // Heutige Fokuszeit (Summe der Focus-Sessions).
-  const focusToday = useLiveQuery(
+  // Heutige Focus-Sessions: Summe, Anzahl, letzte Session.
+  const focusSummary = useLiveQuery(
     async () => {
       const s = await db.entries.where("[type+date]").equals(["focus", today]).toArray();
-      return s.reduce((sum: number, e: Entry) => sum + focusMeta(e).actualSec, 0);
+      const totalSec = s.reduce((sum: number, e: Entry) => sum + focusMeta(e).actualSec, 0);
+      const last = s.length ? s[s.length - 1] : null;
+      return { totalSec, count: s.length, last };
     },
     [today],
-    0,
+    { totalSec: 0, count: 0, last: null as Entry | null },
   );
 
   // Tagesfokus = gestern gesetzte "Tomorrow Priority".
@@ -205,6 +217,42 @@ export default function Dashboard() {
         </Link>
       )}
 
+      {overdueTasks > 0 && (
+        <Link to="/tasks" className="dash-weekly-hint dash-overdue-hint">
+          <span className="dwh-icon">⏰</span>
+          <span>
+            <strong>
+              {overdueTasks} überfällige {overdueTasks === 1 ? "Task" : "Tasks"}.
+            </strong>{" "}
+            Erledigen oder neu terminieren.
+          </span>
+          <span className="dwh-arrow">→</span>
+        </Link>
+      )}
+
+      {!review && (
+        <Link to="/review" className="dash-weekly-hint">
+          <span className="dwh-icon">📝</span>
+          <span>
+            <strong>Daily Review noch offen.</strong> Tag kurz auswerten.
+          </span>
+          <span className="dwh-arrow">→</span>
+        </Link>
+      )}
+
+      {openHabits > 0 && (
+        <Link to="/habits" className="dash-weekly-hint">
+          <span className="dwh-icon">🔁</span>
+          <span>
+            <strong>
+              {openHabits} {openHabits === 1 ? "Habit" : "Habits"} heute offen.
+            </strong>{" "}
+            Noch abhaken.
+          </span>
+          <span className="dwh-arrow">→</span>
+        </Link>
+      )}
+
       <div className="dash-grid">
         <div className="dash-stat">
           <span className="dash-label">Tasks heute offen</span>
@@ -222,7 +270,8 @@ export default function Dashboard() {
         </div>
         <div className="dash-stat">
           <span className="dash-label">Fokuszeit heute</span>
-          <span className="dash-value">{fmtDuration(focusToday)}</span>
+          <span className="dash-value">{fmtDuration(focusSummary.totalSec)}</span>
+          <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>{focusSummary.count} Sessions</span>
           <Link to="/focus" className="dash-link">
             Focus Mode →
           </Link>
@@ -270,6 +319,21 @@ export default function Dashboard() {
           ) : (
             <span className="muted">
               Kein Wochenfokus. <Link to="/weekly-review">Weekly Review →</Link>
+            </span>
+          )}
+        </div>
+        <div className="dash-info">
+          <span className="dash-label">Letzte Focus Session</span>
+          {focusSummary.last ? (
+            <div className="dash-next">
+              <span className="dash-next-title">{focusSummary.last.title}</span>
+              <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>
+                {fmtDuration(focusMeta(focusSummary.last).actualSec)}
+              </span>
+            </div>
+          ) : (
+            <span className="muted">
+              Noch keine Session heute. <Link to="/focus">Starten →</Link>
             </span>
           )}
         </div>

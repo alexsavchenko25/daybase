@@ -31,11 +31,21 @@ export interface Entry {
 // (noch) nicht hart erzwungen – `meta` bleibt bewusst flexibel –, dienen aber
 // als Vertrag für die späteren Module.
 
+export interface Subtask {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export type Recurrence = "daily" | "weekly" | "monthly";
+
 export interface TaskMeta {
   done: boolean;
   priority: "low" | "medium" | "high";
-  projectId?: string; // optionale Zuordnung
+  projectId?: string;
   goalId?: string;
+  subtasks?: Subtask[];
+  recurrence?: Recurrence;
 }
 
 export type GoalPeriod = "weekly" | "monthly" | "yearly";

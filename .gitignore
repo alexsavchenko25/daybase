@@ -4,6 +4,11 @@ dist-ssr
 *.local
 .vite
 
+# Secrets — nur .env.example wird eingecheckt
+.env
+.env.*
+!.env.example
+
 # Editor / OS
 .DS_Store
 .idea
