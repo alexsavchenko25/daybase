@@ -219,9 +219,9 @@ export default function CommandPalette() {
           )}
         </div>
         <div className="cmdk-foot">
-          <span>↑↓ navigieren</span>
-          <span>↵ öffnen</span>
-          <span>esc schließen</span>
+          <span><kbd>↑↓</kbd> navigieren</span>
+          <span><kbd>↵</kbd> öffnen</span>
+          <span><kbd>esc</kbd> schließen</span>
         </div>
       </div>
     </div>

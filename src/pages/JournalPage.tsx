@@ -146,7 +146,10 @@ export default function JournalPage() {
           )}
 
           {filtered.length === 0 ? (
-            <p className="muted empty">Keine Einträge.</p>
+            <div className="empty" data-icon="📓">
+              <strong>Keine Einträge</strong>
+              <span>Schreibe rechts deinen ersten Tagebucheintrag.</span>
+            </div>
           ) : (
             <ul className="entry-list">
               {filtered.map((e) => (

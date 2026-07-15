@@ -260,7 +260,10 @@ export default function GoalsPage() {
       </div>
 
       {shown.length === 0 ? (
-        <p className="muted empty">Keine Ziele.</p>
+        <div className="empty" data-icon="🎯">
+          <strong>Keine Ziele in dieser Ansicht</strong>
+          <span>Definiere oben ein neues Ziel — mit Zeitraum, Deadline und Fortschritt.</span>
+        </div>
       ) : (
         <ul className="entity-list">
           {shown.map((g) => {

@@ -82,7 +82,10 @@ export default function HabitsPage() {
       </form>
 
       {habits.length === 0 ? (
-        <p className="muted empty">Keine Habits.</p>
+        <div className="empty" data-icon="🔁">
+          <strong>Noch keine Habits</strong>
+          <span>Lege oben deine erste Gewohnheit an — täglich oder wöchentlich.</span>
+        </div>
       ) : (
         <ul className="habit-list">
           {habits.map((habit) => {

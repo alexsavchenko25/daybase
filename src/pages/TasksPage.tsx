@@ -388,14 +388,17 @@ export default function TasksPage() {
       </div>
 
       {tasks.length === 0 ? (
-        <p className="muted empty">
-          {view === "today" && "Keine Tasks für heute — neuen Task oben eintragen."}
-          {view === "week" && "Keine Tasks diese Woche."}
-          {view === "later" && "Keine zukünftigen Tasks."}
-          {view === "all" && "Alle Tasks erledigt."}
-          {view === "done" && "Noch keine Tasks abgehakt."}
-          {view === "day" && "Keine Tasks für diesen Tag."}
-        </p>
+        <div className="empty" data-icon="✅">
+          <strong>
+            {view === "today" && "Keine Tasks für heute"}
+            {view === "week" && "Keine Tasks diese Woche"}
+            {view === "later" && "Keine zukünftigen Tasks"}
+            {view === "all" && "Alle Tasks erledigt"}
+            {view === "done" && "Noch keine Tasks abgehakt"}
+            {view === "day" && "Keine Tasks für diesen Tag"}
+          </strong>
+          <span>Neuen Task oben im Formular anlegen.</span>
+        </div>
       ) : (
         <ul className="task-list">
           {tasks.map((entry) => {

@@ -545,7 +545,7 @@ export default function TradesPage() {
       {/* Trade-Liste */}
       <p className="section-label">Trades</p>
       {filtered.length === 0 ? (
-        <div className="empty trade-empty">
+        <div className="empty trade-empty" data-icon="📈">
           <strong>Noch keine Trades für diesen Zeitraum</strong>
           <span className="muted">
             Lege deinen ersten Trade an, um Statistiken zu sehen.

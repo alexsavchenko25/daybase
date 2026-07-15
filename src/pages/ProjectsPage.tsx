@@ -222,7 +222,10 @@ export default function ProjectsPage() {
       </div>
 
       {shown.length === 0 ? (
-        <p className="muted empty">Keine Projekte.</p>
+        <div className="empty" data-icon="📂">
+          <strong>Keine Projekte in dieser Ansicht</strong>
+          <span>Starte oben ein neues Projekt und verknüpfe Tasks & Notizen damit.</span>
+        </div>
       ) : (
         <ul className="entity-list">
           {shown.map((p) => {

@@ -152,8 +152,10 @@ export default function SettingsPage() {
         <h1>
           <span className="page-icon">⚙️</span> Einstellungen
         </h1>
+        <p className="muted">App, Cloud Sync und Daten verwalten.</p>
       </header>
 
+      <p className="section-label">App</p>
       <section className="set-card">
         <div className="set-row">
           <div>
@@ -165,37 +167,6 @@ export default function SettingsPage() {
             <div className="muted" style={{ fontSize: "var(--fs-xs)", marginTop: 2 }}>{__BUILD_DATE__}</div>
           </div>
         </div>
-      </section>
-
-      <section className="set-card">
-        <div className="set-title">Konto / Cloud Sync</div>
-        {!isSupabaseConfigured ? (
-          <p className="muted set-sub">
-            Cloud Sync ist nicht konfiguriert — die App läuft rein lokal. Mehr
-            unter <Link to="/auth">Konto</Link>.
-          </p>
-        ) : session ? (
-          <>
-            <p className="muted set-sub">
-              Eingeloggt als <strong>{session.user.email}</strong>. Neue & geänderte
-              Daten werden automatisch in die Cloud gespiegelt.
-            </p>
-            <div className="set-actions">
-              <button className="btn" onClick={doMigrateTasks} disabled={migrating}>
-                {migrating ? "Übertrage…" : "Lokale Daten in Cloud übertragen"}
-              </button>
-              <button className="chip" onClick={() => supabase?.auth.signOut()}>
-                Logout
-              </button>
-            </div>
-            {migrateMsg && <p className="set-msg pos">{migrateMsg}</p>}
-          </>
-        ) : (
-          <p className="muted set-sub">
-            Nicht eingeloggt — Daten bleiben lokal.{" "}
-            <Link to="/auth">Einloggen →</Link>
-          </p>
-        )}
       </section>
 
       <section className="set-card">
@@ -236,6 +207,57 @@ export default function SettingsPage() {
         {remindersMsg && <p className="set-msg neg">{remindersMsg}</p>}
       </section>
 
+      <section className="set-card">
+        <div className="set-title">Onboarding</div>
+        <p className="muted set-sub">Willkommens-Bildschirm beim nächsten Reload erneut anzeigen.</p>
+        <div className="set-actions">
+          <button
+            className="chip"
+            onClick={() => {
+              resetOnboarding();
+              setDemoMsg(null);
+              setMsg(null);
+              setResetDone(true);
+            }}
+          >
+            {resetDone ? "Zurückgesetzt ✓" : "Onboarding zurücksetzen"}
+          </button>
+        </div>
+      </section>
+
+      <p className="section-label">Cloud Sync</p>
+      <section className="set-card">
+        <div className="set-title">Konto / Cloud Sync</div>
+        {!isSupabaseConfigured ? (
+          <p className="muted set-sub">
+            Cloud Sync ist nicht konfiguriert — die App läuft rein lokal. Mehr
+            unter <Link to="/auth">Konto</Link>.
+          </p>
+        ) : session ? (
+          <>
+            <p className="muted set-sub">
+              Eingeloggt als <strong>{session.user.email}</strong>. Neue & geänderte
+              Daten werden automatisch in die Cloud gespiegelt.
+            </p>
+            <div className="set-actions">
+              <button className="btn" onClick={doMigrateTasks} disabled={migrating}>
+                {migrating ? "Übertrage…" : "Lokale Daten in Cloud übertragen"}
+              </button>
+              <button className="chip" onClick={() => supabase?.auth.signOut()}>
+                Logout
+              </button>
+            </div>
+            {migrateMsg && <p className="set-msg pos">{migrateMsg}</p>}
+          </>
+        ) : (
+          <p className="muted set-sub">
+            Nicht eingeloggt — Daten bleiben lokal.{" "}
+            <Link to="/auth">Einloggen →</Link>
+          </p>
+        )}
+      </section>
+
+      <p className="section-label">Daten & Backup</p>
       <section className="set-card">
         <div className="set-title">Backup</div>
         <p className="muted set-sub">
@@ -308,15 +330,17 @@ export default function SettingsPage() {
         </p>
       </section>
 
-      <section className="set-card set-hint">
-        <span className="set-hint-icon">💾</span>
-        <p>
-          Deine Daten werden aktuell <strong>nur lokal auf diesem Gerät</strong>{" "}
-          gespeichert (IndexedDB). Kein Server, keine Cloud, kein Sync zwischen
-          Geräten. Nutze Export/Import, um Daten zu sichern oder auf ein anderes
-          Gerät zu übertragen.
-        </p>
-      </section>
+      {!session && (
+        <section className="set-card set-hint">
+          <span className="set-hint-icon">💾</span>
+          <p>
+            Deine Daten werden aktuell <strong>nur lokal auf diesem Gerät</strong>{" "}
+            gespeichert (IndexedDB). Kein Server, keine Cloud, kein Sync zwischen
+            Geräten. Nutze Export/Import, um Daten zu sichern oder auf ein anderes
+            Gerät zu übertragen.
+          </p>
+        </section>
+      )}
 
       <section className="set-card">
         <div className="set-title">Demo-Daten</div>
@@ -382,24 +406,6 @@ export default function SettingsPage() {
           </div>
         )}
         {yearMsg && <p className="set-msg pos">{yearMsg}</p>}
-      </section>
-
-      <section className="set-card">
-        <div className="set-title">Onboarding</div>
-        <p className="muted set-sub">Willkommens-Bildschirm beim nächsten Reload erneut anzeigen.</p>
-        <div className="set-actions">
-          <button
-            className="chip"
-            onClick={() => {
-              resetOnboarding();
-              setDemoMsg(null);
-              setMsg(null);
-              setResetDone(true);
-            }}
-          >
-            {resetDone ? "Zurückgesetzt ✓" : "Onboarding zurücksetzen"}
-          </button>
-        </div>
       </section>
     </div>
   );

@@ -179,7 +179,10 @@ export default function NotesPage() {
           )}
 
           {filtered.length === 0 ? (
-            <p className="muted empty">Keine Notizen.</p>
+            <div className="empty" data-icon="🗒️">
+              <strong>Keine Notizen</strong>
+              <span>Lege rechts deine erste Notiz an — mit Tags und Verknüpfungen.</span>
+            </div>
           ) : (
             <ul className="entry-list">
               {filtered.map((e) => (
