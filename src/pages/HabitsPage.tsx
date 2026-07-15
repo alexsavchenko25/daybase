@@ -54,7 +54,7 @@ export default function HabitsPage() {
   }
 
   return (
-    <div className="page">
+    <div className="page habits-page">
       <header className="page-head">
         <h1>
           <span className="page-icon">🔁</span> Habit Tracker
