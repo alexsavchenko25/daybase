@@ -4,6 +4,7 @@ import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
 import ProgressBar from "../components/ProgressBar";
+import PageHeader from "../components/PageHeader";
 import type { Entry, ProjectMeta, ProjectStatus, TaskMeta } from "../types";
 
 const STATUSES: ProjectStatus[] = ["active", "done", "paused"];
@@ -129,11 +130,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="page goals-page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">📂</span> Projects
-        </h1>
-      </header>
+      <PageHeader icon="📂" title="Projects" />
 
       <form className="entity-form" onSubmit={save}>
         <input

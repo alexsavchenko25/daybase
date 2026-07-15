@@ -10,6 +10,7 @@ import {
   SYMBOL_PRESETS,
 } from "../utils/trade";
 import TradeCalendar from "./TradeCalendar";
+import PageHeader from "../components/PageHeader";
 import type { Entry, TradeMeta } from "../types";
 
 type SortKey = "date" | "pnl" | "symbol";
@@ -263,11 +264,7 @@ export default function TradesPage() {
 
   return (
     <div className="page trades-page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">📈</span> Trading Journal
-        </h1>
-      </header>
+      <PageHeader icon="📈" title="Trading Journal" />
 
       {/* KPI */}
       <div className="kpi-row">

@@ -4,6 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { addDaysIso, todayIso } from "../utils/date";
+import PageHeader from "../components/PageHeader";
 import type { ReviewMeta } from "../types";
 
 const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
@@ -90,11 +91,7 @@ export default function ReviewPage() {
 
   return (
     <div className="page review-page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">📝</span> Daily Review
-        </h1>
-      </header>
+      <PageHeader icon="📝" title="Daily Review" />
 
       <div className="week-nav rv-nav">
         <button className="chip" onClick={() => goDay(addDaysIso(date, -1))}>

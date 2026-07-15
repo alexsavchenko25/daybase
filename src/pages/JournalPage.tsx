@@ -4,6 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
+import PageHeader from "../components/PageHeader";
 import type { Entry } from "../types";
 
 function parseTags(raw: string): string[] {
@@ -105,11 +106,7 @@ export default function JournalPage() {
 
   return (
     <div className="page journal-page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">📓</span> Tagebuch
-        </h1>
-      </header>
+      <PageHeader icon="📓" title="Tagebuch" />
 
       <div className="journal-grid">
         {/* Liste / Navigation */}

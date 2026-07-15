@@ -8,6 +8,7 @@ import { markBackup, lastBackup, daysSinceBackup } from "../utils/backup";
 import { resetOnboarding } from "../components/Onboarding";
 import { loadDemoData, applyYearlyWeekplanTemplate } from "../seed";
 import { remindersEnabled, setRemindersEnabled, enableReminders } from "../reminders";
+import PageHeader from "../components/PageHeader";
 import { Link } from "react-router-dom";
 import { supabase, isSupabaseConfigured, useSession } from "../supabase";
 import { pushAllLocal } from "../sync";
@@ -148,12 +149,7 @@ export default function SettingsPage() {
 
   return (
     <div className="page settings-page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">⚙️</span> Einstellungen
-        </h1>
-        <p className="muted">App, Cloud Sync und Daten verwalten.</p>
-      </header>
+      <PageHeader icon="⚙️" title="Einstellungen" subtitle="App, Cloud Sync und Daten verwalten." />
 
       <p className="section-label">App</p>
       <section className="set-card">

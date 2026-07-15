@@ -6,6 +6,7 @@ import { entriesRepo } from "../repository";
 import { addDaysIso, isoWeekNumber, mondayOfIso, todayIso } from "../utils/date";
 import { fmtUsd } from "../utils/trade";
 import { fmtDuration, focusMeta } from "../utils/focus";
+import PageHeader from "../components/PageHeader";
 import type {
   Entry,
   HabitMeta,
@@ -185,11 +186,7 @@ export default function WeeklyReviewPage() {
 
   return (
     <div className="page review-page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">📅</span> Weekly Review
-        </h1>
-      </header>
+      <PageHeader icon="📅" title="Weekly Review" />
 
       <div className="week-nav rv-nav">
         <button className="chip" onClick={() => setMonday(addDaysIso(monday, -7))}>

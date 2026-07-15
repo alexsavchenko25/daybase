@@ -4,6 +4,7 @@ import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
 import ProgressBar from "../components/ProgressBar";
+import PageHeader from "../components/PageHeader";
 import { projectProgress } from "./ProjectsPage";
 import type { Entry, GoalMeta, GoalPeriod, GoalStatus } from "../types";
 
@@ -158,11 +159,7 @@ export default function GoalsPage() {
 
   return (
     <div className="page goals-page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">🎯</span> Goals
-        </h1>
-      </header>
+      <PageHeader icon="🎯" title="Goals" />
 
       <form className="entity-form" onSubmit={save}>
         <input

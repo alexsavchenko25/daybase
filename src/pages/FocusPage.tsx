@@ -4,6 +4,7 @@ import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
 import { fmtClock, fmtDuration, focusMeta } from "../utils/focus";
+import PageHeader from "../components/PageHeader";
 import type { Entry, FocusMeta } from "../types";
 
 const PRESETS = [25, 50, 90];
@@ -210,15 +211,16 @@ export default function FocusPage() {
 
   return (
     <div className="page focus-page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">⏱️</span> Focus Mode
-        </h1>
-        <p className="muted">
-          Heute fokussiert: <strong>{fmtDuration(todayTotal)}</strong> ·{" "}
-          {todaySessions.length} Sessions
-        </p>
-      </header>
+      <PageHeader
+        icon="⏱️"
+        title="Focus Mode"
+        subtitle={
+          <>
+            Heute fokussiert: <strong>{fmtDuration(todayTotal)}</strong> ·{" "}
+            {todaySessions.length} Sessions
+          </>
+        }
+      />
 
       {phase === "setup" && (
         <div className="focus-card">

@@ -5,6 +5,7 @@ import { addDaysIso, isoWeekNumber, mondayOfIso, todayIso } from "../utils/date"
 import { isDoneForPeriod, habitMeta } from "../utils/habit";
 import ProgressBar from "../components/ProgressBar";
 import { fmtDuration, focusMeta } from "../utils/focus";
+import PageHeader from "../components/PageHeader";
 import { daysSinceBackup } from "../utils/backup";
 import { projectProgress } from "./ProjectsPage";
 import { goalProgress } from "./GoalsPage";
@@ -183,12 +184,7 @@ export default function Dashboard() {
 
   return (
     <div className="page dashboard">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">🏠</span> Dashboard
-        </h1>
-        <p className="muted">{dateLabel}</p>
-      </header>
+      <PageHeader icon="🏠" title="Dashboard" subtitle={dateLabel} />
 
       {/* Primär: heutiger Fokus + nächster Block */}
       <div className="dash-hero">

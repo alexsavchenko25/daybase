@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase, isSupabaseConfigured, useSession } from "../supabase";
+import PageHeader from "../components/PageHeader";
 
 // Auth-Seite: Email/Passwort Login + Registrierung gegen Supabase.
 // Optional — ohne Login bleibt die App voll lokal nutzbar (IndexedDB).
@@ -45,12 +46,11 @@ export default function AuthPage() {
 
   return (
     <div className="page settings-page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">🔐</span> Konto
-        </h1>
-        <p className="muted">Cloud Sync ist optional — ohne Login läuft alles lokal weiter.</p>
-      </header>
+      <PageHeader
+        icon="🔐"
+        title="Konto"
+        subtitle="Cloud Sync ist optional — ohne Login läuft alles lokal weiter."
+      />
 
       {!isSupabaseConfigured ? (
         <section className="set-card set-hint">

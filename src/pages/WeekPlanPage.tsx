@@ -9,6 +9,7 @@ import {
   catClass,
   type CategoryId,
 } from "../data/weekplanCategories";
+import PageHeader from "../components/PageHeader";
 import type { Entry } from "../types";
 
 const DAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -149,41 +150,42 @@ export default function WeekPlanPage() {
 
   return (
     <div className="page week-page">
-      <header className="page-head week-head">
-        <h1>
-          <span className="page-icon">🗓️</span> Wochenplan
-        </h1>
-        <div className="week-nav">
-          <button className="chip" onClick={() => setMonday(addDaysIso(monday, -7))}>
-            ← Woche
-          </button>
-          <span className="week-label">
-            KW {weekNo}
-            {isCurrentWeek && <span className="week-now"> · aktuell</span>}
-          </span>
-          <button className="chip" onClick={() => setMonday(addDaysIso(monday, 7))}>
-            Woche →
-          </button>
-          {!isCurrentWeek && (
-            <button className="chip" onClick={() => setMonday(mondayOfIso(today))}>
-              heute
+      <PageHeader
+        icon="🗓️"
+        title="Wochenplan"
+        actions={
+          <div className="week-nav">
+            <button className="chip" onClick={() => setMonday(addDaysIso(monday, -7))}>
+              ← Woche
             </button>
-          )}
-          <span className="week-sep" />
-          <button
-            className={`chip ${compact ? "chip-active" : ""}`}
-            onClick={() => setCompact(true)}
-          >
-            Kompakt
-          </button>
-          <button
-            className={`chip ${!compact ? "chip-active" : ""}`}
-            onClick={() => setCompact(false)}
-          >
-            Detailliert
-          </button>
-        </div>
-      </header>
+            <span className="week-label">
+              KW {weekNo}
+              {isCurrentWeek && <span className="week-now"> · aktuell</span>}
+            </span>
+            <button className="chip" onClick={() => setMonday(addDaysIso(monday, 7))}>
+              Woche →
+            </button>
+            {!isCurrentWeek && (
+              <button className="chip" onClick={() => setMonday(mondayOfIso(today))}>
+                heute
+              </button>
+            )}
+            <span className="week-sep" />
+            <button
+              className={`chip ${compact ? "chip-active" : ""}`}
+              onClick={() => setCompact(true)}
+            >
+              Kompakt
+            </button>
+            <button
+              className={`chip ${!compact ? "chip-active" : ""}`}
+              onClick={() => setCompact(false)}
+            >
+              Detailliert
+            </button>
+          </div>
+        }
+      />
 
       <div className="legend">
         {CATEGORIES.map((c) => (

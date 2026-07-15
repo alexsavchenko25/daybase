@@ -4,6 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
+import PageHeader from "../components/PageHeader";
 import type { Entry, NoteMeta } from "../types";
 
 type Sort = "date" | "title";
@@ -124,11 +125,7 @@ export default function NotesPage() {
 
   return (
     <div className="page journal-page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">🗒️</span> Notizen
-        </h1>
-      </header>
+      <PageHeader icon="🗒️" title="Notizen" />
 
       <div className="journal-grid">
         <aside className="journal-list">

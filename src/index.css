@@ -1524,7 +1524,7 @@ a {
 }
 
 /* ---------- Wochenplan (pre-redesign Layout, nur Farben angepasst) ---------- */
-.week-head {
+.page-head.page-head-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;

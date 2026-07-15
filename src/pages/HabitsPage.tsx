@@ -4,6 +4,7 @@ import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso, lastNDays } from "../utils/date";
 import { computeStreak, isDoneForPeriod, habitMeta } from "../utils/habit";
+import PageHeader from "../components/PageHeader";
 import type { Entry, HabitMeta } from "../types";
 
 type Frequency = HabitMeta["frequency"];
@@ -55,11 +56,7 @@ export default function HabitsPage() {
 
   return (
     <div className="page habits-page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">🔁</span> Habit Tracker
-        </h1>
-      </header>
+      <PageHeader icon="🔁" title="Habit Tracker" />
 
       <form className="task-form" onSubmit={addHabit}>
         <input

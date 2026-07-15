@@ -10,6 +10,7 @@ import {
   nextRecurDate,
   recurrenceLabel,
 } from "../utils/recurrence";
+import PageHeader from "../components/PageHeader";
 import type { Entry, RecurrenceKind, RecurrenceRule, Subtask, TaskMeta } from "../types";
 
 type View = "today" | "week" | "later" | "all" | "done" | "day";
@@ -226,14 +227,15 @@ export default function TasksPage() {
 
   return (
     <div className="page">
-      <header className="page-head">
-        <h1>
-          <span className="page-icon">✅</span> Tasks
-        </h1>
-        <p className="muted">
-          Heute offen: <strong>{openTodayCount}</strong>
-        </p>
-      </header>
+      <PageHeader
+        icon="✅"
+        title="Tasks"
+        subtitle={
+          <>
+            Heute offen: <strong>{openTodayCount}</strong>
+          </>
+        }
+      />
 
       <form className="task-form" onSubmit={addTask}>
         <input
