@@ -3,7 +3,6 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { addDaysIso, isoWeekNumber, mondayOfIso, todayIso } from "../utils/date";
 import { isDoneForPeriod, habitMeta } from "../utils/habit";
-import { MODULES } from "../modules";
 import ProgressBar from "../components/ProgressBar";
 import { fmtDuration, focusMeta } from "../utils/focus";
 import { daysSinceBackup } from "../utils/backup";
@@ -191,104 +190,25 @@ export default function Dashboard() {
         <p className="muted">{dateLabel}</p>
       </header>
 
-      {showBackupHint && (
-        <Link to="/settings" className="dash-weekly-hint dash-backup-hint">
-          <span className="dwh-icon">💾</span>
-          <span>
-            <strong>
-              {backupDays === null
-                ? "Noch kein Backup erstellt."
-                : `Letztes Backup vor ${backupDays} Tagen.`}
-            </strong>{" "}
-            Daten liegen nur lokal — jetzt exportieren.
-          </span>
-          <span className="dwh-arrow">→</span>
-        </Link>
-      )}
-
-      {showWeeklyHint && (
-        <Link to="/weekly-review" className="dash-weekly-hint">
-          <span className="dwh-icon">📅</span>
-          <span>
-            <strong>Weekly Review für KW {isoWeekNumber(monday)} steht an.</strong>{" "}
-            Woche auswerten & nächste planen.
-          </span>
-          <span className="dwh-arrow">→</span>
-        </Link>
-      )}
-
-      {overdueTasks > 0 && (
-        <Link to="/tasks" className="dash-weekly-hint dash-overdue-hint">
-          <span className="dwh-icon">⏰</span>
-          <span>
-            <strong>
-              {overdueTasks} überfällige {overdueTasks === 1 ? "Task" : "Tasks"}.
-            </strong>{" "}
-            Erledigen oder neu terminieren.
-          </span>
-          <span className="dwh-arrow">→</span>
-        </Link>
-      )}
-
-      {!review && (
-        <Link to="/review" className="dash-weekly-hint">
-          <span className="dwh-icon">📝</span>
-          <span>
-            <strong>Daily Review noch offen.</strong> Tag kurz auswerten.
-          </span>
-          <span className="dwh-arrow">→</span>
-        </Link>
-      )}
-
-      {openHabits > 0 && (
-        <Link to="/habits" className="dash-weekly-hint">
-          <span className="dwh-icon">🔁</span>
-          <span>
-            <strong>
-              {openHabits} {openHabits === 1 ? "Habit" : "Habits"} heute offen.
-            </strong>{" "}
-            Noch abhaken.
-          </span>
-          <span className="dwh-arrow">→</span>
-        </Link>
-      )}
-
-      <div className="dash-grid">
-        <div className="dash-stat">
-          <span className="dash-label">Tasks heute offen</span>
-          <span className="dash-value">{openTasks}</span>
-          <Link to="/tasks" className="dash-link">
-            zu den Tasks →
-          </Link>
+      {/* Primär: heutiger Fokus + nächster Block */}
+      <div className="dash-hero">
+        <div className="dash-hero-card dash-hero-focus">
+          <span className="dash-label">Heutiger Fokus</span>
+          {focus ? (
+            <p className="dash-hero-text">{focus}</p>
+          ) : (
+            <p className="dash-hero-text muted">
+              Kein Fokus gesetzt — im <Link to="/review">gestrigen Review</Link> festlegen.
+            </p>
+          )}
+          {weeklyFocus && (
+            <div className="dash-hero-week">
+              <span className="dash-label">Wochenfokus</span>
+              <span>{weeklyFocus}</span>
+            </div>
+          )}
         </div>
-        <div className="dash-stat">
-          <span className="dash-label">Habits heute offen</span>
-          <span className="dash-value">{openHabits}</span>
-          <Link to="/habits" className="dash-link">
-            zum Habit Tracker →
-          </Link>
-        </div>
-        <div className="dash-stat">
-          <span className="dash-label">Fokuszeit heute</span>
-          <span className="dash-value">{fmtDuration(focusSummary.totalSec)}</span>
-          <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>{focusSummary.count} Sessions</span>
-          <Link to="/focus" className="dash-link">
-            Focus Mode →
-          </Link>
-        </div>
-        <div className="dash-stat">
-          <span className="dash-label">Daily Review</span>
-          <span className={`dash-badge ${review ? "done" : "open"}`}>
-            {review ? "✓ erledigt" : "noch offen"}
-          </span>
-          <Link to="/review" className="dash-link">
-            {review ? "ansehen →" : "jetzt ausfüllen →"}
-          </Link>
-        </div>
-      </div>
-
-      <div className="dash-grid dash-grid-2">
-        <div className="dash-info">
+        <div className="dash-hero-card dash-hero-next">
           <span className="dash-label">Nächster Block</span>
           {nextBlock ? (
             <div className="dash-next">
@@ -301,42 +221,89 @@ export default function Dashboard() {
               <span className="dash-next-title">{nextBlock.title}</span>
             </div>
           ) : (
-            <span className="muted">Kein Block heute. <Link to="/weekplan">Planen →</Link></span>
+            <span className="muted">Kein Block heute.</span>
           )}
+          <Link to="/weekplan" className="dash-link">
+            Wochenplan →
+          </Link>
         </div>
-        <div className="dash-info">
-          <span className="dash-label">Heutiger Fokus</span>
-          {focus ? (
-            <span className="dash-focus">{focus}</span>
-          ) : (
-            <span className="muted">Kein Fokus gesetzt (gestriges Review).</span>
-          )}
-        </div>
-        <div className="dash-info">
-          <span className="dash-label">Wochenfokus</span>
-          {weeklyFocus ? (
-            <span className="dash-focus">{weeklyFocus}</span>
-          ) : (
-            <span className="muted">
-              Kein Wochenfokus. <Link to="/weekly-review">Weekly Review →</Link>
+      </div>
+
+      {/* Kompakte Hinweise */}
+      <div className="dash-hints">
+        {showBackupHint && (
+          <Link to="/settings" className="dash-weekly-hint dash-backup-hint">
+            <span className="dwh-icon">💾</span>
+            <span>
+              <strong>
+                {backupDays === null
+                  ? "Noch kein Backup erstellt."
+                  : `Letztes Backup vor ${backupDays} Tagen.`}
+              </strong>{" "}
+              Daten liegen nur lokal — jetzt exportieren.
             </span>
-          )}
-        </div>
-        <div className="dash-info">
-          <span className="dash-label">Letzte Focus Session</span>
-          {focusSummary.last ? (
-            <div className="dash-next">
-              <span className="dash-next-title">{focusSummary.last.title}</span>
-              <span className="muted" style={{ fontSize: "var(--fs-sm)" }}>
-                {fmtDuration(focusMeta(focusSummary.last).actualSec)}
-              </span>
-            </div>
-          ) : (
-            <span className="muted">
-              Noch keine Session heute. <Link to="/focus">Starten →</Link>
+            <span className="dwh-arrow">→</span>
+          </Link>
+        )}
+        {showWeeklyHint && (
+          <Link to="/weekly-review" className="dash-weekly-hint">
+            <span className="dwh-icon">📅</span>
+            <span>
+              <strong>Weekly Review für KW {isoWeekNumber(monday)} steht an.</strong>{" "}
+              Woche auswerten & nächste planen.
             </span>
-          )}
-        </div>
+            <span className="dwh-arrow">→</span>
+          </Link>
+        )}
+        {overdueTasks > 0 && (
+          <Link to="/tasks" className="dash-weekly-hint dash-overdue-hint">
+            <span className="dwh-icon">⏰</span>
+            <span>
+              <strong>
+                {overdueTasks} überfällige {overdueTasks === 1 ? "Task" : "Tasks"}.
+              </strong>{" "}
+              Erledigen oder neu terminieren.
+            </span>
+            <span className="dwh-arrow">→</span>
+          </Link>
+        )}
+        {!review && (
+          <Link to="/review" className="dash-weekly-hint">
+            <span className="dwh-icon">📝</span>
+            <span>
+              <strong>Daily Review noch offen.</strong> Tag kurz auswerten.
+            </span>
+            <span className="dwh-arrow">→</span>
+          </Link>
+        )}
+        {openHabits > 0 && (
+          <Link to="/habits" className="dash-weekly-hint">
+            <span className="dwh-icon">🔁</span>
+            <span>
+              <strong>
+                {openHabits} {openHabits === 1 ? "Habit" : "Habits"} heute offen.
+              </strong>{" "}
+              Noch abhaken.
+            </span>
+            <span className="dwh-arrow">→</span>
+          </Link>
+        )}
+      </div>
+
+      {/* Sekundäre KPIs */}
+      <div className="dash-kpis">
+        <Link to="/tasks" className="dash-kpi">
+          <span className="dash-kpi-value">{openTasks}</span>
+          <span className="dash-kpi-label">Tasks offen</span>
+        </Link>
+        <Link to="/habits" className="dash-kpi">
+          <span className="dash-kpi-value">{openHabits}</span>
+          <span className="dash-kpi-label">Habits offen</span>
+        </Link>
+        <Link to="/focus" className="dash-kpi">
+          <span className="dash-kpi-value">{fmtDuration(focusSummary.totalSec)}</span>
+          <span className="dash-kpi-label">Fokuszeit · {focusSummary.count} Sessions</span>
+        </Link>
       </div>
 
       {(topGoals.length > 0 || activeProjects.length > 0) && (
@@ -387,16 +354,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
-      <p className="section-label">Module</p>
-      <div className="dash-modules">
-        {MODULES.map((m) => (
-          <Link key={m.path} to={m.path} className="dash-module">
-            <span className="dash-module-icon">{m.icon}</span>
-            <span className="dash-module-label">{m.label}</span>
-          </Link>
-        ))}
-      </div>
     </div>
   );
 }
