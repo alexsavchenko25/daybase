@@ -23,6 +23,7 @@ import { MODULES } from "./modules";
 import { syncHabitStreaks } from "./repository";
 import { seedIfFirstRun, cleanupDuplicateWeekplan } from "./seed";
 import { initSync } from "./sync";
+import { checkAndNotify } from "./reminders";
 
 // Module mit echter UI. Rest fällt auf ModulePlaceholder zurück.
 const PAGES: Record<string, React.ReactNode> = {
@@ -48,6 +49,7 @@ export default function App() {
       await seedIfFirstRun();
       await cleanupDuplicateWeekplan();
       await syncHabitStreaks();
+      await checkAndNotify();
     })();
     initSync();
   }, []);

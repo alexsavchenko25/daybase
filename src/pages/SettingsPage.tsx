@@ -7,6 +7,7 @@ import { todayIso } from "../utils/date";
 import { markBackup, lastBackup, daysSinceBackup } from "../utils/backup";
 import { resetOnboarding } from "../components/Onboarding";
 import { loadDemoData, applyYearlyWeekplanTemplate } from "../seed";
+import { remindersEnabled, setRemindersEnabled, enableReminders } from "../reminders";
 import { Link } from "react-router-dom";
 import { supabase, isSupabaseConfigured, useSession } from "../supabase";
 import { pushAllLocal } from "../sync";
@@ -22,6 +23,23 @@ export default function SettingsPage() {
   const [yearPending, setYearPending] = useState(false);
   const [yearLoading, setYearLoading] = useState(false);
   const [yearMsg, setYearMsg] = useState<string | null>(null);
+  const [remindersOn, setRemindersOn] = useState(remindersEnabled);
+  const [remindersMsg, setRemindersMsg] = useState<string | null>(null);
+  const notificationSupported = typeof Notification !== "undefined";
+
+  async function toggleReminders() {
+    setRemindersMsg(null);
+    if (remindersOn) {
+      setRemindersEnabled(false);
+      setRemindersOn(false);
+      return;
+    }
+    const perm = await enableReminders();
+    setRemindersOn(perm === "granted");
+    if (perm !== "granted") {
+      setRemindersMsg("Berechtigung verweigert — Reminder bleiben aus.");
+    }
+  }
   const [resetDone, setResetDone] = useState(false);
   const [theme, setTheme] = useState(
     () => document.documentElement.dataset.theme || "dark",
@@ -197,6 +215,25 @@ export default function SettingsPage() {
             ☀️ Light
           </button>
         </div>
+      </section>
+
+      <section className="set-card">
+        <div className="set-title">Reminders</div>
+        <p className="muted set-sub">
+          Benachrichtigung beim App-Start, wenn überfällige Tasks oder offene
+          Habits da sind. Nur während die App offen ist — kein Server, kein
+          Push bei geschlossener App.
+        </p>
+        {!notificationSupported ? (
+          <p className="muted set-sub">Browser unterstützt keine Notifications.</p>
+        ) : (
+          <div className="set-actions">
+            <button className="chip" onClick={toggleReminders}>
+              {remindersOn ? "✓ Aktiviert — ausschalten" : "Aktivieren"}
+            </button>
+          </div>
+        )}
+        {remindersMsg && <p className="set-msg neg">{remindersMsg}</p>}
       </section>
 
       <section className="set-card">

@@ -58,5 +58,5 @@ Consequence: **new entry types are additive and free** — add to the `EntryType
 - **Command palette / global search**: `src/components/CommandPalette.tsx` (Ctrl/Cmd+K). Search results deep-link with query params (`?sel=`, `?date=`, `?week=`) that the target pages read via `useSearchParams` to preselect.
 - **PWA**: `vite-plugin-pwa` (`registerType: autoUpdate`, `injectRegister: auto` — no manual SW registration in app code). Icons come from `public/icon.svg` → `scripts/gen-icons.mjs` (`sharp`).
 - UI strings are German.
-- `localStorage` keys in use: `daybase.seeded.v1`, `daybase.theme`, `daybase.lastBackup`, `daybase.focus.active` (focus timer survives reload via a timestamp anchor, not per-second writes).
+- `localStorage` keys in use: `daybase.seeded.v1`, `daybase.theme`, `daybase.lastBackup`, `daybase.focus.active` (focus timer survives reload via a timestamp anchor, not per-second writes), `daybase.reminders.enabled` + `daybase.reminders.lastShown` (see `src/reminders.ts`).
 - Backup import is **non-destructive merge** (`bulkPut` upserts by `id`; entries not in the file are kept).
