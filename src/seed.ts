@@ -19,22 +19,8 @@ export function seedIfFirstRun(): Promise<void> {
   return seedGuard;
 }
 
-async function doSeed(): Promise<void> {
-  if (localStorage.getItem(SEED_KEY)) return;
-
-  // Robuster Check: nur seeden, wenn für DIESE Woche (Mo–So) noch keine
-  // weekplan-Entries existieren.
-  const monday = mondayOfIso(todayIso());
-  const sunday = addDaysIso(monday, 6);
-  const existing = await db.entries
-    .where("[type+date]")
-    .between(["weekplan", monday], ["weekplan", sunday], true, true)
-    .count();
-  if (existing > 0) {
-    localStorage.setItem(SEED_KEY, "1");
-    return;
-  }
-
+// Legt die Standard-Woche (DEFAULT_WEEK) für eine gegebene Montags-Woche an.
+async function createWeekplanWeek(monday: string): Promise<void> {
   for (const b of DEFAULT_WEEK) {
     const date = addDaysIso(monday, b.day);
     await entriesRepo.create({
@@ -53,6 +39,25 @@ async function doSeed(): Promise<void> {
       },
     });
   }
+}
+
+async function doSeed(): Promise<void> {
+  if (localStorage.getItem(SEED_KEY)) return;
+
+  // Robuster Check: nur seeden, wenn für DIESE Woche (Mo–So) noch keine
+  // weekplan-Entries existieren.
+  const monday = mondayOfIso(todayIso());
+  const sunday = addDaysIso(monday, 6);
+  const existing = await db.entries
+    .where("[type+date]")
+    .between(["weekplan", monday], ["weekplan", sunday], true, true)
+    .count();
+  if (existing > 0) {
+    localStorage.setItem(SEED_KEY, "1");
+    return;
+  }
+
+  await createWeekplanWeek(monday);
 
   for (const note of DEFAULT_RULES) {
     await entriesRepo.create({
@@ -66,6 +71,28 @@ async function doSeed(): Promise<void> {
   }
 
   localStorage.setItem(SEED_KEY, "1");
+}
+
+// Wochenplan-Vorlage (DEFAULT_WEEK) für jede Woche ab der aktuellen Woche
+// bis zum Jahresende anlegen. Überschreibt bestehende weekplan-Einträge
+// in jeder betroffenen Woche komplett (Button in Settings, mit Bestätigung).
+// Gibt die Anzahl angelegter Wochen zurück.
+export async function applyYearlyWeekplanTemplate(): Promise<number> {
+  const yearEnd = `${new Date().getFullYear()}-12-31`;
+  let monday = mondayOfIso(todayIso());
+  let weeks = 0;
+  while (monday <= yearEnd) {
+    const sunday = addDaysIso(monday, 6);
+    const existing = await db.entries
+      .where("[type+date]")
+      .between(["weekplan", monday], ["weekplan", sunday], true, true)
+      .toArray();
+    if (existing.length) await db.entries.bulkDelete(existing.map((e) => e.id));
+    await createWeekplanWeek(monday);
+    weeks++;
+    monday = addDaysIso(monday, 7);
+  }
+  return weeks;
 }
 
 // Demo-Daten: Beispiel-Einträge für alle Module. Additiv (neue IDs) —

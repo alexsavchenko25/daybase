@@ -6,7 +6,7 @@ import type { Backup, BackupSummary } from "../repository";
 import { todayIso } from "../utils/date";
 import { markBackup, lastBackup, daysSinceBackup } from "../utils/backup";
 import { resetOnboarding } from "../components/Onboarding";
-import { loadDemoData } from "../seed";
+import { loadDemoData, applyYearlyWeekplanTemplate } from "../seed";
 import { Link } from "react-router-dom";
 import { supabase, isSupabaseConfigured, useSession } from "../supabase";
 import { pushAllLocal } from "../sync";
@@ -19,6 +19,9 @@ export default function SettingsPage() {
   const [demoPending, setDemoPending] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoMsg, setDemoMsg] = useState<string | null>(null);
+  const [yearPending, setYearPending] = useState(false);
+  const [yearLoading, setYearLoading] = useState(false);
+  const [yearMsg, setYearMsg] = useState<string | null>(null);
   const [resetDone, setResetDone] = useState(false);
   const [theme, setTheme] = useState(
     () => document.documentElement.dataset.theme || "dark",
@@ -108,6 +111,20 @@ export default function SettingsPage() {
     } finally {
       setDemoLoading(false);
       setDemoPending(false);
+    }
+  }
+
+  async function doApplyYearlyWeekplan() {
+    setYearLoading(true);
+    setYearMsg(null);
+    try {
+      const n = await applyYearlyWeekplanTemplate();
+      setYearMsg(`Wochenplan-Vorlage für ${n} Wochen (bis Jahresende) angelegt.`);
+    } catch (err) {
+      setYearMsg(`Fehler: ${(err as Error).message}`);
+    } finally {
+      setYearLoading(false);
+      setYearPending(false);
     }
   }
 
@@ -295,6 +312,39 @@ export default function SettingsPage() {
           </div>
         )}
         {demoMsg && <p className="set-msg pos">{demoMsg}</p>}
+      </section>
+
+      <section className="set-card">
+        <div className="set-title">Wochenplan-Vorlage</div>
+        <p className="muted set-sub">
+          Deinen Standard-Wochenplan (Mo–So) für jede Woche ab jetzt bis
+          Jahresende anlegen.
+        </p>
+        {!yearPending ? (
+          <div className="set-actions">
+            <button className="chip" onClick={() => setYearPending(true)}>
+              Für Rest des Jahres anlegen
+            </button>
+          </div>
+        ) : (
+          <div className="import-preview">
+            <p className="import-preview-title">⚠️ Wochenplan-Vorlage anlegen?</p>
+            <p className="muted set-sub">
+              Bestehende Wochenplan-Einträge in jeder betroffenen Woche werden{" "}
+              <strong>komplett überschrieben</strong> (gelöscht + neu angelegt).
+              Andere Module sind nicht betroffen.
+            </p>
+            <div className="rv-actions">
+              <button className="btn" onClick={doApplyYearlyWeekplan} disabled={yearLoading}>
+                {yearLoading ? "Lege an…" : "Überschreiben & anlegen"}
+              </button>
+              <button className="chip" onClick={() => setYearPending(false)}>
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        )}
+        {yearMsg && <p className="set-msg pos">{yearMsg}</p>}
       </section>
 
       <section className="set-card">
