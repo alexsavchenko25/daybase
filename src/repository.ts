@@ -33,17 +33,18 @@ export type UpdateEntryInput = Partial<
   Omit<Entry, "id" | "createdAt" | "updatedAt">
 >;
 
-// ---- Task-Sync-Hooks (optional, Supabase-agnostisch) ----
-// taskSync.ts registriert hier Callbacks. Sie feuern NUR für type === "task"
-// und sind no-ops, solange nichts registriert ist (= kein Cloud-Sync).
-let taskUpsertHook: ((e: Entry) => void) | null = null;
-let taskDeleteHook: ((id: string) => void) | null = null;
-export function setTaskSyncHooks(h: {
+// ---- Cloud-Sync-Hooks (optional, Supabase-agnostisch) ----
+// sync.ts registriert hier Callbacks, die bei jedem Write feuern. sync.ts
+// selbst entscheidet anhand von entry.type, ob eine Cloud-Tabelle existiert
+// (No-op solange nichts registriert ist = kein Cloud-Sync).
+let entryUpsertHook: ((e: Entry) => void) | null = null;
+let entryDeleteHook: ((e: Entry) => void) | null = null;
+export function setEntrySyncHooks(h: {
   onUpsert: (e: Entry) => void;
-  onDelete: (id: string) => void;
+  onDelete: (e: Entry) => void;
 }): void {
-  taskUpsertHook = h.onUpsert;
-  taskDeleteHook = h.onDelete;
+  entryUpsertHook = h.onUpsert;
+  entryDeleteHook = h.onDelete;
 }
 
 export const entriesRepo = {
@@ -62,7 +63,7 @@ export const entriesRepo = {
       updatedAt: ts,
     };
     await db.entries.add(entry);
-    if (entry.type === "task") taskUpsertHook?.(entry);
+    entryUpsertHook?.(entry);
     return entry;
   },
 
@@ -80,7 +81,7 @@ export const entriesRepo = {
   async update(id: string, patch: UpdateEntryInput): Promise<Entry | undefined> {
     await db.entries.update(id, { ...patch, updatedAt: nowIso() });
     const updated = await db.entries.get(id);
-    if (updated?.type === "task") taskUpsertHook?.(updated);
+    if (updated) entryUpsertHook?.(updated);
     return updated;
   },
 
@@ -88,7 +89,7 @@ export const entriesRepo = {
   async remove(id: string): Promise<void> {
     const existing = await db.entries.get(id);
     await db.entries.delete(id);
-    if (existing?.type === "task") taskDeleteHook?.(id);
+    if (existing) entryDeleteHook?.(existing);
   },
 
   // QUERY by type (indexiert)

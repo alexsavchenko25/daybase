@@ -22,7 +22,7 @@ import AuthPage from "./pages/AuthPage";
 import { MODULES } from "./modules";
 import { syncHabitStreaks } from "./repository";
 import { seedIfFirstRun, cleanupDuplicateWeekplan } from "./seed";
-import { initTaskSync } from "./taskSync";
+import { initSync } from "./sync";
 
 // Module mit echter UI. Rest fällt auf ModulePlaceholder zurück.
 const PAGES: Record<string, React.ReactNode> = {
@@ -49,7 +49,7 @@ export default function App() {
       await cleanupDuplicateWeekplan();
       await syncHabitStreaks();
     })();
-    initTaskSync();
+    initSync();
   }, []);
 
   return (

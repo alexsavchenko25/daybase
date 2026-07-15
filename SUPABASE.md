@@ -83,5 +83,5 @@ select tablename, policyname, cmd from pg_policies where schemaname = 'public';
 
 - ✅ Schema + RLS + Policies (`supabase-schema.sql`)
 - ✅ Client-Kapselung (`src/supabase.ts`) + Auth-UI (`/auth`)
-- ⬜ Sync-Logik (IndexedDB ↔ Supabase) — noch nicht implementiert
-- ⬜ Migration bestehender lokaler Daten — noch nicht implementiert
+- ✅ Sync-Logik für alle 10 Tabellen (`src/sync.ts`) — Push bei Write, Pull bei
+  Login, Migration bestehender lokaler Daten via Settings-Button

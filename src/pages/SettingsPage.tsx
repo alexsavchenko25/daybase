@@ -9,7 +9,7 @@ import { resetOnboarding } from "../components/Onboarding";
 import { loadDemoData } from "../seed";
 import { Link } from "react-router-dom";
 import { supabase, isSupabaseConfigured, useSession } from "../supabase";
-import { pushAllLocalTasks } from "../taskSync";
+import { pushAllLocal } from "../sync";
 
 export default function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -39,9 +39,9 @@ export default function SettingsPage() {
     setMigrating(true);
     setMigrateMsg(null);
     try {
-      const n = await pushAllLocalTasks();
+      const n = await pushAllLocal();
       setMigrateMsg(
-        n === 0 ? "Keine lokalen Tasks vorhanden." : `${n} Tasks in die Cloud übertragen.`,
+        n === 0 ? "Keine lokalen Daten vorhanden." : `${n} Einträge in die Cloud übertragen.`,
       );
     } catch (err) {
       setMigrateMsg(`Fehler: ${(err as Error).message}`);
@@ -143,11 +143,11 @@ export default function SettingsPage() {
           <>
             <p className="muted set-sub">
               Eingeloggt als <strong>{session.user.email}</strong>. Neue & geänderte
-              Tasks werden automatisch in die Cloud gespiegelt.
+              Daten werden automatisch in die Cloud gespiegelt.
             </p>
             <div className="set-actions">
               <button className="btn" onClick={doMigrateTasks} disabled={migrating}>
-                {migrating ? "Übertrage…" : "Lokale Tasks in Cloud übertragen"}
+                {migrating ? "Übertrage…" : "Lokale Daten in Cloud übertragen"}
               </button>
               <button className="chip" onClick={() => supabase?.auth.signOut()}>
                 Logout
