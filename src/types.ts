@@ -37,7 +37,13 @@ export interface Subtask {
   done: boolean;
 }
 
-export type Recurrence = "daily" | "weekly" | "monthly";
+export type RecurrenceKind = "daily" | "weekly" | "monthly" | "weekdays";
+
+export interface RecurrenceRule {
+  kind: RecurrenceKind;
+  interval: number; // "alle N" — Tage/Wochen/Monate je nach kind; bei "weekdays" ignoriert
+  weekdays?: number[]; // 0=Mo..6=So, nur bei kind "weekdays"
+}
 
 export interface TaskMeta {
   done: boolean;
@@ -45,7 +51,7 @@ export interface TaskMeta {
   projectId?: string;
   goalId?: string;
   subtasks?: Subtask[];
-  recurrence?: Recurrence;
+  recurrence?: RecurrenceRule;
 }
 
 export type GoalPeriod = "weekly" | "monthly" | "yearly";

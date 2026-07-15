@@ -165,7 +165,7 @@ export async function loadDemoData(): Promise<number> {
     meta: {
       done: false,
       priority: "low",
-      recurrence: "weekly",
+      recurrence: { kind: "weekly", interval: 1 },
       subtasks: [
         { id: crypto.randomUUID(), text: "Trades durchgehen", done: false },
         { id: crypto.randomUUID(), text: "Stats berechnen", done: false },

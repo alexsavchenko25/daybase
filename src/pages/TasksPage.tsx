@@ -4,7 +4,13 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { addDaysIso, mondayOfIso, todayIso } from "../utils/date";
-import type { Entry, Recurrence, Subtask, TaskMeta } from "../types";
+import {
+  WEEKDAY_LABELS,
+  normalizeRecurrence,
+  nextRecurDate,
+  recurrenceLabel,
+} from "../utils/recurrence";
+import type { Entry, RecurrenceKind, RecurrenceRule, Subtask, TaskMeta } from "../types";
 
 type View = "today" | "week" | "later" | "all" | "done" | "day";
 type Priority = TaskMeta["priority"];
@@ -26,20 +32,6 @@ function meta(e: Entry): TaskMeta {
   return e.meta as TaskMeta;
 }
 
-function nextRecurDate(date: string, recurrence: Recurrence): string {
-  if (recurrence === "daily") return addDaysIso(date, 1);
-  if (recurrence === "weekly") return addDaysIso(date, 7);
-  const d = new Date(date + "T00:00:00");
-  d.setMonth(d.getMonth() + 1);
-  return d.toISOString().slice(0, 10);
-}
-
-const RECUR_LABEL: Record<Recurrence, string> = {
-  daily: "Täglich",
-  weekly: "Wöchentlich",
-  monthly: "Monatlich",
-};
-
 export default function TasksPage() {
   const today = todayIso();
   const [params] = useSearchParams();
@@ -56,7 +48,17 @@ export default function TasksPage() {
   const [priority, setPriority] = useState<Priority>("medium");
   const [projectId, setProjectId] = useState("");
   const [goalId, setGoalId] = useState("");
-  const [recurrence, setRecurrence] = useState<Recurrence | "">("");
+  const [recurKind, setRecurKind] = useState<RecurrenceKind | "">("");
+  const [recurInterval, setRecurInterval] = useState(1);
+  const [recurWeekdays, setRecurWeekdays] = useState<Set<number>>(new Set());
+  function buildRecurrence(): RecurrenceRule | undefined {
+    if (!recurKind) return undefined;
+    if (recurKind === "weekdays") {
+      if (recurWeekdays.size === 0) return undefined;
+      return { kind: "weekdays", interval: 1, weekdays: [...recurWeekdays].sort() };
+    }
+    return { kind: recurKind, interval: Math.max(1, recurInterval) };
+  }
   // Datum für neue Tasks. Folgt der Tagesansicht, bleibt manuell überschreibbar.
   const [formDate, setFormDate] = useState(today);
 
@@ -138,6 +140,7 @@ export default function TasksPage() {
     e.preventDefault();
     const t = title.trim();
     if (!t) return;
+    const recurrence = buildRecurrence();
     await entriesRepo.create({
       type: "task",
       date: formDate,
@@ -156,7 +159,9 @@ export default function TasksPage() {
     setPriority("medium");
     setProjectId("");
     setGoalId("");
-    setRecurrence("");
+    setRecurKind("");
+    setRecurInterval(1);
+    setRecurWeekdays(new Set());
   }
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -173,14 +178,15 @@ export default function TasksPage() {
   async function toggleDone(entry: Entry) {
     const m = meta(entry);
     await entriesRepo.update(entry.id, { meta: { ...m, done: !m.done } });
-    if (!m.done && m.recurrence) {
+    const rule = normalizeRecurrence(m.recurrence);
+    if (!m.done && rule) {
       await entriesRepo.create({
         type: "task",
-        date: nextRecurDate(entry.date, m.recurrence),
+        date: nextRecurDate(entry.date, rule),
         title: entry.title,
         content: entry.content,
         tags: entry.tags,
-        meta: { ...m, done: false, subtasks: [] } satisfies TaskMeta,
+        meta: { ...m, done: false, subtasks: [], recurrence: rule } satisfies TaskMeta,
       });
     }
   }
@@ -280,15 +286,47 @@ export default function TasksPage() {
         </select>
         <select
           className="task-select"
-          value={recurrence}
-          onChange={(e) => setRecurrence(e.target.value as Recurrence | "")}
+          value={recurKind}
+          onChange={(e) => setRecurKind(e.target.value as RecurrenceKind | "")}
           title="Wiederholung (optional)"
         >
           <option value="">— Einmalig —</option>
           <option value="daily">Täglich</option>
           <option value="weekly">Wöchentlich</option>
           <option value="monthly">Monatlich</option>
+          <option value="weekdays">Wochentage</option>
         </select>
+        {(recurKind === "daily" || recurKind === "weekly" || recurKind === "monthly") && (
+          <input
+            className="task-select"
+            type="number"
+            min={1}
+            value={recurInterval}
+            onChange={(e) => setRecurInterval(Math.max(1, parseInt(e.target.value) || 1))}
+            title="Alle N Tage/Wochen/Monate"
+            style={{ width: 64 }}
+          />
+        )}
+        {recurKind === "weekdays" && (
+          <span style={{ display: "inline-flex", gap: 4 }}>
+            {WEEKDAY_LABELS.map((label, i) => (
+              <button
+                key={label}
+                type="button"
+                className={`chip ${recurWeekdays.has(i) ? "chip-active" : ""}`}
+                onClick={() =>
+                  setRecurWeekdays((prev) => {
+                    const next = new Set(prev);
+                    next.has(i) ? next.delete(i) : next.add(i);
+                    return next;
+                  })
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </span>
+        )}
         <button className="btn" type="submit">
           Hinzufügen
         </button>
@@ -391,8 +429,10 @@ export default function TasksPage() {
                   <span className={`prio prio-${m.priority}`}>
                     {PRIO_LABEL[m.priority]}
                   </span>
-                  {m.recurrence && (
-                    <span className="chip" title={RECUR_LABEL[m.recurrence]}>🔄</span>
+                  {normalizeRecurrence(m.recurrence) && (
+                    <span className="chip" title={recurrenceLabel(normalizeRecurrence(m.recurrence)!)}>
+                      🔄
+                    </span>
                   )}
                   <button
                     className={`chip subtask-toggle ${isExpanded ? "chip-active" : ""}`}
