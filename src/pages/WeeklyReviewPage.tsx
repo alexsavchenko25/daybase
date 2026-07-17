@@ -188,11 +188,7 @@ export default function WeeklyReviewPage() {
 
   return (
     <div className="page review-page">
-      <PageHeader
-        icon="weekly-review"
-        title="Weekly Review"
-        subtitle={tr("Fortschritt verstehen, die Woche abschließen und den nächsten Fokus setzen.", "Understand progress, close the week and set the next focus.")}
-      />
+      <PageHeader icon="📅" title="Weekly Review" />
 
       <div className="week-nav rv-nav">
         <button className="chip" onClick={() => setMonday(addDaysIso(monday, -7))}>
@@ -219,10 +215,6 @@ export default function WeeklyReviewPage() {
       </div>
 
       {/* Auto-Übersicht */}
-      <div className="review-section-head review-summary-head">
-        <span className="eyebrow">{tr("Automatische Übersicht", "Automatic overview")}</span>
-        <h2>{tr("Diese Woche in Zahlen", "This week in numbers")}</h2>
-      </div>
       <div className="wr-summary">
         <div className="wr-stat">
           <span className="wr-label">{tr("Tasks erledigt", "Tasks completed")}</span>
@@ -286,13 +278,7 @@ export default function WeeklyReviewPage() {
       </div>
 
       {/* Formular */}
-      <div className="rv-form weekly-review-form">
-        <section className="review-section">
-          <div className="review-section-head">
-            <span className="eyebrow">{tr("Rückblick", "Reflection")}</span>
-            <h2>{tr("Erfolge, Probleme und Erkenntnisse", "Wins, problems and lessons")}</h2>
-          </div>
-          <div className="review-writing-grid">
+      <div className="rv-form">
         <label className="rv-field">
           <span>🏆 Top 3 Wins</span>
           <textarea value={form.wins} onChange={(e) => set("wins", e.target.value)} />
@@ -311,15 +297,6 @@ export default function WeeklyReviewPage() {
             onChange={(e) => set("lessons", e.target.value)}
           />
         </label>
-          </div>
-        </section>
-
-        <section className="review-section review-planning-section">
-          <div className="review-section-head">
-            <span className="eyebrow">{tr("Nächste Woche", "Next week")}</span>
-            <h2>{tr("Verbesserung und Ausrichtung", "Improvement and direction")}</h2>
-          </div>
-          <div className="review-planning-grid">
         <label className="rv-field">
           <span>🔧 What to improve next week</span>
           <textarea
@@ -344,22 +321,15 @@ export default function WeeklyReviewPage() {
             placeholder={tr("Fortschritt an Zielen/Projekten…", "Progress on goals/projects…")}
           />
         </label>
-        <label className="rv-field next-week-focus-field">
+        <label className="rv-field">
           <span>➡️ Next Week Focus</span>
           <textarea
             value={form.nextWeekFocus}
             onChange={(e) => set("nextWeekFocus", e.target.value)}
           />
         </label>
-          </div>
-        </section>
 
-        <section className="review-section review-score-section">
-          <div className="review-section-head">
-            <span className="eyebrow">{tr("Wochengefühl", "Week signals")}</span>
-            <h2>{tr("Score, Energie und Disziplin", "Score, energy and discipline")}</h2>
-          </div>
-          <div className="rv-sliders">
+        <div className="rv-sliders">
           {(
             [
               ["score", tr("⭐ Wochen-Score", "⭐ Weekly score")],
@@ -380,8 +350,7 @@ export default function WeeklyReviewPage() {
               />
             </label>
           ))}
-          </div>
-        </section>
+        </div>
 
         <div className="rv-actions">
           <button className="btn" onClick={save}>

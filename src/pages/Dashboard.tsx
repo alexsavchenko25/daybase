@@ -6,7 +6,6 @@ import { isDoneForPeriod, habitMeta } from "../utils/habit";
 import ProgressBar from "../components/ProgressBar";
 import { fmtDuration, focusMeta } from "../utils/focus";
 import PageHeader from "../components/PageHeader";
-import Icon from "../components/Icon";
 import { useI18n } from "../i18n";
 import { daysSinceBackup } from "../utils/backup";
 import { projectProgress } from "./ProjectsPage";
@@ -187,7 +186,7 @@ export default function Dashboard() {
 
   return (
     <div className="page dashboard">
-      <PageHeader icon="dashboard" title="Dashboard" subtitle={dateLabel} />
+      <PageHeader icon="🏠" title="Dashboard" subtitle={dateLabel} />
 
       {/* Primär: heutiger Fokus + nächster Block */}
       <div className="dash-hero">
@@ -232,7 +231,7 @@ export default function Dashboard() {
       <div className="dash-hints">
         {showBackupHint && (
           <Link to="/settings" className="dash-weekly-hint dash-backup-hint">
-            <span className="dwh-icon"><Icon name="backup" size={17} /></span>
+            <span className="dwh-icon">💾</span>
             <span>
               <strong>
                 {backupDays === null
@@ -246,7 +245,7 @@ export default function Dashboard() {
         )}
         {showWeeklyHint && (
           <Link to="/weekly-review" className="dash-weekly-hint">
-            <span className="dwh-icon"><Icon name="weekly-review" size={17} /></span>
+            <span className="dwh-icon">📅</span>
             <span>
               <strong>{tr(`Weekly Review für KW ${isoWeekNumber(monday)} steht an.`, `Weekly Review for week ${isoWeekNumber(monday)} is due.`)}</strong>{" "}
               {tr("Woche auswerten & nächste planen.", "Review this week and plan the next.")}
@@ -256,7 +255,7 @@ export default function Dashboard() {
         )}
         {overdueTasks > 0 && (
           <Link to="/tasks" className="dash-weekly-hint dash-overdue-hint">
-            <span className="dwh-icon"><Icon name="alert" size={17} /></span>
+            <span className="dwh-icon">⏰</span>
             <span>
               <strong>
                 {tr(`${overdueTasks} überfällige ${overdueTasks === 1 ? "Task" : "Tasks"}.`, `${overdueTasks} overdue ${overdueTasks === 1 ? "task" : "tasks"}.`)}
@@ -268,7 +267,7 @@ export default function Dashboard() {
         )}
         {!review && (
           <Link to="/review" className="dash-weekly-hint">
-            <span className="dwh-icon"><Icon name="review" size={17} /></span>
+            <span className="dwh-icon">📝</span>
             <span>
               <strong>{tr("Daily Review noch offen.", "Daily Review still open.")}</strong> {tr("Tag kurz auswerten.", "Take a moment to review your day.")}
             </span>
@@ -277,7 +276,7 @@ export default function Dashboard() {
         )}
         {openHabits > 0 && (
           <Link to="/habits" className="dash-weekly-hint">
-            <span className="dwh-icon"><Icon name="habit" size={17} /></span>
+            <span className="dwh-icon">🔁</span>
             <span>
               <strong>
                 {tr(`${openHabits} ${openHabits === 1 ? "Habit" : "Habits"} heute offen.`, `${openHabits} ${openHabits === 1 ? "habit" : "habits"} open today.`)}
@@ -323,7 +322,7 @@ export default function Dashboard() {
                     {g.title}
                     <span className="dash-prog-sub">{Math.round(pct)}%</span>
                   </span>
-                  <ProgressBar value={pct} label={`${g.title}: ${Math.round(pct)}%`} />
+                  <ProgressBar value={pct} />
                 </div>
               ))
             )}
@@ -346,7 +345,7 @@ export default function Dashboard() {
                       {prog.done}/{prog.total}
                     </span>
                   </span>
-                  <ProgressBar value={prog.pct} label={`${p.title}: ${Math.round(prog.pct)}%`} />
+                  <ProgressBar value={prog.pct} />
                 </div>
               ))
             )}

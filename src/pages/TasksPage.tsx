@@ -11,8 +11,6 @@ import {
   recurrenceLabel,
 } from "../utils/recurrence";
 import PageHeader from "../components/PageHeader";
-import EmptyState from "../components/EmptyState";
-import Icon from "../components/Icon";
 import { useI18n } from "../i18n";
 import type { Entry, RecurrenceKind, RecurrenceRule, Subtask, TaskMeta } from "../types";
 
@@ -48,7 +46,6 @@ export default function TasksPage() {
   const [recurKind, setRecurKind] = useState<RecurrenceKind | "">("");
   const [recurInterval, setRecurInterval] = useState(1);
   const [recurWeekdays, setRecurWeekdays] = useState<Set<number>>(new Set());
-  const [showOptions, setShowOptions] = useState(false);
   function buildRecurrence(): RecurrenceRule | undefined {
     if (!recurKind) return undefined;
     if (recurKind === "weekdays") {
@@ -225,7 +222,7 @@ export default function TasksPage() {
   return (
     <div className="page">
       <PageHeader
-        icon="tasks"
+        icon="✅"
         title="Tasks"
         subtitle={
           <>
@@ -234,109 +231,101 @@ export default function TasksPage() {
         }
       />
 
-      <form className="task-form task-quick-add" onSubmit={addTask}>
-        <div className="task-form-primary">
-          <input
-            className="task-input"
-            placeholder={tr("Was möchtest du erledigen?", "What do you want to get done?")}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            aria-label={tr("Task-Titel", "Task title")}
-          />
+      <form className="task-form" onSubmit={addTask}>
+        <input
+          className="task-input"
+          placeholder={tr("Neue Task…", "New task…")}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <input
+          className="task-select"
+          type="date"
+          value={formDate}
+          onChange={(e) => setFormDate(e.target.value)}
+          title={tr("Datum der Task", "Task date")}
+        />
+        <select
+          className="task-select"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value as Priority)}
+        >
+          <option value="high">{tr("Hoch", "High")}</option>
+          <option value="medium">{tr("Mittel", "Medium")}</option>
+          <option value="low">{tr("Niedrig", "Low")}</option>
+        </select>
+        <select
+          className="task-select"
+          value={projectId}
+          onChange={(e) => setProjectId(e.target.value)}
+          title={tr("Projekt (optional)", "Project (optional)")}
+        >
+          <option value="">— {tr("Projekt", "Project")} —</option>
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.title}
+            </option>
+          ))}
+        </select>
+        <select
+          className="task-select"
+          value={goalId}
+          onChange={(e) => setGoalId(e.target.value)}
+          title={tr("Goal (optional)", "Goal (optional)")}
+        >
+          <option value="">— Goal —</option>
+          {goals.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.title}
+            </option>
+          ))}
+        </select>
+        <select
+          className="task-select"
+          value={recurKind}
+          onChange={(e) => setRecurKind(e.target.value as RecurrenceKind | "")}
+          title={tr("Wiederholung (optional)", "Recurrence (optional)")}
+        >
+          <option value="">— {tr("Einmalig", "One-time")} —</option>
+          <option value="daily">{tr("Täglich", "Daily")}</option>
+          <option value="weekly">{tr("Wöchentlich", "Weekly")}</option>
+          <option value="monthly">{tr("Monatlich", "Monthly")}</option>
+          <option value="weekdays">{tr("Wochentage", "Weekdays")}</option>
+        </select>
+        {(recurKind === "daily" || recurKind === "weekly" || recurKind === "monthly") && (
           <input
             className="task-select"
-            type="date"
-            value={formDate}
-            onChange={(e) => setFormDate(e.target.value)}
-            title={tr("Datum der Task", "Task date")}
-            aria-label={tr("Task-Datum", "Task date")}
+            type="number"
+            min={1}
+            value={recurInterval}
+            onChange={(e) => setRecurInterval(Math.max(1, parseInt(e.target.value) || 1))}
+            title={tr("Alle N Tage/Wochen/Monate", "Every N days/weeks/months")}
+            style={{ width: 64 }}
           />
-          <select
-            className="task-select"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as Priority)}
-            aria-label={tr("Priorität", "Priority")}
-          >
-            <option value="high">{tr("Hoch", "High")}</option>
-            <option value="medium">{tr("Mittel", "Medium")}</option>
-            <option value="low">{tr("Niedrig", "Low")}</option>
-          </select>
-          <button className="btn" type="submit">
-            <Icon name="plus" size={16} /> {tr("Hinzufügen", "Add")}
-          </button>
-        </div>
-        <div className="task-form-secondary">
-          <button
-            className={`btn subtle sm ${showOptions ? "is-active" : ""}`}
-            type="button"
-            onClick={() => setShowOptions((value) => !value)}
-            aria-expanded={showOptions}
-          >
-            {showOptions ? tr("Optionen ausblenden", "Hide options") : tr("Projekt, Goal & Wiederholung", "Project, goal & recurrence")}
-          </button>
-          {showOptions && (
-            <div className="task-form-options">
-              <select
-                className="task-select"
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                aria-label={tr("Projekt (optional)", "Project (optional)")}
+        )}
+        {recurKind === "weekdays" && (
+          <span style={{ display: "inline-flex", gap: 4 }}>
+            {weekdayLabels.map((label, i) => (
+              <button
+                key={label}
+                type="button"
+                className={`chip ${recurWeekdays.has(i) ? "chip-active" : ""}`}
+                onClick={() =>
+                  setRecurWeekdays((prev) => {
+                    const next = new Set(prev);
+                    next.has(i) ? next.delete(i) : next.add(i);
+                    return next;
+                  })
+                }
               >
-                <option value="">— {tr("Projekt", "Project")} —</option>
-                {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-              </select>
-              <select
-                className="task-select"
-                value={goalId}
-                onChange={(e) => setGoalId(e.target.value)}
-                aria-label={tr("Goal (optional)", "Goal (optional)")}
-              >
-                <option value="">— Goal —</option>
-                {goals.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}
-              </select>
-              <select
-                className="task-select"
-                value={recurKind}
-                onChange={(e) => setRecurKind(e.target.value as RecurrenceKind | "")}
-                aria-label={tr("Wiederholung (optional)", "Recurrence (optional)")}
-              >
-                <option value="">— {tr("Einmalig", "One-time")} —</option>
-                <option value="daily">{tr("Täglich", "Daily")}</option>
-                <option value="weekly">{tr("Wöchentlich", "Weekly")}</option>
-                <option value="monthly">{tr("Monatlich", "Monthly")}</option>
-                <option value="weekdays">{tr("Wochentage", "Weekdays")}</option>
-              </select>
-              {(recurKind === "daily" || recurKind === "weekly" || recurKind === "monthly") && (
-                <input
-                  className="task-select task-interval"
-                  type="number"
-                  min={1}
-                  value={recurInterval}
-                  onChange={(e) => setRecurInterval(Math.max(1, parseInt(e.target.value) || 1))}
-                  aria-label={tr("Wiederholungsintervall", "Recurrence interval")}
-                />
-              )}
-              {recurKind === "weekdays" && (
-                <span className="weekday-picker">
-                  {weekdayLabels.map((label, i) => (
-                    <button
-                      key={label}
-                      type="button"
-                      className={`chip ${recurWeekdays.has(i) ? "chip-active" : ""}`}
-                      onClick={() => setRecurWeekdays((prev) => {
-                        const next = new Set(prev);
-                        next.has(i) ? next.delete(i) : next.add(i);
-                        return next;
-                      })}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+                {label}
+              </button>
+            ))}
+          </span>
+        )}
+        <button className="btn" type="submit">
+          {tr("Hinzufügen", "Add")}
+        </button>
       </form>
 
       {/* Tagesnavigation nur bei ?date= deep-links */}
@@ -395,19 +384,17 @@ export default function TasksPage() {
       </div>
 
       {tasks.length === 0 ? (
-        <EmptyState
-          icon="tasks"
-          title={<>
+        <div className="empty" data-icon="✅">
+          <strong>
             {view === "today" && tr("Keine Tasks für heute", "No tasks for today")}
             {view === "week" && tr("Keine Tasks diese Woche", "No tasks this week")}
             {view === "later" && tr("Keine zukünftigen Tasks", "No future tasks")}
             {view === "all" && tr("Alle Tasks erledigt", "All tasks completed")}
             {view === "done" && tr("Noch keine Tasks abgehakt", "No completed tasks yet")}
             {view === "day" && tr("Keine Tasks für diesen Tag", "No tasks for this day")}
-          </>}
-          description={tr("Nutze Quick Add, wenn du etwas festhalten möchtest.", "Use quick add whenever you want to capture something.")}
-          compact
-        />
+          </strong>
+          <span>{tr("Neuen Task oben im Formular anlegen.", "Create a new task using the form above.")}</span>
+        </div>
       ) : (
         <ul className="task-list">
           {tasks.map((entry) => {
@@ -442,8 +429,8 @@ export default function TasksPage() {
                     {prioLabel[m.priority]}
                   </span>
                   {normalizeRecurrence(m.recurrence) && (
-                    <span className="chip" title={recurrenceLabel(normalizeRecurrence(m.recurrence)!)} aria-label={recurrenceLabel(normalizeRecurrence(m.recurrence)!)}>
-                      <Icon name="habit" size={14} />
+                    <span className="chip" title={recurrenceLabel(normalizeRecurrence(m.recurrence)!)}>
+                      🔄
                     </span>
                   )}
                   <button
@@ -454,12 +441,11 @@ export default function TasksPage() {
                     {subs.length > 0 ? `${subsDone}/${subs.length}` : "⋯"}
                   </button>
                   <button
-                    className="icon-btn danger-ghost"
+                    className="task-del"
                     title={tr("Löschen", "Delete")}
-                    aria-label={tr("Task löschen", "Delete task")}
                     onClick={() => remove(entry.id)}
                   >
-                    <Icon name="trash" size={16} />
+                    ✕
                   </button>
                 </div>
                 {isExpanded && (
@@ -475,11 +461,10 @@ export default function TasksPage() {
                           {s.text}
                         </span>
                         <button
-                          className="icon-btn danger-ghost"
-                          aria-label={tr("Subtask löschen", "Delete subtask")}
+                          className="task-del"
                           onClick={() => removeSubtask(entry, s.id)}
                         >
-                          <Icon name="trash" size={15} />
+                          ✕
                         </button>
                       </div>
                     ))}

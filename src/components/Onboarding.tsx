@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { loadDemoData } from "../seed";
 import { useI18n } from "../i18n";
-import Icon, { type IconName } from "./Icon";
 
 const LS_KEY = "daybase.onboarded";
 
@@ -17,10 +16,10 @@ export function isOnboarded() {
 
 export default function Onboarding({ onClose }: { onClose: () => void }) {
   const { tr } = useI18n();
-  const steps: { icon: IconName; title: string; body: string }[] = [
-    { icon: "dashboard", title: tr("Willkommen bei Daybase", "Welcome to Daybase"), body: tr("Dein persönliches Produktivitäts-System — komplett offline. Tasks, Gewohnheiten, Ziele, Trading-Journal, Focus-Sessions und tägliche Reviews, alles an einem Ort. Kein Account, keine Cloud, keine Kosten.", "Your personal productivity system — fully offline. Tasks, habits, goals, trading, focus sessions and reviews in one place. No account, no cloud, no cost.") },
-    { icon: "tasks", title: tr("Erste Schritte", "Get started"), body: tr("Lege eine Task an, erstelle ein Ziel oder starte eine Focus-Session. Alle Module sind über die Sidebar erreichbar. Du kannst Daten jederzeit importieren, falls du bereits ein Backup hast.", "Create a task, add a goal or start a focus session. Every module is available from the sidebar. You can import an existing backup at any time.") },
-    { icon: "backup", title: tr("Daten sichern", "Protect your data"), body: tr("Daybase speichert alles lokal in deinem Browser (IndexedDB). Erstelle regelmäßig ein Backup über Einstellungen → Export JSON. Nur du hast Zugriff auf deine Daten.", "Daybase stores everything locally in your browser (IndexedDB). Create regular backups in Settings → Export JSON. Only you can access your data.") },
+  const steps = [
+    { icon: "▦", title: tr("Willkommen bei Daybase", "Welcome to Daybase"), body: tr("Dein persönliches Produktivitäts-System — komplett offline. Tasks, Gewohnheiten, Ziele, Trading-Journal, Focus-Sessions und tägliche Reviews, alles an einem Ort. Kein Account, keine Cloud, keine Kosten.", "Your personal productivity system — fully offline. Tasks, habits, goals, trading, focus sessions and reviews in one place. No account, no cloud, no cost.") },
+    { icon: "✅", title: tr("Erste Schritte", "Get started"), body: tr("Lege eine Task an, erstelle ein Ziel oder starte eine Focus-Session. Alle Module sind über die Sidebar erreichbar. Du kannst Daten jederzeit importieren, falls du bereits ein Backup hast.", "Create a task, add a goal or start a focus session. Every module is available from the sidebar. You can import an existing backup at any time.") },
+    { icon: "💾", title: tr("Daten sichern", "Protect your data"), body: tr("Daybase speichert alles lokal in deinem Browser (IndexedDB). Erstelle regelmäßig ein Backup über Einstellungen → Export JSON. Nur du hast Zugriff auf deine Daten.", "Daybase stores everything locally in your browser (IndexedDB). Create regular backups in Settings → Export JSON. Only you can access your data.") },
   ];
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -41,9 +40,9 @@ export default function Onboarding({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="onboarding-overlay">
-      <div className="onboarding-card" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
-        <div className="onboarding-icon"><Icon name={s.icon} size={28} /></div>
-        <h2 className="onboarding-title" id="onboarding-title">{s.title}</h2>
+      <div className="onboarding-card">
+        <div className="onboarding-icon">{s.icon}</div>
+        <h2 className="onboarding-title">{s.title}</h2>
         <p className="onboarding-body">{s.body}</p>
 
         {isLast && demoWarn && (

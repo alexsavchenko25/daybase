@@ -11,8 +11,6 @@ import {
 } from "../utils/trade";
 import TradeCalendar from "./TradeCalendar";
 import PageHeader from "../components/PageHeader";
-import EmptyState from "../components/EmptyState";
-import Icon from "../components/Icon";
 import type { Entry, TradeMeta } from "../types";
 import { useI18n } from "../i18n";
 
@@ -51,7 +49,6 @@ export default function TradesPage() {
   const [fDir, setFDir] = useState<"all" | "long" | "short">("all");
   const [fResult, setFResult] = useState<"all" | "profit" | "loss">("all");
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [showCalendar, setShowCalendar] = useState(true);
 
   const trades = useLiveQuery(
     () => db.entries.where("type").equals("trade").toArray(),
@@ -269,11 +266,7 @@ export default function TradesPage() {
 
   return (
     <div className="page trades-page">
-      <PageHeader
-        icon="trades"
-        title="Trading Journal"
-        subtitle={tr("Ausführung dokumentieren, Ergebnisse einordnen und Muster erkennen.", "Document execution, understand results and identify patterns.")}
-      />
+      <PageHeader icon="📈" title="Trading Journal" />
 
       {/* KPI */}
       <div className="kpi-row">
@@ -355,19 +348,11 @@ export default function TradesPage() {
       </div>
 
       {/* Kalender */}
-      <div className="trade-section-head">
-        <p className="section-label">{tr("Performance-Kalender", "Performance calendar")}</p>
-        <button className="btn subtle sm" type="button" onClick={() => setShowCalendar((value) => !value)} aria-expanded={showCalendar}>
-          {showCalendar ? tr("Einklappen", "Collapse") : tr("Kalender anzeigen", "Show calendar")}
-        </button>
-      </div>
-      {showCalendar && (
-        <TradeCalendar
-          trades={trades}
-          selected={selectedDay}
-          onPick={(iso) => setSelectedDay((d) => (d === iso ? null : iso))}
-        />
-      )}
+      <TradeCalendar
+        trades={trades}
+        selected={selectedDay}
+        onPick={(iso) => setSelectedDay((d) => (d === iso ? null : iso))}
+      />
 
       {/* Trade-Formular (gruppiert) */}
       <form className="trade-form" onSubmit={submit}>
@@ -559,12 +544,12 @@ export default function TradesPage() {
       {/* Trade-Liste */}
       <p className="section-label">Trades</p>
       {filtered.length === 0 ? (
-        <EmptyState
-          icon="trades"
-          title={tr("Noch keine Trades für diesen Zeitraum", "No trades for this period yet")}
-          description={tr("Lege einen Trade an oder passe die Filter an.", "Add a trade or adjust the filters.")}
-          className="trade-empty"
-        />
+        <div className="empty trade-empty" data-icon="📈">
+          <strong>{tr("Noch keine Trades für diesen Zeitraum", "No trades for this period yet")}</strong>
+          <span className="muted">
+            {tr("Lege deinen ersten Trade an, um Statistiken zu sehen.", "Create your first trade to see statistics.")}
+          </span>
+        </div>
       ) : (
         <div className="trade-table-wrap">
           <table className="trade-table">
@@ -578,7 +563,7 @@ export default function TradesPage() {
                 <th className="num">Size</th>
                 <th>Setup</th>
                 <th className="sortable num" onClick={() => headerSort("pnl")}>PnL{arrow("pnl")}</th>
-                <th aria-label={tr("Screenshot", "Screenshot")}><Icon name="notes" size={15} /></th>
+                <th>📷</th>
                 <th></th>
               </tr>
             </thead>
@@ -617,15 +602,14 @@ export default function TradesPage() {
                     </td>
                     <td>
                       <button
-                        className="icon-btn danger-ghost"
+                        className="task-del"
                         title={tr("Löschen", "Delete")}
-                        aria-label={tr("Trade löschen", "Delete trade")}
                         onClick={(ev) => {
                           ev.stopPropagation();
                           remove(t.id);
                         }}
                       >
-                        <Icon name="trash" size={16} />
+                        ✕
                       </button>
                     </td>
                   </tr>

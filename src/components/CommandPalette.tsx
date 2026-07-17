@@ -3,11 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { db } from "../db";
 import type { Entry } from "../types";
 import { useI18n } from "../i18n";
-import Icon, { type IconName } from "./Icon";
 
 interface Item {
   key: string;
-  icon: IconName;
+  icon: string;
   title: string;
   sub?: string;
   run: () => void;
@@ -18,49 +17,47 @@ interface Group {
 }
 
 // Statische Befehle (Seiten + Erstellen). keywords für Fuzzy-Match.
-const PAGES: { icon: IconName; label: string; labelEn: string; path: string; kw: string }[] = [
-  { icon: "dashboard", label: "Dashboard", labelEn: "Dashboard", path: "/", kw: "home start" },
-  { icon: "tasks", label: "Tasks", labelEn: "Tasks", path: "/tasks", kw: "aufgaben" },
-  { icon: "weekplan", label: "Wochenplan", labelEn: "Weekly Plan", path: "/weekplan", kw: "week plan" },
-  { icon: "goal", label: "Goals", labelEn: "Goals", path: "/goals", kw: "ziele" },
-  { icon: "project", label: "Projects", labelEn: "Projects", path: "/projects", kw: "projekte" },
-  { icon: "habit", label: "Habit Tracker", labelEn: "Habit Tracker", path: "/habits", kw: "habits" },
-  { icon: "focus", label: "Focus Mode", labelEn: "Focus Mode", path: "/focus", kw: "timer session" },
-  { icon: "trades", label: "Trading Journal", labelEn: "Trading Journal", path: "/trades", kw: "trades" },
-  { icon: "journal", label: "Tagebuch", labelEn: "Journal", path: "/journal", kw: "journal" },
-  { icon: "notes", label: "Notizen", labelEn: "Notes", path: "/notes", kw: "notes" },
-  { icon: "review", label: "Daily Review", labelEn: "Daily Review", path: "/review", kw: "review täglich" },
-  { icon: "weekly-review", label: "Weekly Review", labelEn: "Weekly Review", path: "/weekly-review", kw: "review woche" },
-  { icon: "account", label: "Konto", labelEn: "Account", path: "/auth", kw: "login cloud auth" },
-  { icon: "settings", label: "Einstellungen", labelEn: "Settings", path: "/settings", kw: "settings backup" },
+const PAGES = [
+  { icon: "🏠", label: "Dashboard", labelEn: "Dashboard", path: "/", kw: "home start" },
+  { icon: "✅", label: "Tasks", labelEn: "Tasks", path: "/tasks", kw: "aufgaben" },
+  { icon: "🗓️", label: "Wochenplan", labelEn: "Weekly Plan", path: "/weekplan", kw: "week plan" },
+  { icon: "📈", label: "Trading Journal", labelEn: "Trading Journal", path: "/trades", kw: "trades" },
+  { icon: "🔁", label: "Habit Tracker", labelEn: "Habit Tracker", path: "/habits", kw: "habits" },
+  { icon: "📓", label: "Tagebuch", labelEn: "Journal", path: "/journal", kw: "journal" },
+  { icon: "🗒️", label: "Notizen", labelEn: "Notes", path: "/notes", kw: "notes" },
+  { icon: "📝", label: "Daily Review", labelEn: "Daily Review", path: "/review", kw: "review täglich" },
+  { icon: "📅", label: "Weekly Review", labelEn: "Weekly Review", path: "/weekly-review", kw: "review woche" },
+  { icon: "🎯", label: "Goals", labelEn: "Goals", path: "/goals", kw: "ziele" },
+  { icon: "📂", label: "Projects", labelEn: "Projects", path: "/projects", kw: "projekte" },
+  { icon: "⚙️", label: "Einstellungen", labelEn: "Settings", path: "/settings", kw: "settings backup" },
 ];
-const CREATE: { icon: IconName; label: string; labelEn: string; path: string; kw: string }[] = [
-  { icon: "tasks", label: "Neue Task", labelEn: "New task", path: "/tasks", kw: "task aufgabe neu add" },
-  { icon: "goal", label: "Neues Goal", labelEn: "New goal", path: "/goals?new=1", kw: "ziel goal neu add" },
-  { icon: "project", label: "Neues Project", labelEn: "New project", path: "/projects?new=1", kw: "projekt neu add" },
-  { icon: "notes", label: "Neue Notiz", labelEn: "New note", path: "/notes", kw: "note notiz neu add" },
-  { icon: "trades", label: "Neuer Trade", labelEn: "New trade", path: "/trades", kw: "trade neu add" },
+const CREATE = [
+  { icon: "✅", label: "Neue Task", labelEn: "New task", path: "/tasks", kw: "task aufgabe neu add" },
+  { icon: "🎯", label: "Neues Goal", labelEn: "New goal", path: "/goals", kw: "ziel goal neu add" },
+  { icon: "📂", label: "Neues Project", labelEn: "New project", path: "/projects", kw: "projekt neu add" },
+  { icon: "🗒️", label: "Neue Notiz", labelEn: "New note", path: "/notes", kw: "note notiz neu add" },
+  { icon: "📈", label: "Neuer Trade", labelEn: "New trade", path: "/trades", kw: "trade neu add" },
 ];
 // Such-Typen + Deep-Link zur passenden Seite/Auswahl.
 const SEARCH_GROUPS: {
   type: Entry["type"];
   label: string;
-  icon: IconName;
+  icon: string;
   to: (e: Entry) => string;
 }[] = [
-  { type: "task", label: "Tasks", icon: "tasks", to: (e) => `/tasks?date=${e.date}` },
-  { type: "note", label: "Notizen", icon: "notes", to: (e) => `/notes?sel=${e.id}` },
-  { type: "journal", label: "Tagebuch", icon: "journal", to: (e) => `/journal?sel=${e.id}` },
-  { type: "review", label: "Daily Reviews", icon: "review", to: (e) => `/review?date=${e.date}` },
+  { type: "task", label: "Tasks", icon: "✅", to: (e) => `/tasks?date=${e.date}` },
+  { type: "note", label: "Notizen", icon: "🗒️", to: (e) => `/notes?sel=${e.id}` },
+  { type: "journal", label: "Tagebuch", icon: "📓", to: (e) => `/journal?sel=${e.id}` },
+  { type: "review", label: "Daily Reviews", icon: "📝", to: (e) => `/review?date=${e.date}` },
   {
     type: "weeklyreview",
     label: "Weekly Reviews",
-    icon: "weekly-review",
+    icon: "📅",
     to: (e) => `/weekly-review?week=${e.date}`,
   },
-  { type: "goal", label: "Goals", icon: "goal", to: () => "/goals" },
-  { type: "project", label: "Projects", icon: "project", to: () => "/projects" },
-  { type: "trade", label: "Trading Journal", icon: "trades", to: () => "/trades" },
+  { type: "goal", label: "Goals", icon: "🎯", to: () => "/goals" },
+  { type: "project", label: "Projects", icon: "📂", to: () => "/projects" },
+  { type: "trade", label: "Trading Journal", icon: "📈", to: () => "/trades" },
 ];
 
 // Durchsuchbarer Text je Entry: Titel, Beschreibung, Tags, Datum, Kategorie.
@@ -87,8 +84,6 @@ export default function CommandPalette() {
   const [active, setActive] = useState(0);
   const [data, setData] = useState<Entry[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   // Ctrl/Cmd+K toggelt, Esc schließt.
   useEffect(() => {
@@ -107,7 +102,6 @@ export default function CommandPalette() {
   // Beim Öffnen: Such-Daten laden + Reset.
   useEffect(() => {
     if (!open) return;
-    previousFocusRef.current = document.activeElement as HTMLElement | null;
     setQuery("");
     setActive(0);
     db.entries
@@ -125,7 +119,6 @@ export default function CommandPalette() {
       .toArray()
       .then(setData);
     setTimeout(() => inputRef.current?.focus(), 0);
-    return () => previousFocusRef.current?.focus();
   }, [open]);
 
   function go(path: string) {
@@ -186,37 +179,12 @@ export default function CommandPalette() {
     }
   }
 
-  function trapFocus(e: React.KeyboardEvent) {
-    if (e.key !== "Tab") return;
-    const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
-      'input, button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-    );
-    if (!focusable?.length) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  }
-
   if (!open) return null;
 
   let idx = -1;
   return (
     <div className="cmdk-overlay" onMouseDown={() => setOpen(false)}>
-      <div
-        ref={panelRef}
-        className="cmdk-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-label={tr("Befehlspalette", "Command palette")}
-        onMouseDown={(e) => e.stopPropagation()}
-        onKeyDown={trapFocus}
-      >
+      <div className="cmdk-panel" onMouseDown={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           className="cmdk-input"
@@ -224,9 +192,8 @@ export default function CommandPalette() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onInputKey}
-          aria-label={tr("Daybase durchsuchen", "Search Daybase")}
         />
-        <div className="cmdk-list" role="listbox" aria-label={tr("Suchergebnisse", "Search results")}>
+        <div className="cmdk-list">
           {flat.length === 0 ? (
             <div className="cmdk-empty">{tr("Nichts gefunden.", "Nothing found.")}</div>
           ) : (
@@ -240,12 +207,10 @@ export default function CommandPalette() {
                     <button
                       key={it.key}
                       className={`cmdk-item ${myIdx === active ? "active" : ""}`}
-                      role="option"
-                      aria-selected={myIdx === active}
                       onMouseEnter={() => setActive(myIdx)}
                       onClick={it.run}
                     >
-                      <span className="cmdk-ico"><Icon name={it.icon} /></span>
+                      <span className="cmdk-ico">{it.icon}</span>
                       <span className="cmdk-text">
                         <span className="cmdk-title">{it.title}</span>
                         {it.sub && <span className="cmdk-sub">{it.sub}</span>}
