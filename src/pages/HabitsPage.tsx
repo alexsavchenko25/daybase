@@ -5,6 +5,8 @@ import { entriesRepo } from "../repository";
 import { todayIso, lastNDays } from "../utils/date";
 import { computeStreak, isDoneForPeriod, habitMeta } from "../utils/habit";
 import PageHeader from "../components/PageHeader";
+import EmptyState from "../components/EmptyState";
+import Icon from "../components/Icon";
 import { useI18n } from "../i18n";
 import type { Entry, HabitMeta } from "../types";
 
@@ -58,33 +60,41 @@ export default function HabitsPage() {
 
   return (
     <div className="page habits-page">
-      <PageHeader icon="🔁" title="Habit Tracker" />
+      <PageHeader
+        icon="habit"
+        title="Habit Tracker"
+        subtitle={tr("Konstanz sichtbar machen — Tag für Tag.", "Make consistency visible — day by day.")}
+      />
 
-      <form className="task-form" onSubmit={addHabit}>
+      <form className="task-form quick-add-bar" onSubmit={addHabit}>
         <input
           className="task-input"
           placeholder={tr("Neue Gewohnheit…", "New habit…")}
           value={name}
           onChange={(e) => setName(e.target.value)}
+          aria-label={tr("Name der Gewohnheit", "Habit name")}
         />
         <select
           className="task-select"
           value={frequency}
           onChange={(e) => setFrequency(e.target.value as Frequency)}
+          aria-label={tr("Häufigkeit", "Frequency")}
         >
           <option value="daily">{tr("Täglich", "Daily")}</option>
           <option value="weekly">{tr("Wöchentlich", "Weekly")}</option>
         </select>
         <button className="btn" type="submit">
-          {tr("Hinzufügen", "Add")}
+          <Icon name="plus" size={16} /> {tr("Hinzufügen", "Add")}
         </button>
       </form>
 
       {habits.length === 0 ? (
-        <div className="empty" data-icon="🔁">
-          <strong>{tr("Noch keine Habits", "No habits yet")}</strong>
-          <span>{tr("Lege oben deine erste Gewohnheit an — täglich oder wöchentlich.", "Create your first habit above — daily or weekly.")}</span>
-        </div>
+        <EmptyState
+          icon="habit"
+          title={tr("Noch keine Habits", "No habits yet")}
+          description={tr("Lege deine erste tägliche oder wöchentliche Gewohnheit an.", "Create your first daily or weekly habit.")}
+          compact
+        />
       ) : (
         <ul className="habit-list">
           {habits.map((habit) => {
@@ -92,7 +102,7 @@ export default function HabitsPage() {
             const done = isDoneForPeriod(m.completedDates, m.frequency, today);
             const doneSet = new Set(m.completedDates);
             return (
-              <li key={habit.id} className="habit-item">
+              <li key={habit.id} className={`habit-item ${done ? "habit-complete" : ""}`}>
                 <label className="habit-check">
                   <input
                     type="checkbox"
@@ -119,15 +129,16 @@ export default function HabitsPage() {
                 </div>
 
                 <span className="habit-streak" title={tr("aktueller Streak", "current streak")}>
-                  🔥 {m.streak}
+                  <Icon name="sparkles" size={15} /> {m.streak}
                 </span>
 
                 <button
-                  className="task-del"
+                  className="icon-btn danger-ghost"
                   title={tr("Löschen", "Delete")}
+                  aria-label={tr("Habit löschen", "Delete habit")}
                   onClick={() => remove(habit.id)}
                 >
-                  ✕
+                  <Icon name="trash" size={16} />
                 </button>
               </li>
             );

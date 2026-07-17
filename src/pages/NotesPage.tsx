@@ -5,6 +5,8 @@ import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
 import PageHeader from "../components/PageHeader";
+import EmptyState from "../components/EmptyState";
+import Icon from "../components/Icon";
 import type { Entry, NoteMeta } from "../types";
 import { useI18n } from "../i18n";
 
@@ -127,12 +129,16 @@ export default function NotesPage() {
 
   return (
     <div className="page journal-page">
-      <PageHeader icon="🗒️" title={tr("Notizen", "Notes")} />
+      <PageHeader
+        icon="notes"
+        title={tr("Notizen", "Notes")}
+        subtitle={tr("Wissen, Ideen und Projektkontext an einem ruhigen Ort.", "Knowledge, ideas and project context in one focused place.")}
+      />
 
-      <div className="journal-grid">
+      <div className={`journal-grid ${selected ? "journal-has-selection" : ""}`}>
         <aside className="journal-list">
           <button className="btn full" onClick={newNote}>
-            + {tr("Neue Notiz", "New note")}
+            <Icon name="plus" size={16} /> {tr("Neue Notiz", "New note")}
           </button>
 
           <input
@@ -178,17 +184,27 @@ export default function NotesPage() {
           )}
 
           {filtered.length === 0 ? (
-            <div className="empty" data-icon="🗒️">
-              <strong>{tr("Keine Notizen", "No notes")}</strong>
-              <span>{tr("Lege rechts deine erste Notiz an — mit Tags und Verknüpfungen.", "Create your first note on the right — with tags and links.")}</span>
-            </div>
+            <EmptyState
+              icon="notes"
+              title={tr("Keine Notizen", "No notes")}
+              description={tr("Halte eine Idee fest und verknüpfe sie bei Bedarf.", "Capture an idea and connect it when useful.")}
+              compact
+            />
           ) : (
             <ul className="entry-list">
               {filtered.map((e) => (
                 <li
                   key={e.id}
                   className={`entry-row ${e.id === selectedId ? "entry-active" : ""}`}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedId(e.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedId(e.id);
+                    }
+                  }}
                 >
                   <div className="entry-title">
                     {e.title || <span className="muted">{tr("(ohne Titel)", "(untitled)")}</span>}
@@ -210,16 +226,21 @@ export default function NotesPage() {
         </aside>
 
         <section className="journal-editor">
+          {selected && (
+            <button className="btn subtle mobile-editor-back" type="button" onClick={() => setSelectedId(null)}>
+              ← {tr("Alle Notizen", "All notes")}
+            </button>
+          )}
           {!selected ? (
-            <p className="muted empty">{tr("Notiz wählen oder neue anlegen.", "Select a note or create a new one.")}</p>
+            <EmptyState icon="notes" title={tr("Notiz auswählen", "Select a note")} description={tr("Wähle links eine Notiz oder lege eine neue an.", "Choose a note on the left or create a new one.")} compact />
           ) : (
             <>
               <div className="editor-meta">
                 <span className="editor-date">
                   {tr("zuletzt", "last edited")}: {selected.updatedAt.slice(0, 10)}
                 </span>
-                <button className="task-del" onClick={remove} title={tr("Löschen", "Delete")}>
-                  ✕ {tr("löschen", "delete")}
+                <button className="btn danger sm" onClick={remove} title={tr("Löschen", "Delete")}>
+                  <Icon name="trash" size={15} /> {tr("Löschen", "Delete")}
                 </button>
               </div>
               <input

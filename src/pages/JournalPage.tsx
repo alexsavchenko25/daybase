@@ -5,6 +5,8 @@ import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
 import PageHeader from "../components/PageHeader";
+import EmptyState from "../components/EmptyState";
+import Icon from "../components/Icon";
 import type { Entry } from "../types";
 import { useI18n } from "../i18n";
 
@@ -108,13 +110,17 @@ export default function JournalPage() {
 
   return (
     <div className="page journal-page">
-      <PageHeader icon="📓" title={tr("Tagebuch", "Journal")} />
+      <PageHeader
+        icon="journal"
+        title={tr("Tagebuch", "Journal")}
+        subtitle={tr("Gedanken festhalten, Muster erkennen und Tage bewusst abschließen.", "Capture thoughts, notice patterns and close days intentionally.")}
+      />
 
-      <div className="journal-grid">
+      <div className={`journal-grid ${selected ? "journal-has-selection" : ""}`}>
         {/* Liste / Navigation */}
         <aside className="journal-list">
           <button className="btn full" onClick={newEntry}>
-            + {tr("Neuer Eintrag", "New entry")}
+            <Icon name="plus" size={16} /> {tr("Neuer Eintrag", "New entry")}
           </button>
 
           <input
@@ -145,17 +151,27 @@ export default function JournalPage() {
           )}
 
           {filtered.length === 0 ? (
-            <div className="empty" data-icon="📓">
-              <strong>{tr("Keine Einträge", "No entries")}</strong>
-              <span>{tr("Schreibe rechts deinen ersten Tagebucheintrag.", "Write your first journal entry on the right.")}</span>
-            </div>
+            <EmptyState
+              icon="journal"
+              title={tr("Keine Einträge", "No entries")}
+              description={tr("Beginne mit einem Gedanken oder einem kurzen Rückblick.", "Start with a thought or a short reflection.")}
+              compact
+            />
           ) : (
             <ul className="entry-list">
               {filtered.map((e) => (
                 <li
                   key={e.id}
                   className={`entry-row ${e.id === selectedId ? "entry-active" : ""}`}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedId(e.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedId(e.id);
+                    }
+                  }}
                 >
                   <div className="entry-date">{e.date}</div>
                   <div className="entry-title">
@@ -178,16 +194,19 @@ export default function JournalPage() {
 
         {/* Editor */}
         <section className="journal-editor">
+          {selected && (
+            <button className="btn subtle mobile-editor-back" type="button" onClick={() => setSelectedId(null)}>
+              ← {tr("Alle Einträge", "All entries")}
+            </button>
+          )}
           {!selected ? (
-            <p className="muted empty">
-              {tr("Eintrag wählen oder neuen anlegen.", "Select an entry or create a new one.")}
-            </p>
+            <EmptyState icon="journal" title={tr("Eintrag auswählen", "Select an entry")} description={tr("Wähle links einen Eintrag oder lege einen neuen an.", "Choose an entry on the left or create a new one.")} compact />
           ) : (
             <>
               <div className="editor-meta">
                 <span className="editor-date">{selected.date}</span>
-                <button className="task-del" onClick={remove} title={tr("Löschen", "Delete")}>
-                  ✕ {tr("löschen", "delete")}
+                <button className="btn danger sm" onClick={remove} title={tr("Löschen", "Delete")}>
+                  <Icon name="trash" size={15} /> {tr("Löschen", "Delete")}
                 </button>
               </div>
               <input

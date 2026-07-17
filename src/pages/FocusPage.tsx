@@ -5,6 +5,7 @@ import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
 import { fmtClock, fmtDuration, focusMeta } from "../utils/focus";
 import PageHeader from "../components/PageHeader";
+import Icon from "../components/Icon";
 import type { Entry, FocusMeta } from "../types";
 import { useI18n } from "../i18n";
 
@@ -214,7 +215,7 @@ export default function FocusPage() {
   return (
     <div className="page focus-page">
       <PageHeader
-        icon="⏱️"
+        icon="focus"
         title="Focus Mode"
         subtitle={
           <>
@@ -226,37 +227,44 @@ export default function FocusPage() {
 
       {phase === "setup" && (
         <div className="focus-card">
-          <input
-            className="task-input full"
-            placeholder={tr("Freier Titel (optional)…", "Custom title (optional)…")}
-            value={freeTitle}
-            onChange={(e) => setFreeTitle(e.target.value)}
-          />
-          <select
-            className="task-select full"
-            value={linkId}
-            onChange={(e) => setLinkId(e.target.value)}
-          >
-            <option value="">— {tr("Task / Project / Goal verknüpfen", "Link task / project / goal")} —</option>
-            {links.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-          <div className="focus-presets">
-            {PRESETS.map((p) => (
-              <button
-                key={p}
-                className={`chip ${planned === p ? "chip-active" : ""}`}
-                onClick={() => setPlanned(p)}
-              >
-                {p} min
-              </button>
-            ))}
+          <div className="focus-setup-head">
+            <span className="eyebrow">{tr("Neue Session", "New session")}</span>
+            <h2>{tr("Worauf möchtest du dich konzentrieren?", "What do you want to focus on?")}</h2>
+          </div>
+          <div className="focus-setup-grid">
+            <label className="focus-field">
+              <span>{tr("Session-Titel", "Session title")}</span>
+              <input
+                className="task-input full"
+                placeholder={tr("Optionaler eigener Titel…", "Optional custom title…")}
+                value={freeTitle}
+                onChange={(e) => setFreeTitle(e.target.value)}
+              />
+            </label>
+            <label className="focus-field">
+              <span>{tr("Verknüpfung", "Link")}</span>
+              <select className="task-select full" value={linkId} onChange={(e) => setLinkId(e.target.value)}>
+                <option value="">— {tr("Task / Project / Goal", "Task / project / goal")} —</option>
+                {links.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="focus-duration-picker">
+            <span className="eyebrow">{tr("Dauer", "Duration")}</span>
+            <div className="focus-presets">
+              {PRESETS.map((p) => (
+                <button
+                  key={p}
+                  className={`chip ${planned === p ? "chip-active" : ""}`}
+                  onClick={() => setPlanned(p)}
+                >
+                  {p} min
+                </button>
+              ))}
+            </div>
           </div>
           <button className="btn full" onClick={start}>
-            ▶ {tr("Session starten", "Start session")}
+            <Icon name="focus" size={17} /> {tr("Session starten", "Start session")}
           </button>
         </div>
       )}
@@ -272,10 +280,10 @@ export default function FocusPage() {
           </div>
           <div className="focus-controls">
             <button className="btn" onClick={togglePause}>
-              {running ? `⏸ ${tr("Pause", "Pause")}` : `▶ ${tr("Weiter", "Resume")}`}
+              {running ? tr("Pause", "Pause") : tr("Weiter", "Resume")}
             </button>
-            <button className="chip" onClick={stop}>
-              ⏹ {tr("Beenden", "Stop")}
+            <button className="btn ghost" onClick={stop}>
+              {tr("Beenden", "Stop")}
             </button>
           </div>
         </div>
@@ -343,17 +351,20 @@ export default function FocusPage() {
               const m = focusMeta(e);
               return (
                 <li key={e.id} className="task-item">
-                  <span className="task-title">{e.title}</span>
-                  {m.linkLabel && <span className="link-tag">{m.linkLabel}</span>}
-                  <span className="focus-dur">{fmtDuration(m.actualSec)}</span>
-                  <span className="prio prio-medium">🎯 {m.focusScore}</span>
-                  <button
-                    className="task-del"
-                    title={tr("Löschen", "Delete")}
-                    onClick={() => entriesRepo.remove(e.id)}
-                  >
-                    ✕
-                  </button>
+                  <div className="task-item-row">
+                    <span className="task-title">{e.title}</span>
+                    {m.linkLabel && <span className="link-tag">{m.linkLabel}</span>}
+                    <span className="focus-dur">{fmtDuration(m.actualSec)}</span>
+                    <span className="prio prio-medium">{tr("Fokus", "Focus")} {m.focusScore}</span>
+                    <button
+                      className="icon-btn danger-ghost"
+                      title={tr("Löschen", "Delete")}
+                      aria-label={tr("Focus-Session löschen", "Delete focus session")}
+                      onClick={() => entriesRepo.remove(e.id)}
+                    >
+                      <Icon name="trash" size={16} />
+                    </button>
+                  </div>
                 </li>
               );
             })}

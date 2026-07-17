@@ -87,7 +87,11 @@ export default function ReviewPage() {
 
   return (
     <div className="page review-page">
-      <PageHeader icon="📝" title="Daily Review" />
+      <PageHeader
+        icon="review"
+        title="Daily Review"
+        subtitle={tr("Den Tag abschließen, Erkenntnisse sichern und morgen ausrichten.", "Close the day, capture insights and align tomorrow.")}
+      />
 
       <div className="week-nav rv-nav">
         <button className="chip" onClick={() => goDay(addDaysIso(date, -1))}>
@@ -117,6 +121,12 @@ export default function ReviewPage() {
       </div>
 
       <div className="rv-form">
+        <section className="review-section">
+          <div className="review-section-head">
+            <span className="eyebrow">{tr("Rückblick", "Reflection")}</span>
+            <h2>{tr("Was hat den Tag geprägt?", "What shaped the day?")}</h2>
+          </div>
+          <div className="review-writing-grid">
         <label className="rv-field">
           <span>🏆 Wins</span>
           <textarea
@@ -141,8 +151,15 @@ export default function ReviewPage() {
             placeholder={tr("Was gelernt?", "What did you learn?")}
           />
         </label>
+          </div>
+        </section>
 
-        <div className="rv-sliders">
+        <section className="review-section review-score-section">
+          <div className="review-section-head">
+            <span className="eyebrow">{tr("Tagesgefühl", "Day signals")}</span>
+            <h2>{tr("Energie, Fokus und Stimmung", "Energy, focus and mood")}</h2>
+          </div>
+          <div className="rv-sliders">
           {(
             [
               ["energy", tr("⚡ Energie", "⚡ Energy")],
@@ -163,9 +180,15 @@ export default function ReviewPage() {
               />
             </label>
           ))}
-        </div>
+          </div>
+        </section>
 
-        <label className="rv-field">
+        <section className="review-section review-next-section">
+          <div className="review-section-head">
+            <span className="eyebrow">{tr("Morgen", "Tomorrow")}</span>
+            <h2>{tr("Mit einer klaren Priorität starten", "Start with one clear priority")}</h2>
+          </div>
+          <label className="rv-field">
           <span>➡️ {tr("Priorität für morgen", "Tomorrow priority")}</span>
           <input
             className="task-input full"
@@ -173,7 +196,8 @@ export default function ReviewPage() {
             onChange={(e) => set("tomorrowPriority", e.target.value)}
             placeholder={tr("Wichtigste Sache morgen", "Most important thing tomorrow")}
           />
-        </label>
+          </label>
+        </section>
 
         <div className="rv-actions">
           <button className="btn" onClick={save}>

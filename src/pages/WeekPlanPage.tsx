@@ -153,8 +153,9 @@ export default function WeekPlanPage() {
   return (
     <div className="page week-page">
       <PageHeader
-        icon="🗓️"
+        icon="weekplan"
         title={tr("Wochenplan", "Weekly Plan")}
+        subtitle={tr("Zeitblöcke strukturieren, verschieben und im Wochenkontext überblicken.", "Structure, move and review time blocks in a weekly context.")}
         actions={
           <div className="week-nav">
             <button className="chip" onClick={() => setMonday(addDaysIso(monday, -7))}>
@@ -250,6 +251,7 @@ function DayColumn(props: {
   const { date, dayIdx, isToday, items, editingId } = props;
   const dayLabels = language === "de" ? DAY_LABELS : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const [dragOver, setDragOver] = useState(false);
+  const currentTime = new Date().toTimeString().slice(0, 5);
 
   return (
     <div
@@ -280,6 +282,7 @@ function DayColumn(props: {
             dayIdx={dayIdx}
             editing={editingId === entry.id}
             compact={props.compact}
+            current={isToday && !planMeta(entry).done && !!planMeta(entry).startTime && !!planMeta(entry).endTime && planMeta(entry).startTime <= currentTime && currentTime < planMeta(entry).endTime}
             onEdit={props.onEdit}
             onSave={props.onSave}
             onMove={props.onMove}
@@ -301,6 +304,7 @@ function BlockCard(props: {
   dayIdx: number;
   editing: boolean;
   compact: boolean;
+  current: boolean;
   onEdit: (id: string | null) => void;
   onSave: (
     entry: Entry,
@@ -318,7 +322,7 @@ function BlockCard(props: {
 }) {
   const { language, tr } = useI18n();
   const dayLabels = language === "de" ? DAY_LABELS : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const { entry, dayIdx, editing, compact } = props;
+  const { entry, dayIdx, editing, compact, current } = props;
   const m = planMeta(entry);
 
   // Edit-Draft.
@@ -416,7 +420,7 @@ function BlockCard(props: {
     <li
       className={`plan-block ${catClass(m.category)} ${
         m.done ? "plan-done" : ""
-      } ${compact ? "pb-compact" : "pb-detailed"}`}
+      } ${current ? "plan-current" : ""} ${compact ? "pb-compact" : "pb-detailed"}`}
       draggable
       onDragStart={(e) => e.dataTransfer.setData("text/plain", entry.id)}
       // Kompakt: volle Notiz als nativer Hover-Tooltip.

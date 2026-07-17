@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
 import ProgressBar from "../components/ProgressBar";
 import PageHeader from "../components/PageHeader";
+import EmptyState from "../components/EmptyState";
+import Icon from "../components/Icon";
 import type { Entry, ProjectMeta, ProjectStatus, TaskMeta } from "../types";
 import { useI18n } from "../i18n";
 
@@ -37,8 +40,23 @@ export default function ProjectsPage() {
   const { tr } = useI18n();
   const statusLabel = (s: ProjectStatus) => ({ active: tr("Aktiv", "Active"), done: tr("Erledigt", "Done"), paused: tr("Pausiert", "Paused") })[s];
   const [form, setForm] = useState({ ...EMPTY });
+  const [searchParams, setSearchParams] = useSearchParams();
   const [editId, setEditId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | ProjectStatus>("active");
+
+  useEffect(() => {
+    if (searchParams.get("new") === "1") setFormOpen(true);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!formOpen) return;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeEditor();
+    };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [formOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const projects = useLiveQuery(
     () => db.entries.where("type").equals("project").toArray(),
@@ -91,6 +109,15 @@ export default function ProjectsPage() {
     setForm({ ...EMPTY });
     setEditId(null);
   }
+  function openNew() {
+    reset();
+    setFormOpen(true);
+  }
+  function closeEditor() {
+    reset();
+    setFormOpen(false);
+    if (searchParams.has("new")) setSearchParams({}, { replace: true });
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -118,30 +145,50 @@ export default function ProjectsPage() {
       });
     }
     reset();
+    setFormOpen(false);
+    if (searchParams.has("new")) setSearchParams({}, { replace: true });
   }
 
   async function remove(id: string) {
-    if (editId === id) reset();
+    if (editId === id) closeEditor();
     await entriesRepo.remove(id);
   }
 
   return (
     <div className="page goals-page">
-      <PageHeader icon="📂" title="Projects" />
+      <PageHeader
+        icon="project"
+        title="Projects"
+        subtitle={tr("Arbeit bündeln, Tasks verbinden und Fortschritt sichtbar machen.", "Group work, connect tasks and make progress visible.")}
+        actions={
+          <button className="btn" type="button" onClick={openNew}>
+            <Icon name="plus" size={17} /> {tr("Neues Projekt", "New project")}
+          </button>
+        }
+      />
 
-      <form className="entity-form" onSubmit={save}>
-        <input
-          className="task-input full"
-          placeholder={tr("Projekt-Titel…", "Project title…")}
-          value={form.title}
-          onChange={(e) => set("title", e.target.value)}
-        />
-        <textarea
-          className="journal-textarea sm"
-          placeholder={tr("Beschreibung…", "Description…")}
-          value={form.description}
-          onChange={(e) => set("description", e.target.value)}
-        />
+      {formOpen && (
+      <section className="entity-editor" aria-label={editId ? tr("Projekt bearbeiten", "Edit project") : tr("Neues Projekt", "New project")}>
+        <div className="entity-editor-head">
+          <div>
+            <span className="eyebrow">{editId ? tr("Bearbeiten", "Edit") : tr("Erstellen", "Create")}</span>
+            <h2>{editId ? tr("Projekt aktualisieren", "Update project") : tr("Neues Projekt", "New project")}</h2>
+          </div>
+          <button className="icon-btn" type="button" onClick={closeEditor} aria-label={tr("Formular schließen", "Close form")}>
+            <Icon name="close" />
+          </button>
+        </div>
+        <form className="entity-form" onSubmit={save}>
+        <div className="entity-core-grid">
+          <label className="ef-field">
+            <span>{tr("Titel", "Title")}</span>
+            <input className="task-input full" autoFocus placeholder={tr("Woran möchtest du arbeiten?", "What do you want to work on?")} value={form.title} onChange={(e) => set("title", e.target.value)} />
+          </label>
+          <label className="ef-field">
+            <span>{tr("Beschreibung", "Description")}</span>
+            <textarea className="journal-textarea sm" placeholder={tr("Ziel und Umfang des Projekts", "Purpose and scope of the project")} value={form.description} onChange={(e) => set("description", e.target.value)} />
+          </label>
+        </div>
         <div className="ef-grid">
           <label>
             {tr("Kategorie", "Category")}
@@ -196,12 +243,14 @@ export default function ProjectsPage() {
             {editId ? tr("Aktualisieren", "Update") : tr("Projekt anlegen", "Create project")}
           </button>
           {editId && (
-            <button className="chip" type="button" onClick={reset}>
-              {tr("Abbrechen", "Cancel")}
-            </button>
+              <button className="btn ghost" type="button" onClick={closeEditor}>
+                {tr("Abbrechen", "Cancel")}
+              </button>
           )}
         </div>
-      </form>
+        </form>
+      </section>
+      )}
 
       <div className="filter-row wrap">
         {(["active", "all", "done", "paused"] as const).map((f) => (
@@ -216,10 +265,12 @@ export default function ProjectsPage() {
       </div>
 
       {shown.length === 0 ? (
-        <div className="empty" data-icon="📂">
-          <strong>{tr("Keine Projekte in dieser Ansicht", "No projects in this view")}</strong>
-          <span>{tr("Starte oben ein neues Projekt und verknüpfe Tasks & Notizen damit.", "Start a new project above and link tasks and notes to it.")}</span>
-        </div>
+        <EmptyState
+          icon="project"
+          title={tr("Keine Projekte in dieser Ansicht", "No projects in this view")}
+          description={tr("Starte ein Projekt und verknüpfe Tasks, Notizen oder ein Goal.", "Start a project and connect tasks, notes or a goal.")}
+          action={<button className="btn ghost" type="button" onClick={openNew}><Icon name="plus" size={16} /> {tr("Projekt anlegen", "Create project")}</button>}
+        />
       ) : (
         <ul className="entity-list">
           {shown.map((p) => {
@@ -248,15 +299,15 @@ export default function ProjectsPage() {
                   )}
                 </div>
                 <div className="entity-prog">
-                  <ProgressBar value={prog.pct} />
+                  <ProgressBar value={prog.pct} label={`${p.title}: ${Math.round(prog.pct)}%`} />
                   <span className="entity-prog-val">{Math.round(prog.pct)}%</span>
                 </div>
                 <div className="entity-actions">
-                  <button className="chip sm" onClick={() => setEditId(p.id)}>
-                    {tr("Bearbeiten", "Edit")}
+                  <button className="btn subtle sm" onClick={() => { setEditId(p.id); setFormOpen(true); }}>
+                    <Icon name="edit" size={15} /> {tr("Bearbeiten", "Edit")}
                   </button>
-                  <button className="task-del" onClick={() => remove(p.id)}>
-                    ✕
+                  <button className="icon-btn danger-ghost" onClick={() => remove(p.id)} aria-label={tr("Projekt löschen", "Delete project")}>
+                    <Icon name="trash" size={16} />
                   </button>
                 </div>
               </li>

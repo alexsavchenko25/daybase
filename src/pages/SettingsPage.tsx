@@ -151,21 +151,9 @@ export default function SettingsPage() {
 
   return (
     <div className="page settings-page">
-      <PageHeader icon="⚙️" title={tr("Einstellungen", "Settings")} subtitle={tr("App, Cloud Sync und Daten verwalten.", "Manage the app, cloud sync and your data.")} />
+      <PageHeader icon="settings" title={tr("Einstellungen", "Settings")} subtitle={tr("App, Cloud Sync und Daten verwalten.", "Manage the app, cloud sync and your data.")} />
 
-      <p className="section-label">App</p>
-      <section className="set-card">
-        <div className="set-row">
-          <div>
-            <div className="set-title">{tr("App-Version", "App version")}</div>
-            <div className="muted">Daybase</div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <span className="set-version">v{__APP_VERSION__}</span>
-            <div className="muted" style={{ fontSize: "var(--fs-xs)", marginTop: 2 }}>{__BUILD_DATE__}</div>
-          </div>
-        </div>
-      </section>
+      <p className="section-label">{tr("Erscheinungsbild", "Appearance")}</p>
 
       <section className="set-card">
         <div className="set-title">{tr("Sprache", "Language")}</div>
@@ -199,6 +187,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      <p className="section-label">{tr("App & PWA", "App & PWA")}</p>
       <section className="set-card">
         <div className="set-title">{tr("Erinnerungen", "Reminders")}</div>
         <p className="muted set-sub">
@@ -376,7 +365,8 @@ export default function SettingsPage() {
         {demoMsg && <p className="set-msg pos">{demoMsg}</p>}
       </section>
 
-      <section className="set-card">
+      <p className="section-label danger-label">{tr("Danger Zone", "Danger zone")}</p>
+      <section className="set-card set-danger">
         <div className="set-title">{tr("Wochenplan-Vorlage", "Weekly plan template")}</div>
         <p className="muted set-sub">
           {tr("Deinen Standard-Wochenplan (Mo–So) für jede Woche ab jetzt bis Jahresende anlegen.", "Create your default weekly plan (Mon–Sun) for every week from now through year end.")}
@@ -404,6 +394,20 @@ export default function SettingsPage() {
           </div>
         )}
         {yearMsg && <p className="set-msg pos">{yearMsg}</p>}
+      </section>
+
+      <p className="section-label">Version</p>
+      <section className="set-card">
+        <div className="set-row">
+          <div>
+            <div className="set-title">Daybase</div>
+            <div className="muted">{tr("Installierte App-Version", "Installed app version")}</div>
+          </div>
+          <div className="set-version-block">
+            <span className="set-version">v{__APP_VERSION__}</span>
+            <div className="muted set-build-date">{__BUILD_DATE__}</div>
+          </div>
+        </div>
       </section>
     </div>
   );
