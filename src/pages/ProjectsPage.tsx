@@ -6,14 +6,9 @@ import { todayIso } from "../utils/date";
 import ProgressBar from "../components/ProgressBar";
 import PageHeader from "../components/PageHeader";
 import type { Entry, ProjectMeta, ProjectStatus, TaskMeta } from "../types";
+import { useI18n } from "../i18n";
 
 const STATUSES: ProjectStatus[] = ["active", "done", "paused"];
-const STATUS_LABEL: Record<ProjectStatus, string> = {
-  active: "Aktiv",
-  done: "Erledigt",
-  paused: "Pausiert",
-};
-
 const EMPTY = {
   title: "",
   description: "",
@@ -39,6 +34,8 @@ export function projectProgress(
 }
 
 export default function ProjectsPage() {
+  const { tr } = useI18n();
+  const statusLabel = (s: ProjectStatus) => ({ active: tr("Aktiv", "Active"), done: tr("Erledigt", "Done"), paused: tr("Pausiert", "Paused") })[s];
   const [form, setForm] = useState({ ...EMPTY });
   const [editId, setEditId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | ProjectStatus>("active");
@@ -135,19 +132,19 @@ export default function ProjectsPage() {
       <form className="entity-form" onSubmit={save}>
         <input
           className="task-input full"
-          placeholder="Projekt-Titel…"
+          placeholder={tr("Projekt-Titel…", "Project title…")}
           value={form.title}
           onChange={(e) => set("title", e.target.value)}
         />
         <textarea
           className="journal-textarea sm"
-          placeholder="Beschreibung…"
+          placeholder={tr("Beschreibung…", "Description…")}
           value={form.description}
           onChange={(e) => set("description", e.target.value)}
         />
         <div className="ef-grid">
           <label>
-            Kategorie
+            {tr("Kategorie", "Category")}
             <input
               className="task-select"
               value={form.category}
@@ -164,7 +161,7 @@ export default function ProjectsPage() {
             >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
-                  {STATUS_LABEL[s]}
+                  {statusLabel(s)}
                 </option>
               ))}
             </select>
@@ -185,7 +182,7 @@ export default function ProjectsPage() {
               value={form.goalId}
               onChange={(e) => set("goalId", e.target.value)}
             >
-              <option value="">— kein Goal —</option>
+              <option value="">— {tr("kein Goal", "no goal")} —</option>
               {goals.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.title}
@@ -196,11 +193,11 @@ export default function ProjectsPage() {
         </div>
         <div className="rv-actions">
           <button className="btn" type="submit">
-            {editId ? "Aktualisieren" : "Projekt anlegen"}
+            {editId ? tr("Aktualisieren", "Update") : tr("Projekt anlegen", "Create project")}
           </button>
           {editId && (
             <button className="chip" type="button" onClick={reset}>
-              Abbrechen
+              {tr("Abbrechen", "Cancel")}
             </button>
           )}
         </div>
@@ -213,15 +210,15 @@ export default function ProjectsPage() {
             className={`chip ${filter === f ? "chip-active" : ""}`}
             onClick={() => setFilter(f)}
           >
-            {f === "all" ? "Alle" : STATUS_LABEL[f]}
+            {f === "all" ? tr("Alle", "All") : statusLabel(f)}
           </button>
         ))}
       </div>
 
       {shown.length === 0 ? (
         <div className="empty" data-icon="📂">
-          <strong>Keine Projekte in dieser Ansicht</strong>
-          <span>Starte oben ein neues Projekt und verknüpfe Tasks & Notizen damit.</span>
+          <strong>{tr("Keine Projekte in dieser Ansicht", "No projects in this view")}</strong>
+          <span>{tr("Starte oben ein neues Projekt und verknüpfe Tasks & Notizen damit.", "Start a new project above and link tasks and notes to it.")}</span>
         </div>
       ) : (
         <ul className="entity-list">
@@ -236,7 +233,7 @@ export default function ProjectsPage() {
                 <div className="entity-head">
                   <span className="entity-title">{p.title}</span>
                   <span className={`pill status-${m.status}`}>
-                    {STATUS_LABEL[m.status]}
+                    {statusLabel(m.status)}
                   </span>
                 </div>
                 {p.content && <p className="entity-desc">{p.content}</p>}
@@ -247,7 +244,7 @@ export default function ProjectsPage() {
                     {prog.done}/{prog.total} Tasks
                   </span>
                   {noteCount > 0 && (
-                    <span className="entity-dl">🔗 {noteCount} Notizen</span>
+                    <span className="entity-dl">🔗 {noteCount} {tr("Notizen", "notes")}</span>
                   )}
                 </div>
                 <div className="entity-prog">
@@ -256,7 +253,7 @@ export default function ProjectsPage() {
                 </div>
                 <div className="entity-actions">
                   <button className="chip sm" onClick={() => setEditId(p.id)}>
-                    Bearbeiten
+                    {tr("Bearbeiten", "Edit")}
                   </button>
                   <button className="task-del" onClick={() => remove(p.id)}>
                     ✕

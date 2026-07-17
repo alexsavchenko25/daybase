@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../db";
 import type { Entry } from "../types";
+import { useI18n } from "../i18n";
 
 interface Item {
   key: string;
@@ -17,25 +18,25 @@ interface Group {
 
 // Statische Befehle (Seiten + Erstellen). keywords für Fuzzy-Match.
 const PAGES = [
-  { icon: "🏠", label: "Dashboard", path: "/", kw: "home start" },
-  { icon: "✅", label: "Tasks", path: "/tasks", kw: "aufgaben" },
-  { icon: "🗓️", label: "Wochenplan", path: "/weekplan", kw: "week plan" },
-  { icon: "📈", label: "Trading Journal", path: "/trades", kw: "trades" },
-  { icon: "🔁", label: "Habit Tracker", path: "/habits", kw: "habits" },
-  { icon: "📓", label: "Tagebuch", path: "/journal", kw: "journal" },
-  { icon: "🗒️", label: "Notizen", path: "/notes", kw: "notes" },
-  { icon: "📝", label: "Daily Review", path: "/review", kw: "review täglich" },
-  { icon: "📅", label: "Weekly Review", path: "/weekly-review", kw: "review woche" },
-  { icon: "🎯", label: "Goals", path: "/goals", kw: "ziele" },
-  { icon: "📂", label: "Projects", path: "/projects", kw: "projekte" },
-  { icon: "⚙️", label: "Einstellungen", path: "/settings", kw: "settings backup" },
+  { icon: "🏠", label: "Dashboard", labelEn: "Dashboard", path: "/", kw: "home start" },
+  { icon: "✅", label: "Tasks", labelEn: "Tasks", path: "/tasks", kw: "aufgaben" },
+  { icon: "🗓️", label: "Wochenplan", labelEn: "Weekly Plan", path: "/weekplan", kw: "week plan" },
+  { icon: "📈", label: "Trading Journal", labelEn: "Trading Journal", path: "/trades", kw: "trades" },
+  { icon: "🔁", label: "Habit Tracker", labelEn: "Habit Tracker", path: "/habits", kw: "habits" },
+  { icon: "📓", label: "Tagebuch", labelEn: "Journal", path: "/journal", kw: "journal" },
+  { icon: "🗒️", label: "Notizen", labelEn: "Notes", path: "/notes", kw: "notes" },
+  { icon: "📝", label: "Daily Review", labelEn: "Daily Review", path: "/review", kw: "review täglich" },
+  { icon: "📅", label: "Weekly Review", labelEn: "Weekly Review", path: "/weekly-review", kw: "review woche" },
+  { icon: "🎯", label: "Goals", labelEn: "Goals", path: "/goals", kw: "ziele" },
+  { icon: "📂", label: "Projects", labelEn: "Projects", path: "/projects", kw: "projekte" },
+  { icon: "⚙️", label: "Einstellungen", labelEn: "Settings", path: "/settings", kw: "settings backup" },
 ];
 const CREATE = [
-  { icon: "✅", label: "Neue Task", path: "/tasks", kw: "task aufgabe neu add" },
-  { icon: "🎯", label: "Neues Goal", path: "/goals", kw: "ziel goal neu add" },
-  { icon: "📂", label: "Neues Project", path: "/projects", kw: "projekt neu add" },
-  { icon: "🗒️", label: "Neue Notiz", path: "/notes", kw: "note notiz neu add" },
-  { icon: "📈", label: "Neuer Trade", path: "/trades", kw: "trade neu add" },
+  { icon: "✅", label: "Neue Task", labelEn: "New task", path: "/tasks", kw: "task aufgabe neu add" },
+  { icon: "🎯", label: "Neues Goal", labelEn: "New goal", path: "/goals", kw: "ziel goal neu add" },
+  { icon: "📂", label: "Neues Project", labelEn: "New project", path: "/projects", kw: "projekt neu add" },
+  { icon: "🗒️", label: "Neue Notiz", labelEn: "New note", path: "/notes", kw: "note notiz neu add" },
+  { icon: "📈", label: "Neuer Trade", labelEn: "New trade", path: "/trades", kw: "trade neu add" },
 ];
 // Such-Typen + Deep-Link zur passenden Seite/Auswahl.
 const SEARCH_GROUPS: {
@@ -76,6 +77,7 @@ function haystack(e: Entry): string {
 }
 
 export default function CommandPalette() {
+  const { language, tr } = useI18n();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -128,15 +130,17 @@ export default function CommandPalette() {
     const q = query.trim().toLowerCase();
     const out: Group[] = [];
 
-    const pages = PAGES.filter(
-      (p) => !q || p.label.toLowerCase().includes(q) || p.kw.includes(q),
-    ).map((p) => ({ key: "p" + p.path, icon: p.icon, title: p.label, run: () => go(p.path) }));
-    if (pages.length) out.push({ label: "Seiten", items: pages });
+    const pages = PAGES.filter((p) => {
+      const label = language === "en" && "labelEn" in p ? p.labelEn : p.label;
+      return !q || label.toLowerCase().includes(q) || p.kw.includes(q);
+    }).map((p) => ({ key: "p" + p.path, icon: p.icon, title: language === "en" && "labelEn" in p ? p.labelEn : p.label, run: () => go(p.path) }));
+    if (pages.length) out.push({ label: tr("Seiten", "Pages"), items: pages });
 
-    const create = CREATE.filter(
-      (c) => !q || c.label.toLowerCase().includes(q) || c.kw.includes(q),
-    ).map((c) => ({ key: "c" + c.label, icon: c.icon, title: c.label, run: () => go(c.path) }));
-    if (create.length) out.push({ label: "Erstellen", items: create });
+    const create = CREATE.filter((c) => {
+      const label = language === "en" ? c.labelEn : c.label;
+      return !q || label.toLowerCase().includes(q) || c.kw.includes(q);
+    }).map((c) => ({ key: "c" + c.label, icon: c.icon, title: language === "en" ? c.labelEn : c.label, run: () => go(c.path) }));
+    if (create.length) out.push({ label: tr("Erstellen", "Create"), items: create });
 
     if (q) {
       for (const sg of SEARCH_GROUPS) {
@@ -146,7 +150,7 @@ export default function CommandPalette() {
           .map((e) => ({
             key: e.id,
             icon: sg.icon,
-            title: e.title || "(ohne Titel)",
+            title: e.title || tr("(ohne Titel)", "(untitled)"),
             sub: (e.content || e.date).slice(0, 60) || undefined,
             run: () => go(sg.to(e)),
           }));
@@ -154,7 +158,7 @@ export default function CommandPalette() {
       }
     }
     return out;
-  }, [query, data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [query, data, language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
@@ -184,14 +188,14 @@ export default function CommandPalette() {
         <input
           ref={inputRef}
           className="cmdk-input"
-          placeholder="Suchen oder Befehl… (Tasks, Goals, Seiten)"
+          placeholder={tr("Suchen oder Befehl… (Tasks, Goals, Seiten)", "Search or enter a command… (Tasks, Goals, Pages)")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onInputKey}
         />
         <div className="cmdk-list">
           {flat.length === 0 ? (
-            <div className="cmdk-empty">Nichts gefunden.</div>
+            <div className="cmdk-empty">{tr("Nichts gefunden.", "Nothing found.")}</div>
           ) : (
             groups.map((g) => (
               <div key={g.label} className="cmdk-group">
@@ -219,9 +223,9 @@ export default function CommandPalette() {
           )}
         </div>
         <div className="cmdk-foot">
-          <span><kbd>↑↓</kbd> navigieren</span>
-          <span><kbd>↵</kbd> öffnen</span>
-          <span><kbd>esc</kbd> schließen</span>
+          <span><kbd>↑↓</kbd> {tr("navigieren", "navigate")}</span>
+          <span><kbd>↵</kbd> {tr("öffnen", "open")}</span>
+          <span><kbd>esc</kbd> {tr("schließen", "close")}</span>
         </div>
       </div>
     </div>

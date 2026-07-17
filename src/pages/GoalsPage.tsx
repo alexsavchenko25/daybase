@@ -7,6 +7,7 @@ import ProgressBar from "../components/ProgressBar";
 import PageHeader from "../components/PageHeader";
 import { projectProgress } from "./ProjectsPage";
 import type { Entry, GoalMeta, GoalPeriod, GoalStatus } from "../types";
+import { useI18n } from "../i18n";
 
 // Auto-Progress: Mittel aus verknüpften Tasks (done = 100) + Projekt-Fortschritt.
 // Ohne Verknüpfungen → manueller Wert (Fallback).
@@ -28,18 +29,6 @@ export function goalProgress(
 
 const PERIODS: GoalPeriod[] = ["weekly", "monthly", "yearly"];
 const STATUSES: GoalStatus[] = ["active", "done", "paused", "dropped"];
-const STATUS_LABEL: Record<GoalStatus, string> = {
-  active: "Aktiv",
-  done: "Erledigt",
-  paused: "Pausiert",
-  dropped: "Verworfen",
-};
-const PERIOD_LABEL: Record<GoalPeriod, string> = {
-  weekly: "Weekly",
-  monthly: "Monthly",
-  yearly: "Yearly",
-};
-
 const EMPTY = {
   title: "",
   description: "",
@@ -55,6 +44,9 @@ function gm(e: Entry): GoalMeta {
 }
 
 export default function GoalsPage() {
+  const { tr } = useI18n();
+  const statusLabel = (s: GoalStatus) => ({ active: tr("Aktiv", "Active"), done: tr("Erledigt", "Done"), paused: tr("Pausiert", "Paused"), dropped: tr("Abgebrochen", "Dropped") })[s];
+  const periodLabel = (p: GoalPeriod) => ({ weekly: tr("Wöchentlich", "Weekly"), monthly: tr("Monatlich", "Monthly"), yearly: tr("Jährlich", "Yearly") })[p];
   const [form, setForm] = useState({ ...EMPTY });
   const [editId, setEditId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | GoalStatus>("active");
@@ -164,28 +156,28 @@ export default function GoalsPage() {
       <form className="entity-form" onSubmit={save}>
         <input
           className="task-input full"
-          placeholder="Ziel-Titel…"
+          placeholder={tr("Ziel-Titel…", "Goal title…")}
           value={form.title}
           onChange={(e) => set("title", e.target.value)}
         />
         <textarea
           className="journal-textarea sm"
-          placeholder="Beschreibung…"
+          placeholder={tr("Beschreibung…", "Description…")}
           value={form.description}
           onChange={(e) => set("description", e.target.value)}
         />
         <div className="ef-grid">
           <label>
-            Kategorie
+            {tr("Kategorie", "Category")}
             <input
               className="task-select"
               value={form.category}
               onChange={(e) => set("category", e.target.value)}
-              placeholder="z.B. Fitness"
+              placeholder={tr("z.B. Fitness", "e.g. Fitness")}
             />
           </label>
           <label>
-            Zeitraum
+            {tr("Zeitraum", "Period")}
             <select
               className="task-select"
               value={form.period}
@@ -193,7 +185,7 @@ export default function GoalsPage() {
             >
               {PERIODS.map((p) => (
                 <option key={p} value={p}>
-                  {PERIOD_LABEL[p]}
+                  {periodLabel(p)}
                 </option>
               ))}
             </select>
@@ -216,13 +208,13 @@ export default function GoalsPage() {
             >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
-                  {STATUS_LABEL[s]}
+                  {statusLabel(s)}
                 </option>
               ))}
             </select>
           </label>
           <label className="ef-wide">
-            Fortschritt <strong>{form.progress}%</strong>
+            {tr("Fortschritt", "Progress")} <strong>{form.progress}%</strong>
             <input
               type="range"
               min={0}
@@ -234,11 +226,11 @@ export default function GoalsPage() {
         </div>
         <div className="rv-actions">
           <button className="btn" type="submit">
-            {editId ? "Aktualisieren" : "Ziel anlegen"}
+            {editId ? tr("Aktualisieren", "Update") : tr("Ziel anlegen", "Create goal")}
           </button>
           {editId && (
             <button className="chip" type="button" onClick={reset}>
-              Abbrechen
+              {tr("Abbrechen", "Cancel")}
             </button>
           )}
         </div>
@@ -251,15 +243,15 @@ export default function GoalsPage() {
             className={`chip ${filter === f ? "chip-active" : ""}`}
             onClick={() => setFilter(f)}
           >
-            {f === "all" ? "Alle" : STATUS_LABEL[f]}
+            {f === "all" ? tr("Alle", "All") : statusLabel(f)}
           </button>
         ))}
       </div>
 
       {shown.length === 0 ? (
         <div className="empty" data-icon="🎯">
-          <strong>Keine Ziele in dieser Ansicht</strong>
-          <span>Definiere oben ein neues Ziel — mit Zeitraum, Deadline und Fortschritt.</span>
+          <strong>{tr("Keine Ziele in dieser Ansicht", "No goals in this view")}</strong>
+          <span>{tr("Definiere oben ein neues Ziel — mit Zeitraum, Deadline und Fortschritt.", "Define a new goal above — with a period, deadline and progress.")}</span>
         </div>
       ) : (
         <ul className="entity-list">
@@ -271,16 +263,16 @@ export default function GoalsPage() {
                 <div className="entity-head">
                   <span className="entity-title">{g.title}</span>
                   <span className={`pill status-${m.status}`}>
-                    {STATUS_LABEL[m.status]}
+                    {statusLabel(m.status)}
                   </span>
                 </div>
                 {g.content && <p className="entity-desc">{g.content}</p>}
                 <div className="entity-meta">
-                  <span className="pill ghost">{PERIOD_LABEL[m.period]}</span>
+                  <span className="pill ghost">{periodLabel(m.period)}</span>
                   {m.category && <span className="pill ghost">{m.category}</span>}
                   {m.deadline && <span className="entity-dl">⏱ {m.deadline}</span>}
                   {(links.get(g.id) ?? 0) > 0 && (
-                    <span className="entity-dl">🔗 {links.get(g.id)} verknüpft</span>
+                    <span className="entity-dl">🔗 {links.get(g.id)} {tr("verknüpft", "linked")}</span>
                   )}
                 </div>
                 <div className="entity-prog">
@@ -289,12 +281,12 @@ export default function GoalsPage() {
                 </div>
                 {prog.auto && (
                   <span className="entity-dl auto-prog">
-                    ⚡ Auto aus Tasks/Projects
+                    ⚡ {tr("Auto aus Tasks/Projects", "Auto from tasks/projects")}
                   </span>
                 )}
                 <div className="entity-actions">
                   <button className="chip sm" onClick={() => setEditId(g.id)}>
-                    Bearbeiten
+                    {tr("Bearbeiten", "Edit")}
                   </button>
                   <button className="task-del" onClick={() => remove(g.id)}>
                     ✕

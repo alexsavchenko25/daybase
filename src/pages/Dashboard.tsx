@@ -6,6 +6,7 @@ import { isDoneForPeriod, habitMeta } from "../utils/habit";
 import ProgressBar from "../components/ProgressBar";
 import { fmtDuration, focusMeta } from "../utils/focus";
 import PageHeader from "../components/PageHeader";
+import { useI18n } from "../i18n";
 import { daysSinceBackup } from "../utils/backup";
 import { projectProgress } from "./ProjectsPage";
 import { goalProgress } from "./GoalsPage";
@@ -23,6 +24,7 @@ function nowHm(): string {
 }
 
 export default function Dashboard() {
+  const { locale, tr } = useI18n();
   const today = todayIso();
 
   const openTasks = useLiveQuery(
@@ -175,7 +177,7 @@ export default function Dashboard() {
     [] as { p: Entry; prog: { done: number; total: number; pct: number } }[],
   );
 
-  const dateLabel = new Date(today + "T00:00:00").toLocaleDateString("de-DE", {
+  const dateLabel = new Date(today + "T00:00:00").toLocaleDateString(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -189,23 +191,23 @@ export default function Dashboard() {
       {/* Primär: heutiger Fokus + nächster Block */}
       <div className="dash-hero">
         <div className="dash-hero-card dash-hero-focus">
-          <span className="dash-label">Heutiger Fokus</span>
+          <span className="dash-label">{tr("Heutiger Fokus", "Today's focus")}</span>
           {focus ? (
             <p className="dash-hero-text">{focus}</p>
           ) : (
             <p className="dash-hero-text muted">
-              Kein Fokus gesetzt — im <Link to="/review">gestrigen Review</Link> festlegen.
+              {tr("Kein Fokus gesetzt — im", "No focus set — define it in")} <Link to="/review">{tr("gestrigen Review", "yesterday's review")}</Link>.
             </p>
           )}
           {weeklyFocus && (
             <div className="dash-hero-week">
-              <span className="dash-label">Wochenfokus</span>
+              <span className="dash-label">{tr("Wochenfokus", "Weekly focus")}</span>
               <span>{weeklyFocus}</span>
             </div>
           )}
         </div>
         <div className="dash-hero-card dash-hero-next">
-          <span className="dash-label">Nächster Block</span>
+          <span className="dash-label">{tr("Nächster Block", "Next block")}</span>
           {nextBlock ? (
             <div className="dash-next">
               {nextBlock.start && (
@@ -217,10 +219,10 @@ export default function Dashboard() {
               <span className="dash-next-title">{nextBlock.title}</span>
             </div>
           ) : (
-            <span className="muted">Kein Block heute.</span>
+            <span className="muted">{tr("Kein Block heute.", "No block today.")}</span>
           )}
           <Link to="/weekplan" className="dash-link">
-            Wochenplan →
+            {tr("Wochenplan", "Weekly plan")} →
           </Link>
         </div>
       </div>
@@ -233,10 +235,10 @@ export default function Dashboard() {
             <span>
               <strong>
                 {backupDays === null
-                  ? "Noch kein Backup erstellt."
-                  : `Letztes Backup vor ${backupDays} Tagen.`}
+                  ? tr("Noch kein Backup erstellt.", "No backup created yet.")
+                  : tr(`Letztes Backup vor ${backupDays} Tagen.`, `Last backup ${backupDays} days ago.`)}
               </strong>{" "}
-              Daten liegen nur lokal — jetzt exportieren.
+              {tr("Daten liegen nur lokal — jetzt exportieren.", "Data is local only — export it now.")}
             </span>
             <span className="dwh-arrow">→</span>
           </Link>
@@ -245,8 +247,8 @@ export default function Dashboard() {
           <Link to="/weekly-review" className="dash-weekly-hint">
             <span className="dwh-icon">📅</span>
             <span>
-              <strong>Weekly Review für KW {isoWeekNumber(monday)} steht an.</strong>{" "}
-              Woche auswerten & nächste planen.
+              <strong>{tr(`Weekly Review für KW ${isoWeekNumber(monday)} steht an.`, `Weekly Review for week ${isoWeekNumber(monday)} is due.`)}</strong>{" "}
+              {tr("Woche auswerten & nächste planen.", "Review this week and plan the next.")}
             </span>
             <span className="dwh-arrow">→</span>
           </Link>
@@ -256,9 +258,9 @@ export default function Dashboard() {
             <span className="dwh-icon">⏰</span>
             <span>
               <strong>
-                {overdueTasks} überfällige {overdueTasks === 1 ? "Task" : "Tasks"}.
+                {tr(`${overdueTasks} überfällige ${overdueTasks === 1 ? "Task" : "Tasks"}.`, `${overdueTasks} overdue ${overdueTasks === 1 ? "task" : "tasks"}.`)}
               </strong>{" "}
-              Erledigen oder neu terminieren.
+              {tr("Erledigen oder neu terminieren.", "Complete or reschedule.")}
             </span>
             <span className="dwh-arrow">→</span>
           </Link>
@@ -267,7 +269,7 @@ export default function Dashboard() {
           <Link to="/review" className="dash-weekly-hint">
             <span className="dwh-icon">📝</span>
             <span>
-              <strong>Daily Review noch offen.</strong> Tag kurz auswerten.
+              <strong>{tr("Daily Review noch offen.", "Daily Review still open.")}</strong> {tr("Tag kurz auswerten.", "Take a moment to review your day.")}
             </span>
             <span className="dwh-arrow">→</span>
           </Link>
@@ -277,9 +279,9 @@ export default function Dashboard() {
             <span className="dwh-icon">🔁</span>
             <span>
               <strong>
-                {openHabits} {openHabits === 1 ? "Habit" : "Habits"} heute offen.
+                {tr(`${openHabits} ${openHabits === 1 ? "Habit" : "Habits"} heute offen.`, `${openHabits} ${openHabits === 1 ? "habit" : "habits"} open today.`)}
               </strong>{" "}
-              Noch abhaken.
+              {tr("Noch abhaken.", "Check them off.")}
             </span>
             <span className="dwh-arrow">→</span>
           </Link>
@@ -290,15 +292,15 @@ export default function Dashboard() {
       <div className="dash-kpis">
         <Link to="/tasks" className="dash-kpi">
           <span className="dash-kpi-value">{openTasks}</span>
-          <span className="dash-kpi-label">Tasks offen</span>
+          <span className="dash-kpi-label">{tr("Tasks offen", "Open tasks")}</span>
         </Link>
         <Link to="/habits" className="dash-kpi">
           <span className="dash-kpi-value">{openHabits}</span>
-          <span className="dash-kpi-label">Habits offen</span>
+          <span className="dash-kpi-label">{tr("Habits offen", "Open habits")}</span>
         </Link>
         <Link to="/focus" className="dash-kpi">
           <span className="dash-kpi-value">{fmtDuration(focusSummary.totalSec)}</span>
-          <span className="dash-kpi-label">Fokuszeit · {focusSummary.count} Sessions</span>
+          <span className="dash-kpi-label">{tr("Fokuszeit", "Focus time")} · {focusSummary.count} {tr("Sessions", "sessions")}</span>
         </Link>
       </div>
 
@@ -308,11 +310,11 @@ export default function Dashboard() {
             <div className="dash-info-head">
               <span className="dash-label">Top Goals</span>
               <Link to="/goals" className="dash-link">
-                alle →
+                {tr("alle", "all")} →
               </Link>
             </div>
             {topGoals.length === 0 ? (
-              <span className="muted">Keine aktiven Ziele.</span>
+              <span className="muted">{tr("Keine aktiven Ziele.", "No active goals.")}</span>
             ) : (
               topGoals.map(({ g, pct }) => (
                 <div key={g.id} className="dash-prog-row">
@@ -327,13 +329,13 @@ export default function Dashboard() {
           </div>
           <div className="dash-info">
             <div className="dash-info-head">
-              <span className="dash-label">Aktive Projects</span>
+              <span className="dash-label">{tr("Aktive Projects", "Active projects")}</span>
               <Link to="/projects" className="dash-link">
-                alle →
+                {tr("alle", "all")} →
               </Link>
             </div>
             {activeProjects.length === 0 ? (
-              <span className="muted">Keine aktiven Projekte.</span>
+              <span className="muted">{tr("Keine aktiven Projekte.", "No active projects.")}</span>
             ) : (
               activeProjects.map(({ p, prog }) => (
                 <div key={p.id} className="dash-prog-row">

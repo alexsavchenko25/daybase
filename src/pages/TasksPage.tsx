@@ -11,29 +11,23 @@ import {
   recurrenceLabel,
 } from "../utils/recurrence";
 import PageHeader from "../components/PageHeader";
+import { useI18n } from "../i18n";
 import type { Entry, RecurrenceKind, RecurrenceRule, Subtask, TaskMeta } from "../types";
 
 type View = "today" | "week" | "later" | "all" | "done" | "day";
 type Priority = TaskMeta["priority"];
 
 const PRIO_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
-const PRIO_LABEL: Record<Priority, string> = {
-  high: "Hoch",
-  medium: "Mittel",
-  low: "Niedrig",
-};
-
-const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-function dayLabel(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
-  return `${WD[d.getDay()]} ${iso.slice(8)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}`;
-}
-
 function meta(e: Entry): TaskMeta {
   return e.meta as TaskMeta;
 }
 
 export default function TasksPage() {
+  const { language, locale, tr } = useI18n();
+  const prioLabel: Record<Priority, string> = {
+    high: tr("Hoch", "High"), medium: tr("Mittel", "Medium"), low: tr("Niedrig", "Low"),
+  };
+  const weekdayLabels = language === "de" ? WEEKDAY_LABELS : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const today = todayIso();
   const [params] = useSearchParams();
   const [view, setView] = useState<View>(() => (params.get("date") ? "day" : "today"));
@@ -232,7 +226,7 @@ export default function TasksPage() {
         title="Tasks"
         subtitle={
           <>
-            Heute offen: <strong>{openTodayCount}</strong>
+            {tr("Heute offen", "Open today")}: <strong>{openTodayCount}</strong>
           </>
         }
       />
@@ -240,7 +234,7 @@ export default function TasksPage() {
       <form className="task-form" onSubmit={addTask}>
         <input
           className="task-input"
-          placeholder="Neue Task…"
+          placeholder={tr("Neue Task…", "New task…")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
@@ -249,24 +243,24 @@ export default function TasksPage() {
           type="date"
           value={formDate}
           onChange={(e) => setFormDate(e.target.value)}
-          title="Datum der Task"
+          title={tr("Datum der Task", "Task date")}
         />
         <select
           className="task-select"
           value={priority}
           onChange={(e) => setPriority(e.target.value as Priority)}
         >
-          <option value="high">Hoch</option>
-          <option value="medium">Mittel</option>
-          <option value="low">Niedrig</option>
+          <option value="high">{tr("Hoch", "High")}</option>
+          <option value="medium">{tr("Mittel", "Medium")}</option>
+          <option value="low">{tr("Niedrig", "Low")}</option>
         </select>
         <select
           className="task-select"
           value={projectId}
           onChange={(e) => setProjectId(e.target.value)}
-          title="Projekt (optional)"
+          title={tr("Projekt (optional)", "Project (optional)")}
         >
-          <option value="">— Projekt —</option>
+          <option value="">— {tr("Projekt", "Project")} —</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
               {p.title}
@@ -277,7 +271,7 @@ export default function TasksPage() {
           className="task-select"
           value={goalId}
           onChange={(e) => setGoalId(e.target.value)}
-          title="Goal (optional)"
+          title={tr("Goal (optional)", "Goal (optional)")}
         >
           <option value="">— Goal —</option>
           {goals.map((g) => (
@@ -290,13 +284,13 @@ export default function TasksPage() {
           className="task-select"
           value={recurKind}
           onChange={(e) => setRecurKind(e.target.value as RecurrenceKind | "")}
-          title="Wiederholung (optional)"
+          title={tr("Wiederholung (optional)", "Recurrence (optional)")}
         >
-          <option value="">— Einmalig —</option>
-          <option value="daily">Täglich</option>
-          <option value="weekly">Wöchentlich</option>
-          <option value="monthly">Monatlich</option>
-          <option value="weekdays">Wochentage</option>
+          <option value="">— {tr("Einmalig", "One-time")} —</option>
+          <option value="daily">{tr("Täglich", "Daily")}</option>
+          <option value="weekly">{tr("Wöchentlich", "Weekly")}</option>
+          <option value="monthly">{tr("Monatlich", "Monthly")}</option>
+          <option value="weekdays">{tr("Wochentage", "Weekdays")}</option>
         </select>
         {(recurKind === "daily" || recurKind === "weekly" || recurKind === "monthly") && (
           <input
@@ -305,13 +299,13 @@ export default function TasksPage() {
             min={1}
             value={recurInterval}
             onChange={(e) => setRecurInterval(Math.max(1, parseInt(e.target.value) || 1))}
-            title="Alle N Tage/Wochen/Monate"
+            title={tr("Alle N Tage/Wochen/Monate", "Every N days/weeks/months")}
             style={{ width: 64 }}
           />
         )}
         {recurKind === "weekdays" && (
           <span style={{ display: "inline-flex", gap: 4 }}>
-            {WEEKDAY_LABELS.map((label, i) => (
+            {weekdayLabels.map((label, i) => (
               <button
                 key={label}
                 type="button"
@@ -330,7 +324,7 @@ export default function TasksPage() {
           </span>
         )}
         <button className="btn" type="submit">
-          Hinzufügen
+          {tr("Hinzufügen", "Add")}
         </button>
       </form>
 
@@ -338,7 +332,7 @@ export default function TasksPage() {
       {view === "day" && (
         <div className="week-nav task-day-nav">
           <button className="chip" onClick={() => goDay(addDaysIso(viewDate, -1))}>
-            ← Tag
+            ← {tr("Tag", "Day")}
           </button>
           <input
             className="task-select"
@@ -347,11 +341,11 @@ export default function TasksPage() {
             onChange={(e) => goDay(e.target.value)}
           />
           <span className="week-label">
-            {dayLabel(viewDate)}
-            {viewDate === today && <span className="week-now"> · heute</span>}
+            {new Date(viewDate + "T00:00:00").toLocaleDateString(locale, { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })}
+            {viewDate === today && <span className="week-now"> · {tr("heute", "today")}</span>}
           </span>
           <button className="chip" onClick={() => goDay(addDaysIso(viewDate, 1))}>
-            Tag →
+            {tr("Tag", "Day")} →
           </button>
         </div>
       )}
@@ -361,45 +355,45 @@ export default function TasksPage() {
           className={`chip ${todayActive ? "chip-active" : ""}`}
           onClick={() => setView("today")}
         >
-          Heute
+          {tr("Heute", "Today")}
         </button>
         <button
           className={`chip ${view === "week" ? "chip-active" : ""}`}
           onClick={() => setView("week")}
         >
-          Diese Woche
+          {tr("Diese Woche", "This week")}
         </button>
         <button
           className={`chip ${view === "later" ? "chip-active" : ""}`}
           onClick={() => setView("later")}
         >
-          Später
+          {tr("Später", "Later")}
         </button>
         <button
           className={`chip ${view === "all" ? "chip-active" : ""}`}
           onClick={() => setView("all")}
         >
-          Alle
+          {tr("Alle", "All")}
         </button>
         <button
           className={`chip ${view === "done" ? "chip-active" : ""}`}
           onClick={() => setView("done")}
         >
-          Erledigt
+          {tr("Erledigt", "Done")}
         </button>
       </div>
 
       {tasks.length === 0 ? (
         <div className="empty" data-icon="✅">
           <strong>
-            {view === "today" && "Keine Tasks für heute"}
-            {view === "week" && "Keine Tasks diese Woche"}
-            {view === "later" && "Keine zukünftigen Tasks"}
-            {view === "all" && "Alle Tasks erledigt"}
-            {view === "done" && "Noch keine Tasks abgehakt"}
-            {view === "day" && "Keine Tasks für diesen Tag"}
+            {view === "today" && tr("Keine Tasks für heute", "No tasks for today")}
+            {view === "week" && tr("Keine Tasks diese Woche", "No tasks this week")}
+            {view === "later" && tr("Keine zukünftigen Tasks", "No future tasks")}
+            {view === "all" && tr("Alle Tasks erledigt", "All tasks completed")}
+            {view === "done" && tr("Noch keine Tasks abgehakt", "No completed tasks yet")}
+            {view === "day" && tr("Keine Tasks für diesen Tag", "No tasks for this day")}
           </strong>
-          <span>Neuen Task oben im Formular anlegen.</span>
+          <span>{tr("Neuen Task oben im Formular anlegen.", "Create a new task using the form above.")}</span>
         </div>
       ) : (
         <ul className="task-list">
@@ -432,7 +426,7 @@ export default function TasksPage() {
                   )}
                   {showDate && <span className="task-date">{entry.date}</span>}
                   <span className={`prio prio-${m.priority}`}>
-                    {PRIO_LABEL[m.priority]}
+                    {prioLabel[m.priority]}
                   </span>
                   {normalizeRecurrence(m.recurrence) && (
                     <span className="chip" title={recurrenceLabel(normalizeRecurrence(m.recurrence)!)}>
@@ -448,7 +442,7 @@ export default function TasksPage() {
                   </button>
                   <button
                     className="task-del"
-                    title="Löschen"
+                    title={tr("Löschen", "Delete")}
                     onClick={() => remove(entry.id)}
                   >
                     ✕
@@ -477,7 +471,7 @@ export default function TasksPage() {
                     <div className="subtask-add">
                       <input
                         className="task-input"
-                        placeholder="Subtask hinzufügen…"
+                        placeholder={tr("Subtask hinzufügen…", "Add subtask…")}
                         value={subInput[entry.id] ?? ""}
                         onChange={(e) =>
                           setSubInput((p) => ({ ...p, [entry.id]: e.target.value }))

@@ -24,6 +24,7 @@ import { syncHabitStreaks } from "./repository";
 import { seedIfFirstRun, cleanupDuplicateWeekplan } from "./seed";
 import { initSync } from "./sync";
 import { checkAndNotify } from "./reminders";
+import { useI18n } from "./i18n";
 
 // Module mit echter UI. Rest fällt auf ModulePlaceholder zurück.
 const PAGES: Record<string, React.ReactNode> = {
@@ -41,6 +42,7 @@ const PAGES: Record<string, React.ReactNode> = {
 };
 
 export default function App() {
+  const { tr } = useI18n();
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboarded());
   const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW();
 
@@ -59,9 +61,9 @@ export default function App() {
     {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
     {needRefresh && (
       <div className="pwa-update-banner">
-        <span>Neue Version verfügbar.</span>
+        <span>{tr("Neue Version verfügbar.", "A new version is available.")}</span>
         <button className="btn" onClick={() => updateServiceWorker(true)}>
-          Update installieren
+          {tr("Update installieren", "Install update")}
         </button>
       </div>
     )}
@@ -84,7 +86,7 @@ export default function App() {
           <Route path="/auth" element={<AuthPage />} />
           <Route
             path="*"
-            element={<div className="page">Seite nicht gefunden.</div>}
+            element={<div className="page">{tr("Seite nicht gefunden.", "Page not found.")}</div>}
           />
         </Route>
       </Routes>

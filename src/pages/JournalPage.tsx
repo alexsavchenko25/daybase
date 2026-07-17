@@ -6,12 +6,14 @@ import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
 import PageHeader from "../components/PageHeader";
 import type { Entry } from "../types";
+import { useI18n } from "../i18n";
 
 function parseTags(raw: string): string[] {
   return [...new Set(raw.split(",").map((t) => t.trim()).filter(Boolean))];
 }
 
 export default function JournalPage() {
+  const { tr } = useI18n();
   const [params] = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(
     () => params.get("sel"),
@@ -106,18 +108,18 @@ export default function JournalPage() {
 
   return (
     <div className="page journal-page">
-      <PageHeader icon="📓" title="Tagebuch" />
+      <PageHeader icon="📓" title={tr("Tagebuch", "Journal")} />
 
       <div className="journal-grid">
         {/* Liste / Navigation */}
         <aside className="journal-list">
           <button className="btn full" onClick={newEntry}>
-            + Neuer Eintrag
+            + {tr("Neuer Eintrag", "New entry")}
           </button>
 
           <input
             className="task-input full"
-            placeholder="Suche (Datum/Text)…"
+            placeholder={tr("Suche (Datum/Text)…", "Search (date/text)…")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -128,7 +130,7 @@ export default function JournalPage() {
                 className={`chip ${tagFilter === null ? "chip-active" : ""}`}
                 onClick={() => setTagFilter(null)}
               >
-                alle
+                {tr("alle", "all")}
               </button>
               {allTags.map((t) => (
                 <button
@@ -144,8 +146,8 @@ export default function JournalPage() {
 
           {filtered.length === 0 ? (
             <div className="empty" data-icon="📓">
-              <strong>Keine Einträge</strong>
-              <span>Schreibe rechts deinen ersten Tagebucheintrag.</span>
+              <strong>{tr("Keine Einträge", "No entries")}</strong>
+              <span>{tr("Schreibe rechts deinen ersten Tagebucheintrag.", "Write your first journal entry on the right.")}</span>
             </div>
           ) : (
             <ul className="entry-list">
@@ -157,7 +159,7 @@ export default function JournalPage() {
                 >
                   <div className="entry-date">{e.date}</div>
                   <div className="entry-title">
-                    {e.title || <span className="muted">(ohne Titel)</span>}
+                    {e.title || <span className="muted">{tr("(ohne Titel)", "(untitled)")}</span>}
                   </div>
                   {e.tags.length > 0 && (
                     <div className="entry-tags">
@@ -178,19 +180,19 @@ export default function JournalPage() {
         <section className="journal-editor">
           {!selected ? (
             <p className="muted empty">
-              Eintrag wählen oder neuen anlegen.
+              {tr("Eintrag wählen oder neuen anlegen.", "Select an entry or create a new one.")}
             </p>
           ) : (
             <>
               <div className="editor-meta">
                 <span className="editor-date">{selected.date}</span>
-                <button className="task-del" onClick={remove} title="Löschen">
-                  ✕ löschen
+                <button className="task-del" onClick={remove} title={tr("Löschen", "Delete")}>
+                  ✕ {tr("löschen", "delete")}
                 </button>
               </div>
               <input
                 className="task-input full"
-                placeholder="Titel…"
+                placeholder={tr("Titel…", "Title…")}
                 value={title}
                 onChange={(e) => {
                   setTitle(e.target.value);
@@ -199,7 +201,7 @@ export default function JournalPage() {
               />
               <textarea
                 className="journal-textarea"
-                placeholder="Was war heute…"
+                placeholder={tr("Was war heute…", "What happened today…")}
                 value={content}
                 onChange={(e) => {
                   setContent(e.target.value);
@@ -208,7 +210,7 @@ export default function JournalPage() {
               />
               <input
                 className="task-input full"
-                placeholder="Tags, kommagetrennt (z.B. arbeit, sport)"
+                placeholder={tr("Tags, kommagetrennt (z.B. arbeit, sport)", "Tags, comma-separated (e.g. work, sport)")}
                 value={tagsRaw}
                 onChange={(e) => {
                   setTagsRaw(e.target.value);
@@ -216,7 +218,7 @@ export default function JournalPage() {
                 }}
               />
               <button className="btn" onClick={save} disabled={!dirty}>
-                {dirty ? "Speichern" : "Gespeichert"}
+                {dirty ? tr("Speichern", "Save") : tr("Gespeichert", "Saved")}
               </button>
             </>
           )}

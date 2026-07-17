@@ -5,11 +5,13 @@ import { entriesRepo } from "../repository";
 import { todayIso, lastNDays } from "../utils/date";
 import { computeStreak, isDoneForPeriod, habitMeta } from "../utils/habit";
 import PageHeader from "../components/PageHeader";
+import { useI18n } from "../i18n";
 import type { Entry, HabitMeta } from "../types";
 
 type Frequency = HabitMeta["frequency"];
 
 export default function HabitsPage() {
+  const { tr } = useI18n();
   const today = todayIso();
   const week = lastNDays(7);
   const [name, setName] = useState("");
@@ -61,7 +63,7 @@ export default function HabitsPage() {
       <form className="task-form" onSubmit={addHabit}>
         <input
           className="task-input"
-          placeholder="Neue Gewohnheit…"
+          placeholder={tr("Neue Gewohnheit…", "New habit…")}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -70,18 +72,18 @@ export default function HabitsPage() {
           value={frequency}
           onChange={(e) => setFrequency(e.target.value as Frequency)}
         >
-          <option value="daily">Täglich</option>
-          <option value="weekly">Wöchentlich</option>
+          <option value="daily">{tr("Täglich", "Daily")}</option>
+          <option value="weekly">{tr("Wöchentlich", "Weekly")}</option>
         </select>
         <button className="btn" type="submit">
-          Hinzufügen
+          {tr("Hinzufügen", "Add")}
         </button>
       </form>
 
       {habits.length === 0 ? (
         <div className="empty" data-icon="🔁">
-          <strong>Noch keine Habits</strong>
-          <span>Lege oben deine erste Gewohnheit an — täglich oder wöchentlich.</span>
+          <strong>{tr("Noch keine Habits", "No habits yet")}</strong>
+          <span>{tr("Lege oben deine erste Gewohnheit an — täglich oder wöchentlich.", "Create your first habit above — daily or weekly.")}</span>
         </div>
       ) : (
         <ul className="habit-list">
@@ -101,10 +103,10 @@ export default function HabitsPage() {
                 </label>
 
                 <span className="habit-freq">
-                  {m.frequency === "daily" ? "täglich" : "wöchentl."}
+                  {m.frequency === "daily" ? tr("täglich", "daily") : tr("wöchentl.", "weekly")}
                 </span>
 
-                <div className="habit-week" title="letzte 7 Tage">
+                <div className="habit-week" title={tr("letzte 7 Tage", "last 7 days")}>
                   {week.map((d) => (
                     <span
                       key={d}
@@ -116,13 +118,13 @@ export default function HabitsPage() {
                   ))}
                 </div>
 
-                <span className="habit-streak" title="aktueller Streak">
+                <span className="habit-streak" title={tr("aktueller Streak", "current streak")}>
                   🔥 {m.streak}
                 </span>
 
                 <button
                   className="task-del"
-                  title="Löschen"
+                  title={tr("Löschen", "Delete")}
                   onClick={() => remove(habit.id)}
                 >
                   ✕

@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase, isSupabaseConfigured, useSession } from "../supabase";
 import PageHeader from "../components/PageHeader";
+import { useI18n } from "../i18n";
 
 // Auth-Seite: Email/Passwort Login + Registrierung gegen Supabase.
 // Optional — ohne Login bleibt die App voll lokal nutzbar (IndexedDB).
 export default function AuthPage() {
+  const { tr } = useI18n();
   const { session, loading } = useSession();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -22,13 +24,13 @@ export default function AuthPage() {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        setMsg({ tone: "ok", text: "Eingeloggt." });
+        setMsg({ tone: "ok", text: tr("Eingeloggt.", "Signed in.") });
       } else {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         setMsg({
           tone: "ok",
-          text: "Registriert. Falls aktiviert, bestätige zuerst die E-Mail.",
+          text: tr("Registriert. Falls aktiviert, bestätige zuerst die E-Mail.", "Registered. If enabled, confirm your email first."),
         });
       }
       setPassword("");
@@ -48,36 +50,36 @@ export default function AuthPage() {
     <div className="page settings-page">
       <PageHeader
         icon="🔐"
-        title="Konto"
-        subtitle="Cloud Sync ist optional — ohne Login läuft alles lokal weiter."
+        title={tr("Konto", "Account")}
+        subtitle={tr("Cloud Sync ist optional — ohne Login läuft alles lokal weiter.", "Cloud sync is optional — everything continues to work locally without signing in.")}
       />
 
       {!isSupabaseConfigured ? (
         <section className="set-card set-hint">
           <span className="set-hint-icon">☁️</span>
           <p>
-            Cloud Sync ist <strong>nicht konfiguriert</strong>. Lege eine{" "}
+            {tr("Cloud Sync ist", "Cloud sync is")} <strong>{tr("nicht konfiguriert", "not configured")}</strong>. {tr("Lege eine", "Create a")}{" "}
             <code>.env</code> mit <code>VITE_SUPABASE_URL</code> und{" "}
             <code>VITE_SUPABASE_ANON_KEY</code> an (siehe <code>.env.example</code>),
-            dann ist hier Login möglich. Deine lokalen Daten bleiben unberührt.
+            {tr("dann ist hier Login möglich. Deine lokalen Daten bleiben unberührt.", "to enable sign-in here. Your local data remains untouched.")}
           </p>
         </section>
       ) : loading ? (
         <section className="set-card">
-          <p className="muted">Lade Login-Status…</p>
+          <p className="muted">{tr("Lade Login-Status…", "Loading sign-in status…")}</p>
         </section>
       ) : session ? (
         <section className="set-card">
-          <div className="set-title">Eingeloggt</div>
+          <div className="set-title">{tr("Eingeloggt", "Signed in")}</div>
           <p className="muted set-sub">
-            Angemeldet als <strong>{session.user.email}</strong>.
+            {tr("Angemeldet als", "Signed in as")} <strong>{session.user.email}</strong>.
           </p>
           <div className="set-actions">
             <button className="chip" onClick={logout}>
               Logout
             </button>
             <Link to="/" className="chip">
-              Zum Dashboard →
+              {tr("Zum Dashboard", "Go to Dashboard")} →
             </Link>
           </div>
         </section>
@@ -94,7 +96,7 @@ export default function AuthPage() {
               className={`chip ${mode === "signup" ? "chip-active" : ""}`}
               onClick={() => setMode("signup")}
             >
-              Registrieren
+              {tr("Registrieren", "Register")}
             </button>
           </div>
           <form onSubmit={submit} className="auth-form">
@@ -110,7 +112,7 @@ export default function AuthPage() {
             <input
               className="task-input full"
               type="password"
-              placeholder="Passwort"
+              placeholder={tr("Passwort", "Password")}
               value={password}
               autoComplete={mode === "login" ? "current-password" : "new-password"}
               required
@@ -118,7 +120,7 @@ export default function AuthPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
             <button className="btn full" type="submit" disabled={busy}>
-              {busy ? "…" : mode === "login" ? "Einloggen" : "Konto erstellen"}
+              {busy ? "…" : mode === "login" ? tr("Einloggen", "Sign in") : tr("Konto erstellen", "Create account")}
             </button>
           </form>
         </section>

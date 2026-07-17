@@ -6,12 +6,7 @@ import { entriesRepo } from "../repository";
 import { addDaysIso, todayIso } from "../utils/date";
 import PageHeader from "../components/PageHeader";
 import type { ReviewMeta } from "../types";
-
-const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-function dayLabel(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
-  return `${WD[d.getDay()]} ${iso.slice(8)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}`;
-}
+import { useI18n } from "../i18n";
 
 const EMPTY: ReviewMeta = {
   wins: "",
@@ -24,6 +19,7 @@ const EMPTY: ReviewMeta = {
 };
 
 export default function ReviewPage() {
+  const { locale, tr } = useI18n();
   const today = todayIso();
   const [params] = useSearchParams();
   const [date, setDate] = useState(() => params.get("date") || today);
@@ -95,7 +91,7 @@ export default function ReviewPage() {
 
       <div className="week-nav rv-nav">
         <button className="chip" onClick={() => goDay(addDaysIso(date, -1))}>
-          ← Tag
+          ← {tr("Tag", "Day")}
         </button>
         <input
           className="task-select"
@@ -104,19 +100,19 @@ export default function ReviewPage() {
           onChange={(e) => goDay(e.target.value)}
         />
         <span className="week-label">
-          {dayLabel(date)}
-          {date === today && <span className="week-now"> · heute</span>}
+          {new Date(date + "T00:00:00").toLocaleDateString(locale, { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })}
+          {date === today && <span className="week-now"> · {tr("heute", "today")}</span>}
         </span>
         <button className="chip" onClick={() => goDay(addDaysIso(date, 1))}>
-          Tag →
+          {tr("Tag", "Day")} →
         </button>
         {date !== today && (
           <button className="chip" onClick={() => goDay(today)}>
-            heute
+            {tr("heute", "today")}
           </button>
         )}
         <span className={`rv-status ${existing ? "done" : "open"}`}>
-          {existing ? "✓ ausgefüllt" : "offen"}
+          {existing ? tr("✓ ausgefüllt", "✓ completed") : tr("offen", "open")}
         </span>
       </div>
 
@@ -126,7 +122,7 @@ export default function ReviewPage() {
           <textarea
             value={form.wins}
             onChange={(e) => set("wins", e.target.value)}
-            placeholder="Was lief gut?"
+            placeholder={tr("Was lief gut?", "What went well?")}
           />
         </label>
         <label className="rv-field">
@@ -134,7 +130,7 @@ export default function ReviewPage() {
           <textarea
             value={form.problems}
             onChange={(e) => set("problems", e.target.value)}
-            placeholder="Was lief schlecht / blockierte?"
+            placeholder={tr("Was lief schlecht / blockierte?", "What went poorly or blocked you?")}
           />
         </label>
         <label className="rv-field">
@@ -142,16 +138,16 @@ export default function ReviewPage() {
           <textarea
             value={form.lessons}
             onChange={(e) => set("lessons", e.target.value)}
-            placeholder="Was gelernt?"
+            placeholder={tr("Was gelernt?", "What did you learn?")}
           />
         </label>
 
         <div className="rv-sliders">
           {(
             [
-              ["energy", "⚡ Energy"],
-              ["focus", "🎯 Focus"],
-              ["mood", "🙂 Mood"],
+              ["energy", tr("⚡ Energie", "⚡ Energy")],
+              ["focus", tr("🎯 Fokus", "🎯 Focus")],
+              ["mood", tr("🙂 Stimmung", "🙂 Mood")],
             ] as [keyof ReviewMeta, string][]
           ).map(([key, label]) => (
             <label key={key} className="rv-slider">
@@ -170,22 +166,22 @@ export default function ReviewPage() {
         </div>
 
         <label className="rv-field">
-          <span>➡️ Tomorrow Priority</span>
+          <span>➡️ {tr("Priorität für morgen", "Tomorrow priority")}</span>
           <input
             className="task-input full"
             value={form.tomorrowPriority}
             onChange={(e) => set("tomorrowPriority", e.target.value)}
-            placeholder="Wichtigste Sache morgen"
+            placeholder={tr("Wichtigste Sache morgen", "Most important thing tomorrow")}
           />
         </label>
 
         <div className="rv-actions">
           <button className="btn" onClick={save}>
-            {saved ? "Gespeichert ✓" : existing ? "Aktualisieren" : "Speichern"}
+            {saved ? tr("Gespeichert ✓", "Saved ✓") : existing ? tr("Aktualisieren", "Update") : tr("Speichern", "Save")}
           </button>
           {existing && (
             <button className="chip" onClick={remove}>
-              Löschen
+              {tr("Löschen", "Delete")}
             </button>
           )}
         </div>

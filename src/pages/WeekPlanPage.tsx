@@ -11,6 +11,7 @@ import {
 } from "../data/weekplanCategories";
 import PageHeader from "../components/PageHeader";
 import type { Entry } from "../types";
+import { useI18n } from "../i18n";
 
 const DAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
@@ -36,6 +37,7 @@ function planMeta(e: Entry): PlanMeta {
 }
 
 export default function WeekPlanPage() {
+  const { tr } = useI18n();
   const today = todayIso();
   const [monday, setMonday] = useState(() => mondayOfIso(today));
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -152,22 +154,22 @@ export default function WeekPlanPage() {
     <div className="page week-page">
       <PageHeader
         icon="🗓️"
-        title="Wochenplan"
+        title={tr("Wochenplan", "Weekly Plan")}
         actions={
           <div className="week-nav">
             <button className="chip" onClick={() => setMonday(addDaysIso(monday, -7))}>
-              ← Woche
+              ← {tr("Woche", "Week")}
             </button>
             <span className="week-label">
-              KW {weekNo}
-              {isCurrentWeek && <span className="week-now"> · aktuell</span>}
+              {tr("KW", "Week")} {weekNo}
+              {isCurrentWeek && <span className="week-now"> · {tr("aktuell", "current")}</span>}
             </span>
             <button className="chip" onClick={() => setMonday(addDaysIso(monday, 7))}>
-              Woche →
+              {tr("Woche", "Week")} →
             </button>
             {!isCurrentWeek && (
               <button className="chip" onClick={() => setMonday(mondayOfIso(today))}>
-                heute
+                {tr("heute", "today")}
               </button>
             )}
             <span className="week-sep" />
@@ -175,13 +177,13 @@ export default function WeekPlanPage() {
               className={`chip ${compact ? "chip-active" : ""}`}
               onClick={() => setCompact(true)}
             >
-              Kompakt
+              {tr("Kompakt", "Compact")}
             </button>
             <button
               className={`chip ${!compact ? "chip-active" : ""}`}
               onClick={() => setCompact(false)}
             >
-              Detailliert
+              {tr("Detailliert", "Detailed")}
             </button>
           </div>
         }
@@ -244,7 +246,9 @@ function DayColumn(props: {
   onRemove: (id: string) => void;
   onDropToDay: (id: string, toDay: number) => void;
 }) {
+  const { language, tr } = useI18n();
   const { date, dayIdx, isToday, items, editingId } = props;
+  const dayLabels = language === "de" ? DAY_LABELS : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const [dragOver, setDragOver] = useState(false);
 
   return (
@@ -262,7 +266,7 @@ function DayColumn(props: {
       }}
     >
       <div className="day-head">
-        <span className="day-name">{DAY_LABELS[dayIdx]}</span>
+        <span className="day-name">{dayLabels[dayIdx]}</span>
         <span className="day-date">
           {date.slice(8)}.{date.slice(5, 7)}.
         </span>
@@ -286,7 +290,7 @@ function DayColumn(props: {
       </ul>
 
       <button className="day-add-btn" onClick={() => props.onAdd(dayIdx)}>
-        + Block
+        + {tr("Block", "Block")}
       </button>
     </div>
   );
@@ -312,6 +316,8 @@ function BlockCard(props: {
   onToggle: (entry: Entry) => void;
   onRemove: (id: string) => void;
 }) {
+  const { language, tr } = useI18n();
+  const dayLabels = language === "de" ? DAY_LABELS : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const { entry, dayIdx, editing, compact } = props;
   const m = planMeta(entry);
 
@@ -349,13 +355,13 @@ function BlockCard(props: {
         </div>
         <input
           className="pb-edit-title"
-          placeholder="Titel"
+          placeholder={tr("Titel", "Title")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
         <textarea
           className="pb-edit-note"
-          placeholder="Notiz"
+          placeholder={tr("Notiz", "Note")}
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
@@ -371,11 +377,11 @@ function BlockCard(props: {
             ))}
           </select>
           <select
-            title="Tag verschieben"
+            title={tr("Tag verschieben", "Move day")}
             value={dayIdx}
             onChange={(e) => props.onMove(entry, Number(e.target.value))}
           >
-            {DAY_LABELS.map((d, i) => (
+            {dayLabels.map((d, i) => (
               <option key={i} value={i}>
                 {d}
               </option>
@@ -389,14 +395,14 @@ function BlockCard(props: {
               props.onSave(entry, { title, note, startTime, endTime, category })
             }
           >
-            Speichern
+            {tr("Speichern", "Save")}
           </button>
           <button className="chip sm" onClick={() => props.onEdit(null)}>
-            Abbrechen
+            {tr("Abbrechen", "Cancel")}
           </button>
           <button
             className="plan-del"
-            title="Löschen"
+            title={tr("Löschen", "Delete")}
             onClick={() => props.onRemove(entry.id)}
           >
             ✕
@@ -437,7 +443,7 @@ function BlockCard(props: {
           <div className="pb-note">{entry.content}</div>
         )}
       </div>
-      <button className="pb-edit-btn" title="Bearbeiten" onClick={openEdit}>
+      <button className="pb-edit-btn" title={tr("Bearbeiten", "Edit")} onClick={openEdit}>
         ✎
       </button>
     </li>

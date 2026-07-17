@@ -12,6 +12,7 @@ import {
 import TradeCalendar from "./TradeCalendar";
 import PageHeader from "../components/PageHeader";
 import type { Entry, TradeMeta } from "../types";
+import { useI18n } from "../i18n";
 
 type SortKey = "date" | "pnl" | "symbol";
 type Period = "today" | "week" | "month" | "all";
@@ -34,6 +35,7 @@ const EMPTY = {
 };
 
 export default function TradesPage() {
+  const { tr } = useI18n();
   const today = todayIso();
   const [form, setForm] = useState({ ...EMPTY, date: today });
   const [editId, setEditId] = useState<string | null>(null);
@@ -203,7 +205,7 @@ export default function TradesPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_IMG) {
-      alert("Bild zu groß (max. 2 MB).");
+      alert(tr("Bild zu groß (max. 2 MB).", "Image too large (max. 2 MB)."));
       e.target.value = "";
       return;
     }
@@ -218,7 +220,7 @@ export default function TradesPage() {
     const sz = parseFloat(form.size);
     const pv = parseFloat(form.pointValue);
     if (!form.symbol.trim() || [en, ex, sz, pv].some((n) => Number.isNaN(n))) {
-      alert("Symbol, Entry, Exit, Size, $/Punkt sind Pflicht (Zahlen).");
+      alert(tr("Symbol, Entry, Exit, Size, $/Punkt sind Pflicht (Zahlen).", "Symbol, entry, exit, size and $/point are required numbers."));
       return;
     }
     const pnl = computeTradePnl(en, ex, sz, pv, form.direction);
@@ -282,10 +284,10 @@ export default function TradesPage() {
         <div className="filter-row">
           {(
             [
-              ["today", "Heute"],
-              ["week", "Woche"],
-              ["month", "Monat"],
-              ["all", "Alle"],
+              ["today", tr("Heute", "Today")],
+              ["week", tr("Woche", "Week")],
+              ["month", tr("Monat", "Month")],
+              ["all", tr("Alle", "All")],
             ] as [Period, string][]
           ).map(([p, l]) => (
             <button
@@ -307,13 +309,13 @@ export default function TradesPage() {
         </div>
         <div className="filter-row">
           <select className="task-select" value={fSymbol} onChange={(e) => setFSymbol(e.target.value)}>
-            <option value="">Alle Symbole</option>
+            <option value="">{tr("Alle Symbole", "All symbols")}</option>
             {allSymbols.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
           <select className="task-select" value={fSetup} onChange={(e) => setFSetup(e.target.value)}>
-            <option value="">Alle Setups</option>
+            <option value="">{tr("Alle Setups", "All setups")}</option>
             {allSetups.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
@@ -329,9 +331,9 @@ export default function TradesPage() {
           </select>
           {(
             [
-              ["all", "Alle"],
-              ["profit", "Nur Profit"],
-              ["loss", "Nur Loss"],
+              ["all", tr("Alle", "All")],
+              ["profit", tr("Nur Profit", "Profit only")],
+              ["loss", tr("Nur Verlust", "Loss only")],
             ] as [typeof fResult, string][]
           ).map(([r, l]) => (
             <button
@@ -355,10 +357,10 @@ export default function TradesPage() {
       {/* Trade-Formular (gruppiert) */}
       <form className="trade-form" onSubmit={submit}>
         <div className="tf-group">
-          <div className="tf-group-label">Trade Basics</div>
+          <div className="tf-group-label">{tr("Trade-Grundlagen", "Trade basics")}</div>
           <div className="tf-grid">
             <label>
-              Datum
+              {tr("Datum", "Date")}
               <input type="date" value={form.date} onChange={(e) => set("date", e.target.value)} />
             </label>
             <label>
@@ -376,7 +378,7 @@ export default function TradesPage() {
               </datalist>
             </label>
             <label>
-              Richtung
+              {tr("Richtung", "Direction")}
               <select
                 value={form.direction}
                 onChange={(e) => set("direction", e.target.value as TradeMeta["direction"])}
@@ -430,7 +432,7 @@ export default function TradesPage() {
             <div className="tf-upload">
               <span className="tf-up-label">Screenshot</span>
               <label className="tf-up-btn">
-                {form.screenshot ? "Bild ändern" : "📎 Bild wählen"}
+                {form.screenshot ? tr("Bild ändern", "Change image") : tr("📎 Bild wählen", "📎 Choose image")}
                 <input type="file" accept="image/*" onChange={onFile} hidden />
               </label>
               {form.screenshot && (
@@ -450,11 +452,11 @@ export default function TradesPage() {
           <div className="tf-actions">
             {editId && (
               <button className="chip" type="button" onClick={resetForm}>
-                Abbrechen
+                {tr("Abbrechen", "Cancel")}
               </button>
             )}
             <button className="btn" type="submit">
-              {editId ? "Speichern" : "Trade anlegen"}
+              {editId ? tr("Speichern", "Save") : tr("Trade anlegen", "Create trade")}
             </button>
           </div>
         </div>
@@ -466,7 +468,7 @@ export default function TradesPage() {
           <p className="section-label">Analyse</p>
           <div className="analytics-grid">
             <div className="an-card">
-              <div className="an-title">PnL nach Setup</div>
+              <div className="an-title">{tr("PnL nach Setup", "PnL by setup")}</div>
               {analytics.bySetup.map(([k, v]) => (
                 <div key={k} className="an-row">
                   <span className="an-key">{k}</span>
@@ -482,7 +484,7 @@ export default function TradesPage() {
             </div>
 
             <div className="an-card">
-              <div className="an-title">Trades nach Symbol</div>
+              <div className="an-title">{tr("Trades nach Symbol", "Trades by symbol")}</div>
               {analytics.bySymbol.map(([k, n]) => (
                 <div key={k} className="an-row">
                   <span className="an-key">{k}</span>
@@ -495,7 +497,7 @@ export default function TradesPage() {
             </div>
 
             <div className="an-card">
-              <div className="an-title">Winrate Richtung</div>
+              <div className="an-title">{tr("Winrate Richtung", "Win rate by direction")}</div>
               {(["long", "short"] as const).map((d) => {
                 const s = analytics.dirStat[d];
                 const wr = s.n ? (s.wins / s.n) * 100 : 0;
@@ -516,7 +518,7 @@ export default function TradesPage() {
             </div>
 
             <div className="an-card">
-              <div className="an-title">Monats-PnL</div>
+              <div className="an-title">{tr("Monats-PnL", "Monthly PnL")}</div>
               {analytics.byMonth.map(([k, v]) => (
                 <div key={k} className="an-row">
                   <span className="an-key">{k}</span>
@@ -543,9 +545,9 @@ export default function TradesPage() {
       <p className="section-label">Trades</p>
       {filtered.length === 0 ? (
         <div className="empty trade-empty" data-icon="📈">
-          <strong>Noch keine Trades für diesen Zeitraum</strong>
+          <strong>{tr("Noch keine Trades für diesen Zeitraum", "No trades for this period yet")}</strong>
           <span className="muted">
-            Lege deinen ersten Trade an, um Statistiken zu sehen.
+            {tr("Lege deinen ersten Trade an, um Statistiken zu sehen.", "Create your first trade to see statistics.")}
           </span>
         </div>
       ) : (
@@ -553,7 +555,7 @@ export default function TradesPage() {
           <table className="trade-table">
             <thead>
               <tr>
-                <th className="sortable" onClick={() => headerSort("date")}>Datum{arrow("date")}</th>
+                <th className="sortable" onClick={() => headerSort("date")}>{tr("Datum", "Date")}{arrow("date")}</th>
                 <th className="sortable" onClick={() => headerSort("symbol")}>Symbol{arrow("symbol")}</th>
                 <th>Dir</th>
                 <th className="num">Entry</th>
@@ -601,7 +603,7 @@ export default function TradesPage() {
                     <td>
                       <button
                         className="task-del"
-                        title="Löschen"
+                        title={tr("Löschen", "Delete")}
                         onClick={(ev) => {
                           ev.stopPropagation();
                           remove(t.id);

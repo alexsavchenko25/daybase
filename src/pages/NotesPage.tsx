@@ -6,6 +6,7 @@ import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
 import PageHeader from "../components/PageHeader";
 import type { Entry, NoteMeta } from "../types";
+import { useI18n } from "../i18n";
 
 type Sort = "date" | "title";
 
@@ -14,6 +15,7 @@ function parseTags(raw: string): string[] {
 }
 
 export default function NotesPage() {
+  const { tr } = useI18n();
   const [params] = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(
     () => params.get("sel"),
@@ -125,17 +127,17 @@ export default function NotesPage() {
 
   return (
     <div className="page journal-page">
-      <PageHeader icon="🗒️" title="Notizen" />
+      <PageHeader icon="🗒️" title={tr("Notizen", "Notes")} />
 
       <div className="journal-grid">
         <aside className="journal-list">
           <button className="btn full" onClick={newNote}>
-            + Neue Notiz
+            + {tr("Neue Notiz", "New note")}
           </button>
 
           <input
             className="task-input full"
-            placeholder="Volltextsuche…"
+            placeholder={tr("Volltextsuche…", "Full-text search…")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -145,13 +147,13 @@ export default function NotesPage() {
               className={`chip ${sort === "date" ? "chip-active" : ""}`}
               onClick={() => setSort("date")}
             >
-              nach Datum
+              {tr("nach Datum", "by date")}
             </button>
             <button
               className={`chip ${sort === "title" ? "chip-active" : ""}`}
               onClick={() => setSort("title")}
             >
-              nach Titel
+              {tr("nach Titel", "by title")}
             </button>
           </div>
 
@@ -161,7 +163,7 @@ export default function NotesPage() {
                 className={`chip ${tagFilter === null ? "chip-active" : ""}`}
                 onClick={() => setTagFilter(null)}
               >
-                alle
+                {tr("alle", "all")}
               </button>
               {allTags.map((t) => (
                 <button
@@ -177,8 +179,8 @@ export default function NotesPage() {
 
           {filtered.length === 0 ? (
             <div className="empty" data-icon="🗒️">
-              <strong>Keine Notizen</strong>
-              <span>Lege rechts deine erste Notiz an — mit Tags und Verknüpfungen.</span>
+              <strong>{tr("Keine Notizen", "No notes")}</strong>
+              <span>{tr("Lege rechts deine erste Notiz an — mit Tags und Verknüpfungen.", "Create your first note on the right — with tags and links.")}</span>
             </div>
           ) : (
             <ul className="entry-list">
@@ -189,7 +191,7 @@ export default function NotesPage() {
                   onClick={() => setSelectedId(e.id)}
                 >
                   <div className="entry-title">
-                    {e.title || <span className="muted">(ohne Titel)</span>}
+                    {e.title || <span className="muted">{tr("(ohne Titel)", "(untitled)")}</span>}
                   </div>
                   <div className="entry-date">{e.updatedAt.slice(0, 10)}</div>
                   {e.tags.length > 0 && (
@@ -209,20 +211,20 @@ export default function NotesPage() {
 
         <section className="journal-editor">
           {!selected ? (
-            <p className="muted empty">Notiz wählen oder neue anlegen.</p>
+            <p className="muted empty">{tr("Notiz wählen oder neue anlegen.", "Select a note or create a new one.")}</p>
           ) : (
             <>
               <div className="editor-meta">
                 <span className="editor-date">
-                  zuletzt: {selected.updatedAt.slice(0, 10)}
+                  {tr("zuletzt", "last edited")}: {selected.updatedAt.slice(0, 10)}
                 </span>
-                <button className="task-del" onClick={remove} title="Löschen">
-                  ✕ löschen
+                <button className="task-del" onClick={remove} title={tr("Löschen", "Delete")}>
+                  ✕ {tr("löschen", "delete")}
                 </button>
               </div>
               <input
                 className="task-input full"
-                placeholder="Titel…"
+                placeholder={tr("Titel…", "Title…")}
                 value={title}
                 onChange={(e) => {
                   setTitle(e.target.value);
@@ -231,7 +233,7 @@ export default function NotesPage() {
               />
               <textarea
                 className="journal-textarea"
-                placeholder="Inhalt…"
+                placeholder={tr("Inhalt…", "Content…")}
                 value={content}
                 onChange={(e) => {
                   setContent(e.target.value);
@@ -240,7 +242,7 @@ export default function NotesPage() {
               />
               <input
                 className="task-input full"
-                placeholder="Tags, kommagetrennt"
+                placeholder={tr("Tags, kommagetrennt", "Tags, comma-separated")}
                 value={tagsRaw}
                 onChange={(e) => {
                   setTagsRaw(e.target.value);
@@ -256,7 +258,7 @@ export default function NotesPage() {
                     setDirty(true);
                   }}
                 >
-                  <option value="">— Projekt —</option>
+                  <option value="">— {tr("Projekt", "Project")} —</option>
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.title}
@@ -280,7 +282,7 @@ export default function NotesPage() {
                 </select>
               </div>
               <button className="btn" onClick={save} disabled={!dirty}>
-                {dirty ? "Speichern" : "Gespeichert"}
+                {dirty ? tr("Speichern", "Save") : tr("Gespeichert", "Saved")}
               </button>
             </>
           )}

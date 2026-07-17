@@ -5,6 +5,7 @@ import { db } from "./db";
 import { todayIso } from "./utils/date";
 import { isDoneForPeriod } from "./utils/habit";
 import type { HabitMeta, TaskMeta } from "./types";
+import { getLanguage } from "./i18n";
 
 const ENABLED_KEY = "daybase.reminders.enabled";
 const LAST_SHOWN_KEY = "daybase.reminders.lastShown";
@@ -48,8 +49,9 @@ export async function checkAndNotify(): Promise<void> {
   if (overdue === 0 && openHabits === 0) return;
 
   const parts: string[] = [];
-  if (overdue > 0) parts.push(`${overdue} überfällige Task${overdue > 1 ? "s" : ""}`);
-  if (openHabits > 0) parts.push(`${openHabits} offene Habit${openHabits > 1 ? "s" : ""}`);
+  const en = getLanguage() === "en";
+  if (overdue > 0) parts.push(en ? `${overdue} overdue task${overdue > 1 ? "s" : ""}` : `${overdue} überfällige Task${overdue > 1 ? "s" : ""}`);
+  if (openHabits > 0) parts.push(en ? `${openHabits} open habit${openHabits > 1 ? "s" : ""}` : `${openHabits} offene Habit${openHabits > 1 ? "s" : ""}`);
 
   const notif = new Notification("Daybase", { body: parts.join(" · "), tag: "daybase-reminder" });
   notif.onclick = () => {

@@ -6,6 +6,7 @@ import { todayIso } from "../utils/date";
 import { fmtClock, fmtDuration, focusMeta } from "../utils/focus";
 import PageHeader from "../components/PageHeader";
 import type { Entry, FocusMeta } from "../types";
+import { useI18n } from "../i18n";
 
 const PRESETS = [25, 50, 90];
 type Phase = "setup" | "run" | "finish";
@@ -42,6 +43,7 @@ function loadFocus(): SavedFocus | null {
 }
 
 export default function FocusPage() {
+  const { tr } = useI18n();
   const today = todayIso();
 
   // Setup
@@ -216,8 +218,8 @@ export default function FocusPage() {
         title="Focus Mode"
         subtitle={
           <>
-            Heute fokussiert: <strong>{fmtDuration(todayTotal)}</strong> ·{" "}
-            {todaySessions.length} Sessions
+            {tr("Heute fokussiert", "Focused today")}: <strong>{fmtDuration(todayTotal)}</strong> ·{" "}
+            {todaySessions.length} {tr("Sessions", "sessions")}
           </>
         }
       />
@@ -226,7 +228,7 @@ export default function FocusPage() {
         <div className="focus-card">
           <input
             className="task-input full"
-            placeholder="Freier Titel (optional)…"
+            placeholder={tr("Freier Titel (optional)…", "Custom title (optional)…")}
             value={freeTitle}
             onChange={(e) => setFreeTitle(e.target.value)}
           />
@@ -235,7 +237,7 @@ export default function FocusPage() {
             value={linkId}
             onChange={(e) => setLinkId(e.target.value)}
           >
-            <option value="">— Task / Project / Goal verknüpfen —</option>
+            <option value="">— {tr("Task / Project / Goal verknüpfen", "Link task / project / goal")} —</option>
             {links.map((l) => (
               <option key={l.id} value={l.id}>
                 {l.label}
@@ -254,7 +256,7 @@ export default function FocusPage() {
             ))}
           </div>
           <button className="btn full" onClick={start}>
-            ▶ Session starten
+            ▶ {tr("Session starten", "Start session")}
           </button>
         </div>
       )}
@@ -266,14 +268,14 @@ export default function FocusPage() {
             {fmtClock(left)}
           </div>
           <div className="focus-sub muted">
-            geplant {planned} min · gearbeitet {fmtDuration(actualSec)}
+            {tr("geplant", "planned")} {planned} min · {tr("gearbeitet", "worked")} {fmtDuration(actualSec)}
           </div>
           <div className="focus-controls">
             <button className="btn" onClick={togglePause}>
-              {running ? "⏸ Pause" : "▶ Weiter"}
+              {running ? `⏸ ${tr("Pause", "Pause")}` : `▶ ${tr("Weiter", "Resume")}`}
             </button>
             <button className="chip" onClick={stop}>
-              ⏹ Beenden
+              ⏹ {tr("Beenden", "Stop")}
             </button>
           </div>
         </div>
@@ -282,15 +284,15 @@ export default function FocusPage() {
       {phase === "finish" && (
         <div className="focus-card">
           <div className="focus-done">
-            ✓ {fmtDuration(actualSec)} fokussiert{" "}
+            ✓ {fmtDuration(actualSec)} {tr("fokussiert", "focused")}{" "}
             <span className="muted">({startTitle.current})</span>
           </div>
           <label className="rv-field">
-            <span>📝 Ergebnis / Notiz</span>
+            <span>📝 {tr("Ergebnis / Notiz", "Result / note")}</span>
             <textarea value={note} onChange={(e) => setNote(e.target.value)} />
           </label>
           <label className="rv-field">
-            <span>🚧 Ablenkungen</span>
+            <span>🚧 {tr("Ablenkungen", "Distractions")}</span>
             <textarea
               value={distractions}
               onChange={(e) => setDistractions(e.target.value)}
@@ -299,7 +301,7 @@ export default function FocusPage() {
           <div className="rv-sliders">
             <label className="rv-slider">
               <span>
-                🎯 Fokus-Score <strong>{focusScore}</strong>/10
+                🎯 {tr("Fokus-Score", "Focus score")} <strong>{focusScore}</strong>/10
               </span>
               <input
                 type="range"
@@ -311,7 +313,7 @@ export default function FocusPage() {
             </label>
             <label className="rv-slider">
               <span>
-                ⚡ Energie danach <strong>{energyAfter}</strong>/10
+                ⚡ {tr("Energie danach", "Energy after")} <strong>{energyAfter}</strong>/10
               </span>
               <input
                 type="range"
@@ -324,10 +326,10 @@ export default function FocusPage() {
           </div>
           <div className="rv-actions">
             <button className="btn" onClick={saveSession}>
-              Session speichern
+              {tr("Session speichern", "Save session")}
             </button>
             <button className="chip" onClick={resetAll}>
-              Verwerfen
+              {tr("Verwerfen", "Discard")}
             </button>
           </div>
         </div>
@@ -335,7 +337,7 @@ export default function FocusPage() {
 
       {todaySessions.length > 0 && (
         <>
-          <p className="section-label">Heutige Sessions</p>
+          <p className="section-label">{tr("Heutige Sessions", "Today's sessions")}</p>
           <ul className="task-list">
             {todaySessions.map((e) => {
               const m = focusMeta(e);
@@ -347,7 +349,7 @@ export default function FocusPage() {
                   <span className="prio prio-medium">🎯 {m.focusScore}</span>
                   <button
                     className="task-del"
-                    title="Löschen"
+                    title={tr("Löschen", "Delete")}
                     onClick={() => entriesRepo.remove(e.id)}
                   >
                     ✕

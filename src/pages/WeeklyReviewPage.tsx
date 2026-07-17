@@ -15,6 +15,7 @@ import type {
   TradeMeta,
   WeeklyReviewMeta,
 } from "../types";
+import { useI18n } from "../i18n";
 
 const EMPTY: WeeklyReviewMeta = {
   wins: "",
@@ -29,6 +30,7 @@ const EMPTY: WeeklyReviewMeta = {
 };
 
 export default function WeeklyReviewPage() {
+  const { tr } = useI18n();
   const today = todayIso();
   const [params] = useSearchParams();
   const [monday, setMonday] = useState(() =>
@@ -190,39 +192,39 @@ export default function WeeklyReviewPage() {
 
       <div className="week-nav rv-nav">
         <button className="chip" onClick={() => setMonday(addDaysIso(monday, -7))}>
-          ← Woche
+          ← {tr("Woche", "Week")}
         </button>
         <span className="week-label">
-          KW {weekNo}
-          {isCurrent && <span className="week-now"> · aktuell</span>}
+          {tr("KW", "Week")} {weekNo}
+          {isCurrent && <span className="week-now"> · {tr("aktuell", "current")}</span>}
         </span>
         <button className="chip" onClick={() => setMonday(addDaysIso(monday, 7))}>
-          Woche →
+          {tr("Woche", "Week")} →
         </button>
         {!isCurrent && (
           <button className="chip" onClick={() => setMonday(mondayOfIso(today))}>
-            aktuelle
+            {tr("aktuelle", "current")}
           </button>
         )}
         <span className="rv-range">
           {monday.slice(5)} – {sunday.slice(5)}
         </span>
         <span className={`rv-status ${existing ? "done" : "open"}`}>
-          {existing ? "✓ ausgefüllt" : "offen"}
+          {existing ? tr("✓ ausgefüllt", "✓ completed") : tr("offen", "open")}
         </span>
       </div>
 
       {/* Auto-Übersicht */}
       <div className="wr-summary">
         <div className="wr-stat">
-          <span className="wr-label">Tasks erledigt</span>
+          <span className="wr-label">{tr("Tasks erledigt", "Tasks completed")}</span>
           <span className="wr-val">
             {summary.tasksDone}
             <span className="wr-sub">/{summary.tasksTotal}</span>
           </span>
         </div>
         <div className="wr-stat">
-          <span className="wr-label">Tasks offen</span>
+          <span className="wr-label">{tr("Tasks offen", "Tasks open")}</span>
           <span className="wr-val">{summary.tasksOpen}</span>
         </div>
         <div className="wr-stat">
@@ -235,7 +237,7 @@ export default function WeeklyReviewPage() {
           </span>
         </div>
         <div className="wr-stat">
-          <span className="wr-label">Fokuszeit</span>
+          <span className="wr-label">{tr("Fokuszeit", "Focus time")}</span>
           <span className="wr-val">{fmtDuration(summary.focusSec)}</span>
         </div>
         <div className="wr-stat">
@@ -243,11 +245,11 @@ export default function WeeklyReviewPage() {
           <span className="wr-val">{summary.focusCount}</span>
         </div>
         <div className="wr-stat">
-          <span className="wr-label">Ø Fokus-Score</span>
+          <span className="wr-label">{tr("Ø Fokus-Score", "Avg. focus score")}</span>
           <span className="wr-val">{fmt1(summary.focusScore)}</span>
         </div>
         <div className="wr-stat">
-          <span className="wr-label">Ø Energie danach</span>
+          <span className="wr-label">{tr("Ø Energie danach", "Avg. energy after")}</span>
           <span className="wr-val">{fmt1(summary.focusEnergy)}</span>
         </div>
         <div className="wr-stat">
@@ -303,7 +305,7 @@ export default function WeeklyReviewPage() {
           />
         </label>
         <label className="rv-field">
-          <span>🎯 Welche Goals/Projects diese Woche bewegt?</span>
+          <span>🎯 {tr("Welche Goals/Projects diese Woche bewegt?", "Which goals/projects moved this week?")}</span>
           {activeGP.length > 0 && (
             <div className="wr-ref">
               {activeGP.map((x) => (
@@ -316,7 +318,7 @@ export default function WeeklyReviewPage() {
           <textarea
             value={form.movedGoalsProjects}
             onChange={(e) => set("movedGoalsProjects", e.target.value)}
-            placeholder="Fortschritt an Zielen/Projekten…"
+            placeholder={tr("Fortschritt an Zielen/Projekten…", "Progress on goals/projects…")}
           />
         </label>
         <label className="rv-field">
@@ -330,9 +332,9 @@ export default function WeeklyReviewPage() {
         <div className="rv-sliders">
           {(
             [
-              ["score", "⭐ Weekly Score"],
-              ["energy", "⚡ Energy Ø"],
-              ["discipline", "🛡️ Discipline"],
+              ["score", tr("⭐ Wochen-Score", "⭐ Weekly score")],
+              ["energy", tr("⚡ Energie Ø", "⚡ Avg. energy")],
+              ["discipline", tr("🛡️ Disziplin", "🛡️ Discipline")],
             ] as [keyof WeeklyReviewMeta, string][]
           ).map(([key, label]) => (
             <label key={key} className="rv-slider">
@@ -352,11 +354,11 @@ export default function WeeklyReviewPage() {
 
         <div className="rv-actions">
           <button className="btn" onClick={save}>
-            {saved ? "Gespeichert ✓" : existing ? "Aktualisieren" : "Speichern"}
+            {saved ? tr("Gespeichert ✓", "Saved ✓") : existing ? tr("Aktualisieren", "Update") : tr("Speichern", "Save")}
           </button>
           {existing && (
             <button className="chip" onClick={remove}>
-              Löschen
+              {tr("Löschen", "Delete")}
             </button>
           )}
         </div>

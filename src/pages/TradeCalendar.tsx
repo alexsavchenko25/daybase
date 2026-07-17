@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { todayIso } from "../utils/date";
 import type { Entry, TradeMeta } from "../types";
+import { useI18n } from "../i18n";
 
 const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
@@ -32,6 +33,8 @@ export default function TradeCalendar({
   selected?: string | null;
   onPick?: (iso: string) => void;
 }) {
+  const { language, locale, tr } = useI18n();
+  const weekdays = language === "de" ? WD : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const today = todayIso();
   const [ref, setRef] = useState(() => {
     const d = new Date(today + "T00:00:00");
@@ -73,7 +76,7 @@ export default function TradeCalendar({
     return sum;
   }, [byDate, ref]);
 
-  const label = new Date(ref.y, ref.m, 1).toLocaleDateString("de-DE", {
+  const label = new Date(ref.y, ref.m, 1).toLocaleDateString(locale, {
     month: "long",
     year: "numeric",
   });
@@ -102,7 +105,7 @@ export default function TradeCalendar({
             →
           </button>
           <button className="chip" onClick={goToday}>
-            heute
+            {tr("heute", "today")}
           </button>
         </div>
         <div className="cal-net">
@@ -114,7 +117,7 @@ export default function TradeCalendar({
       </div>
 
       <div className="cal-grid cal-weekdays">
-        {WD.map((d) => (
+        {weekdays.map((d) => (
           <div key={d} className="cal-wd">
             {d}
           </div>
@@ -159,7 +162,7 @@ export default function TradeCalendar({
           <span className="leg-box loss" /> Loss
         </span>
         <span className="cal-leg">
-          <span className="leg-dot-today" /> Heute
+          <span className="leg-dot-today" /> {tr("Heute", "Today")}
         </span>
       </div>
     </div>
