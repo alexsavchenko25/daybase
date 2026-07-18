@@ -167,4 +167,13 @@ export function initSync(): void {
     activeUserId = newId;
     void handleAuthChange(prevId, newId);
   });
+
+  // Ohne Realtime-Subscription bekommt ein offen gelassener Tab/App fremde
+  // Änderungen (z.B. vom Handy abgehakte Task) sonst erst nach Reload mit.
+  // Deshalb zusätzlich pullen, sobald Tab/App wieder in den Vordergrund kommt.
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && activeUserId) void pullAll();
+    });
+  }
 }
