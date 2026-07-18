@@ -146,6 +146,17 @@ async function handleAuthChange(prevId: string | null, newId: string | null): Pr
   await pullAll();
 }
 
+// Poll-Intervall für den Abgleich zwischen Geräten, solange die App sichtbar
+// ist. ponytail: 20s-Polling deckt den Fall "beide Geräte gleichzeitig offen"
+// ab. Für echten Instant-Sync auf Supabase Realtime (Websocket-Subscription
+// pro Tabelle) umstellen — dann kann das Polling weg.
+const POLL_MS = 20000;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+function isVisible(): boolean {
+  return typeof document === "undefined" || document.visibilityState === "visible";
+}
+
 // Einmal beim App-Start aufrufen. Verbindet Session-Status mit den
 // Repository-Hooks. Ohne konfiguriertes Supabase passiert nichts.
 export function initSync(): void {
@@ -169,11 +180,19 @@ export function initSync(): void {
   });
 
   // Ohne Realtime-Subscription bekommt ein offen gelassener Tab/App fremde
-  // Änderungen (z.B. vom Handy abgehakte Task) sonst erst nach Reload mit.
-  // Deshalb zusätzlich pullen, sobald Tab/App wieder in den Vordergrund kommt.
+  // Änderungen (z.B. vom Handy abgehakte Task) sonst nie mit. Deshalb:
+  //  (1) sofort pullen, wenn Tab/App wieder in den Vordergrund kommt, und
+  //  (2) regelmäßig pullen, solange die App sichtbar ist (deckt den Fall ab,
+  //      dass beide Geräte gleichzeitig offen sind — dann feuert kein
+  //      visibilitychange).
   if (typeof document !== "undefined") {
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible" && activeUserId) void pullAll();
     });
+  }
+  if (pollTimer == null) {
+    pollTimer = setInterval(() => {
+      if (isVisible() && activeUserId) void pullAll();
+    }, POLL_MS);
   }
 }
