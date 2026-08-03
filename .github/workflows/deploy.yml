@@ -24,11 +24,6 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      # Node 20's bundled npm has a bug (npm/cli#7178) that wrongly rejects
-      # platform-specific optionalDependencies (e.g. @esbuild/*) during
-      # `npm ci`. Fixed in npm 10.9.1+; `npm@latest` is npm 12 (needs Node
-      # 22+), so pin the last 10.x line instead of floating to latest.
-      - run: npm install -g npm@10.9.2
       - run: npm ci
       # base = /<repo>/ damit Assets + Router unter dem Pages-Subpfad laufen.
       - run: npm run build
