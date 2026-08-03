@@ -1,5 +1,5 @@
 import { addDaysIso, dayIndex } from "./date";
-import type { RecurrenceRule } from "../types";
+import type { RecurrenceRule, TaskMeta } from "../types";
 
 export const WEEKDAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
@@ -38,6 +38,23 @@ export function nextRecurDate(date: string, rule: RecurrenceRule): string {
     if (days.includes(dayIndex(cand))) return cand;
   }
   return addDaysIso(date, 7);
+}
+
+// Entscheidet beim Abhaken, ob eine Folge-Instanz entstehen soll.
+// null = keine (keine Wiederholung, Task wird gerade wieder geöffnet, oder die
+// Instanz für dieses Datum wurde bereits erzeugt). Genau dieser letzte Fall
+// verhinderte bisher nichts: Ab- und wieder Anhaken legte jedes Mal eine
+// weitere Kopie an.
+export function planRecurrenceSpawn(
+  meta: Pick<TaskMeta, "recurrence" | "recurrenceSpawned">,
+  date: string,
+  nextDone: boolean,
+): { date: string; rule: RecurrenceRule } | null {
+  if (!nextDone) return null;
+  const rule = normalizeRecurrence(meta.recurrence);
+  if (!rule) return null;
+  const next = nextRecurDate(date, rule);
+  return meta.recurrenceSpawned === next ? null : { date: next, rule };
 }
 
 export function recurrenceLabel(rule: RecurrenceRule): string {

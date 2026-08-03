@@ -3,7 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso, lastNDays } from "../utils/date";
-import { computeStreak, isDoneForPeriod, habitMeta } from "../utils/habit";
+import { computeStreak, isDoneForPeriod, habitMeta, toggleCompletion } from "../utils/habit";
 import PageHeader from "../components/PageHeader";
 import { useI18n } from "../i18n";
 import type { Entry, HabitMeta } from "../types";
@@ -40,15 +40,17 @@ export default function HabitsPage() {
   }
 
   // Heute an/abhaken. Streak direkt aus neuen completedDates neu berechnen.
+  // Basis ist der gespeicherte Stand (updateMeta), nicht das gerenderte Prop —
+  // sonst verliert ein zweiter schneller Klick die erste Änderung.
   async function toggleToday(habit: Entry) {
-    const m = habitMeta(habit);
-    const set = new Set(m.completedDates);
-    if (set.has(today)) set.delete(today);
-    else set.add(today);
-    const completedDates = [...set].sort();
-    const streak = computeStreak(completedDates, m.frequency);
-    await entriesRepo.update(habit.id, {
-      meta: { ...m, completedDates, streak } satisfies HabitMeta,
+    await entriesRepo.updateMeta(habit.id, (_meta, current) => {
+      const m = habitMeta(current);
+      const completedDates = toggleCompletion(m.completedDates, m.frequency, today);
+      return {
+        ...m,
+        completedDates,
+        streak: computeStreak(completedDates, m.frequency, today),
+      } satisfies HabitMeta;
     });
   }
 

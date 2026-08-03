@@ -3,8 +3,8 @@
 // installierte PWA). Einmal pro Tag beim App-Start geprüft.
 import { db } from "./db";
 import { todayIso } from "./utils/date";
-import { isDoneForPeriod } from "./utils/habit";
-import type { HabitMeta, TaskMeta } from "./types";
+import { isDoneForPeriod, habitMeta } from "./utils/habit";
+import type { TaskMeta } from "./types";
 import { getLanguage } from "./i18n";
 
 const ENABLED_KEY = "daybase.reminders.enabled";
@@ -42,8 +42,8 @@ export async function checkAndNotify(): Promise<void> {
 
   const habits = await db.entries.where("type").equals("habit").toArray();
   const openHabits = habits.filter((e) => {
-    const m = e.meta as HabitMeta;
-    return !isDoneForPeriod(m.completedDates ?? [], m.frequency, today);
+    const m = habitMeta(e);
+    return !isDoneForPeriod(m.completedDates, m.frequency, today);
   }).length;
 
   if (overdue === 0 && openHabits === 0) return;

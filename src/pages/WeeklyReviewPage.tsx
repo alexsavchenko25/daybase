@@ -6,12 +6,12 @@ import { entriesRepo } from "../repository";
 import { addDaysIso, isoWeekNumber, mondayOfIso, todayIso } from "../utils/date";
 import { fmtUsd } from "../utils/trade";
 import { fmtDuration, focusMeta } from "../utils/focus";
+import { habitMeta } from "../utils/habit";
+import { taskMeta } from "../utils/task";
 import PageHeader from "../components/PageHeader";
 import type {
   Entry,
-  HabitMeta,
   ReviewMeta,
-  TaskMeta,
   TradeMeta,
   WeeklyReviewMeta,
 } from "../types";
@@ -89,7 +89,7 @@ export default function WeeklyReviewPage() {
   // ---- Auto-Übersicht ----
   const summary = useMemo(() => {
     const tasks = range.filter((e) => e.type === "task");
-    const tasksDone = tasks.filter((e) => (e.meta as TaskMeta).done).length;
+    const tasksDone = tasks.filter((e) => taskMeta(e).done).length;
     const tasksOpen = tasks.length - tasksDone;
 
     const trades = range.filter((e) => e.type === "trade");
@@ -107,8 +107,8 @@ export default function WeeklyReviewPage() {
     let done = 0;
     let expected = 0;
     for (const h of habits) {
-      const m = h.meta as HabitMeta;
-      const inWeek = (m.completedDates ?? []).filter((d) => wd.has(d));
+      const m = habitMeta(h);
+      const inWeek = m.completedDates.filter((d) => wd.has(d));
       if (m.frequency === "weekly") {
         expected += 1;
         if (inWeek.length > 0) done += 1;

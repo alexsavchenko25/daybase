@@ -7,9 +7,10 @@ import { addDaysIso, mondayOfIso, todayIso } from "../utils/date";
 import {
   WEEKDAY_LABELS,
   normalizeRecurrence,
-  nextRecurDate,
+  planRecurrenceSpawn,
   recurrenceLabel,
 } from "../utils/recurrence";
+import { taskMeta } from "../utils/task";
 import PageHeader from "../components/PageHeader";
 import { useI18n } from "../i18n";
 import type { Entry, RecurrenceKind, RecurrenceRule, Subtask, TaskMeta } from "../types";
@@ -18,9 +19,7 @@ type View = "today" | "week" | "later" | "all" | "done" | "day";
 type Priority = TaskMeta["priority"];
 
 const PRIO_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
-function meta(e: Entry): TaskMeta {
-  return e.meta as TaskMeta;
-}
+const meta = taskMeta;
 
 export default function TasksPage() {
   const { language, locale, tr } = useI18n();
@@ -170,46 +169,62 @@ export default function TasksPage() {
     });
   }
 
+  // Abhaken + ggf. die nächste Instanz einer wiederkehrenden Task anlegen.
+  // Alle Lese-/Schreibzugriffe gehen über updateMeta auf den gespeicherten
+  // Stand: das Prop `entry` kann bereits veraltet sein (Doppelklick, Sync).
+  // `recurrenceSpawned` merkt sich die erzeugte Folge-Instanz, damit erneutes
+  // Ab-/Anhaken (oder ein Doppelklick) keine weiteren Kopien anlegt.
   async function toggleDone(entry: Entry) {
-    const m = meta(entry);
-    await entriesRepo.update(entry.id, { meta: { ...m, done: !m.done } });
-    const rule = normalizeRecurrence(m.recurrence);
-    if (!m.done && rule) {
+    const out: { spawn?: { date: string; m: TaskMeta } } = {};
+    const updated = await entriesRepo.updateMeta(entry.id, (_meta, current) => {
+      const m = meta(current);
+      const done = !m.done;
+      const next = planRecurrenceSpawn(m, current.date, done);
+      if (!next) return { ...m, done };
+      out.spawn = {
+        date: next.date,
+        m: { ...m, done: false, subtasks: [], recurrence: next.rule },
+      };
+      return { ...m, done, recurrenceSpawned: next.date };
+    });
+    if (out.spawn && updated) {
       await entriesRepo.create({
         type: "task",
-        date: nextRecurDate(entry.date, rule),
-        title: entry.title,
-        content: entry.content,
-        tags: entry.tags,
-        meta: { ...m, done: false, subtasks: [], recurrence: rule } satisfies TaskMeta,
+        date: out.spawn.date,
+        title: updated.title,
+        content: updated.content,
+        tags: updated.tags,
+        // Die neue Instanz startet ohne Spawn-Marke — sie darf ihrerseits
+        // wieder genau einmal die nächste erzeugen.
+        meta: { ...out.spawn.m, recurrenceSpawned: undefined } satisfies TaskMeta,
       });
     }
   }
 
   async function addSubtask(entry: Entry, text: string) {
-    const m = meta(entry);
     const sub: Subtask = { id: crypto.randomUUID(), text, done: false };
-    await entriesRepo.update(entry.id, {
-      meta: { ...m, subtasks: [...(m.subtasks ?? []), sub] },
+    await entriesRepo.updateMeta(entry.id, (_meta, current) => {
+      const m = meta(current);
+      return { ...m, subtasks: [...(m.subtasks ?? []), sub] };
     });
   }
 
   async function toggleSubtask(entry: Entry, subId: string) {
-    const m = meta(entry);
-    await entriesRepo.update(entry.id, {
-      meta: {
+    await entriesRepo.updateMeta(entry.id, (_meta, current) => {
+      const m = meta(current);
+      return {
         ...m,
         subtasks: (m.subtasks ?? []).map((s) =>
           s.id === subId ? { ...s, done: !s.done } : s,
         ),
-      },
+      };
     });
   }
 
   async function removeSubtask(entry: Entry, subId: string) {
-    const m = meta(entry);
-    await entriesRepo.update(entry.id, {
-      meta: { ...m, subtasks: (m.subtasks ?? []).filter((s) => s.id !== subId) },
+    await entriesRepo.updateMeta(entry.id, (_meta, current) => {
+      const m = meta(current);
+      return { ...m, subtasks: (m.subtasks ?? []).filter((s) => s.id !== subId) };
     });
   }
 

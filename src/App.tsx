@@ -50,10 +50,13 @@ export default function App() {
     (async () => {
       await seedIfFirstRun();
       await cleanupDuplicateWeekplan();
+      // Erst den Cloud-Stand holen, dann abgeleitete Werte nachziehen —
+      // sonst überschreibt ein lokal neu berechneter Streak eine Completion,
+      // die auf einem anderen Gerät gesetzt wurde.
+      await initSync();
       await syncHabitStreaks();
       await checkAndNotify();
     })();
-    initSync();
   }, []);
 
   return (
