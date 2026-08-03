@@ -49,11 +49,33 @@ export function isDoneForPeriod(
   return completedDates.some((d) => isoWeekKey(d) === wk);
 }
 
+// Completion für `ref` setzen/entfernen — passend zur Periode, die die
+// Checkbox anzeigt (isDoneForPeriod). Bei "weekly" hakt die Box ab, sobald
+// IRGENDEIN Tag der ISO-Woche erledigt ist; das Entfernen muss deshalb die
+// ganze Woche räumen, sonst lässt sich eine am Montag erledigte Wochen-Habit
+// am Mittwoch nicht mehr abwählen (jeder Klick hätte nur weitere Daten
+// hinzugefügt bzw. entfernt, ohne den Haken je zu ändern).
+export function toggleCompletion(
+  completedDates: string[],
+  frequency: HabitMeta["frequency"],
+  ref = todayIso(),
+): string[] {
+  const unique = [...new Set(completedDates)];
+  if (!isDoneForPeriod(unique, frequency, ref)) return [...unique, ref].sort();
+  const wk = isoWeekKey(ref);
+  return unique
+    .filter((d) => (frequency === "weekly" ? isoWeekKey(d) !== wk : d !== ref))
+    .sort();
+}
+
 export function habitMeta(e: Entry): HabitMeta {
-  const m = e.meta as Partial<HabitMeta>;
+  const m = (e.meta ?? {}) as Partial<HabitMeta>;
   return {
-    frequency: m.frequency ?? "daily",
+    ...m,
+    frequency: m.frequency === "weekly" ? "weekly" : "daily",
     streak: m.streak ?? 0,
-    completedDates: m.completedDates ?? [],
+    // Doppelte Daten würden Statistiken (z.B. Weekly-Review-Quote) über 100%
+    // treiben — hier einmal zentral entschärft.
+    completedDates: [...new Set(m.completedDates ?? [])].sort(),
   };
 }

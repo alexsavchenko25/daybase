@@ -52,6 +52,9 @@ export interface TaskMeta {
   goalId?: string;
   subtasks?: Subtask[];
   recurrence?: RecurrenceRule;
+  // Datum der bereits erzeugten Folge-Instanz. Verhindert, dass erneutes
+  // Ab-/Anhaken einer wiederkehrenden Task weitere Kopien anlegt.
+  recurrenceSpawned?: string;
 }
 
 export type GoalPeriod = "weekly" | "monthly" | "yearly";

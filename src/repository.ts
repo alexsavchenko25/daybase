@@ -1,6 +1,6 @@
 import { db } from "./db";
-import type { Entry, EntryType, HabitMeta } from "./types";
-import { computeStreak } from "./utils/habit";
+import type { Entry, EntryType } from "./types";
+import { computeStreak, habitMeta } from "./utils/habit";
 
 // Generisches Entry-CRUD – modulübergreifend, kein Schema pro Modul.
 // Alle Module (Tagebuch, Tasks, Trades, ...) nutzen exakt diese Funktionen.
@@ -81,6 +81,26 @@ export const entriesRepo = {
   async update(id: string, patch: UpdateEntryInput): Promise<Entry | undefined> {
     await db.entries.update(id, { ...patch, updatedAt: nowIso() });
     const updated = await db.entries.get(id);
+    if (updated) entryUpsertHook?.(updated);
+    return updated;
+  },
+
+  // UPDATE von `meta` auf Basis des GESPEICHERTEN Stands, nicht des gerade
+  // gerenderten Props. Zwei schnelle Aktionen am selben Entry (Doppelklick,
+  // Subtask + Checkbox) haben sonst denselben Ausgangsstand gelesen und die
+  // erste Änderung geht verloren. Read-modify-write läuft in einer Dexie-
+  // rw-Transaktion, ist also atomar.
+  async updateMeta(
+    id: string,
+    mutate: (meta: Record<string, any>, entry: Entry) => Record<string, any>,
+  ): Promise<Entry | undefined> {
+    let updated: Entry | undefined;
+    await db.transaction("rw", db.entries, async () => {
+      const current = await db.entries.get(id);
+      if (!current) return;
+      updated = { ...current, meta: mutate(current.meta ?? {}, current), updatedAt: nowIso() };
+      await db.entries.put(updated);
+    });
     if (updated) entryUpsertHook?.(updated);
     return updated;
   },
@@ -198,16 +218,17 @@ export async function importBackup(data: unknown): Promise<number> {
 // Beim App-Load aufrufen: gespeicherte habit.streak gegen die echten
 // completedDates abgleichen. Verpasste Tage/Wochen brechen den Streak hier,
 // auch ohne dass der User abhakt.
+// WICHTIG: erst nach dem ersten Cloud-Abgleich aufrufen (siehe App.tsx).
+// Sonst würde ein hier geschriebener Streak den lokalen Eintrag "jünger"
+// machen als den Cloud-Stand und eine auf einem anderen Gerät gesetzte
+// Completion überschreiben.
 export async function syncHabitStreaks(): Promise<void> {
   const habits = await db.entries.where("type").equals("habit").toArray();
-  await Promise.all(
-    habits.map((h) => {
-      const m = h.meta as HabitMeta;
-      const live = computeStreak(m.completedDates ?? [], m.frequency ?? "daily");
-      if (live !== m.streak) {
-        return entriesRepo.update(h.id, { meta: { ...m, streak: live } });
-      }
-      return undefined;
-    }),
-  );
+  for (const h of habits) {
+    const m = habitMeta(h);
+    const live = computeStreak(m.completedDates, m.frequency);
+    if (live !== m.streak) {
+      await entriesRepo.updateMeta(h.id, () => ({ ...m, streak: live }));
+    }
+  }
 }
