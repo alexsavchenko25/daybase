@@ -48,3 +48,9 @@ export function isoWeekNumber(iso: string): number {
 export function dayIndex(iso: string): number {
   return (new Date(iso + "T00:00:00").getDay() + 6) % 7;
 }
+
+// Aktuelle lokale Uhrzeit als "HH:MM", zum Vergleich mit Weekplan-Blockzeiten.
+export function nowHm(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}

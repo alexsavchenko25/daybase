@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
@@ -45,10 +46,14 @@ function loadFocus(): SavedFocus | null {
 export default function FocusPage() {
   const { tr } = useI18n();
   const today = todayIso();
+  const [params] = useSearchParams();
 
-  // Setup
-  const [linkId, setLinkId] = useState("");
-  const [freeTitle, setFreeTitle] = useState("");
+  // Setup. `linkId`/`title` erlauben Deep-Links (z.B. von der Today-Seite),
+  // die eine Session direkt mit Task/Project/Goal bzw. Freitext vorbelegen.
+  const [linkId, setLinkId] = useState(() => params.get("linkId") ?? "");
+  const [freeTitle, setFreeTitle] = useState(() =>
+    params.get("linkId") ? "" : (params.get("title") ?? ""),
+  );
   const [planned, setPlanned] = useState(25);
 
   // Timer

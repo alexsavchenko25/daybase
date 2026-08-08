@@ -7,10 +7,9 @@ import { addDaysIso, mondayOfIso, todayIso } from "../utils/date";
 import {
   WEEKDAY_LABELS,
   normalizeRecurrence,
-  planRecurrenceSpawn,
   recurrenceLabel,
 } from "../utils/recurrence";
-import { taskMeta } from "../utils/task";
+import { PRIORITY_ORDER, taskMeta, toggleTaskDone } from "../utils/task";
 import PageHeader from "../components/PageHeader";
 import { useI18n } from "../i18n";
 import type { Entry, RecurrenceKind, RecurrenceRule, Subtask, TaskMeta } from "../types";
@@ -18,7 +17,7 @@ import type { Entry, RecurrenceKind, RecurrenceRule, Subtask, TaskMeta } from ".
 type View = "today" | "week" | "later" | "all" | "done" | "day";
 type Priority = TaskMeta["priority"];
 
-const PRIO_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
+const PRIO_ORDER = PRIORITY_ORDER;
 const meta = taskMeta;
 
 export default function TasksPage() {
@@ -167,38 +166,6 @@ export default function TasksPage() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  }
-
-  // Abhaken + ggf. die nächste Instanz einer wiederkehrenden Task anlegen.
-  // Alle Lese-/Schreibzugriffe gehen über updateMeta auf den gespeicherten
-  // Stand: das Prop `entry` kann bereits veraltet sein (Doppelklick, Sync).
-  // `recurrenceSpawned` merkt sich die erzeugte Folge-Instanz, damit erneutes
-  // Ab-/Anhaken (oder ein Doppelklick) keine weiteren Kopien anlegt.
-  async function toggleDone(entry: Entry) {
-    const out: { spawn?: { date: string; m: TaskMeta } } = {};
-    const updated = await entriesRepo.updateMeta(entry.id, (_meta, current) => {
-      const m = meta(current);
-      const done = !m.done;
-      const next = planRecurrenceSpawn(m, current.date, done);
-      if (!next) return { ...m, done };
-      out.spawn = {
-        date: next.date,
-        m: { ...m, done: false, subtasks: [], recurrence: next.rule },
-      };
-      return { ...m, done, recurrenceSpawned: next.date };
-    });
-    if (out.spawn && updated) {
-      await entriesRepo.create({
-        type: "task",
-        date: out.spawn.date,
-        title: updated.title,
-        content: updated.content,
-        tags: updated.tags,
-        // Die neue Instanz startet ohne Spawn-Marke — sie darf ihrerseits
-        // wieder genau einmal die nächste erzeugen.
-        meta: { ...out.spawn.m, recurrenceSpawned: undefined } satisfies TaskMeta,
-      });
-    }
   }
 
   async function addSubtask(entry: Entry, text: string) {
@@ -429,7 +396,7 @@ export default function TasksPage() {
                     <input
                       type="checkbox"
                       checked={m.done}
-                      onChange={() => toggleDone(entry)}
+                      onChange={() => toggleTaskDone(entry.id)}
                     />
                     <span className="task-title">{entry.title}</span>
                   </label>

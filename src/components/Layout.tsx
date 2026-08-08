@@ -94,6 +94,9 @@ export default function Layout() {
           <NavLink to="/" end className="nav-link" title="Dashboard" onClick={() => setNavOpen(false)}>
             <span className="nav-icon">🏠</span> Dashboard
           </NavLink>
+          <NavLink to="/today" className="nav-link" title={tr("Heute", "Today")} onClick={() => setNavOpen(false)}>
+            <span className="nav-icon">☀️</span> {tr("Heute", "Today")}
+          </NavLink>
           {GROUPS.map((g) => (
             <div key={g.label} style={{ display: "contents" }}>
               <div className="nav-section">{tr(g.label, g.labelEn)}</div>

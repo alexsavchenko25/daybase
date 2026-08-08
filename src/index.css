@@ -3710,3 +3710,16 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text);
   font-size: var(--fs-sm);
 }
+
+/* ---------- Today ---------- */
+.today-nextup {
+  margin-bottom: var(--sp-4);
+}
+.today-nextup-task {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.today-kpis {
+  margin-top: var(--sp-4);
+}

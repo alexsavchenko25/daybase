@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
-import { addDaysIso, isoWeekNumber, mondayOfIso, todayIso } from "../utils/date";
+import { addDaysIso, isoWeekNumber, mondayOfIso, nowHm, todayIso } from "../utils/date";
 import { isDoneForPeriod, habitMeta } from "../utils/habit";
 import ProgressBar from "../components/ProgressBar";
 import { fmtDuration, focusMeta } from "../utils/focus";
@@ -17,11 +17,6 @@ import type {
   WeeklyReviewMeta,
   GoalMeta,
 } from "../types";
-
-function nowHm(): string {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
 
 export default function Dashboard() {
   const { locale, tr } = useI18n();

@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import CommandPalette from "./components/CommandPalette";
 import Onboarding, { isOnboarded } from "./components/Onboarding";
 import Dashboard from "./pages/Dashboard";
+import TodayPage from "./pages/TodayPage";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
 import TasksPage from "./pages/TasksPage";
 import HabitsPage from "./pages/HabitsPage";
@@ -78,6 +79,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
+          <Route path="/today" element={<TodayPage />} />
           {MODULES.map((m) => (
             <Route
               key={m.path}
