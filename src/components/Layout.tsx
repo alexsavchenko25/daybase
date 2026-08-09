@@ -108,6 +108,9 @@ export default function Layout() {
           <NavLink to="/today" className="nav-link" title={tr("Heute", "Today")} onClick={() => setNavOpen(false)}>
             <span className="nav-icon">☀️</span> {tr("Heute", "Today")}
           </NavLink>
+          <NavLink to="/consistency" className="nav-link" title={tr("Konsistenz-Kalender", "Consistency Calendar")} onClick={() => setNavOpen(false)}>
+            <span className="nav-icon">📆</span> {tr("Konsistenz", "Consistency")}
+          </NavLink>
           {GROUPS.map((g) => (
             <div key={g.label} style={{ display: "contents" }}>
               <div className="nav-section">{tr(g.label, g.labelEn)}</div>

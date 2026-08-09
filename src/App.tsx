@@ -7,6 +7,7 @@ import QuickCapture from "./components/QuickCapture";
 import Onboarding, { isOnboarded } from "./components/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import TodayPage from "./pages/TodayPage";
+import ConsistencyPage from "./pages/ConsistencyPage";
 import InboxPage from "./pages/InboxPage";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
 import TasksPage from "./pages/TasksPage";
@@ -85,6 +86,7 @@ export default function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="/today" element={<TodayPage />} />
+          <Route path="/consistency" element={<ConsistencyPage />} />
           {MODULES.map((m) => (
             <Route
               key={m.path}

@@ -3449,6 +3449,158 @@ input[type="range"]::-moz-range-thumb {
   flex-shrink: 0;
 }
 
+/* ---------- Consistency Calendar ---------- */
+.consistency-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: var(--sp-4);
+}
+
+.consistency-weekday {
+  text-align: center;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+  padding-bottom: var(--sp-1);
+}
+
+.consistency-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 4px;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color var(--t), transform var(--t);
+}
+.consistency-cell:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+.consistency-cell.pad {
+  border: none;
+  background: transparent;
+  pointer-events: none;
+}
+.consistency-cell.is-today {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-line);
+}
+.consistency-cell.is-future {
+  color: var(--faint);
+  opacity: 0.6;
+}
+.consistency-cell.level--1 {
+  background: var(--surface);
+  border-style: dashed;
+}
+.consistency-cell.level-0 {
+  background: var(--neg-soft);
+}
+.consistency-cell.level-1 {
+  background: rgba(122, 165, 248, 0.16);
+}
+.consistency-cell.level-2 {
+  background: rgba(122, 165, 248, 0.36);
+}
+.consistency-cell.level-3 {
+  background: rgba(122, 165, 248, 0.58);
+}
+.consistency-cell.level-4 {
+  background: rgba(122, 165, 248, 0.85);
+  color: #0a0b0f;
+}
+
+.cc-daynum {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-glyphs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: auto;
+}
+
+.cc-glyph {
+  font-size: 9px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+}
+.cc-glyph.cc-icon {
+  font-size: 10px;
+}
+
+.consistency-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: var(--sp-4);
+  font-size: var(--fs-xs);
+}
+
+.consistency-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+}
+.consistency-swatch.level--1 {
+  background: var(--surface);
+  border-style: dashed;
+}
+.consistency-swatch.level-0 {
+  background: var(--neg-soft);
+}
+.consistency-swatch.level-1 {
+  background: rgba(122, 165, 248, 0.16);
+}
+.consistency-swatch.level-2 {
+  background: rgba(122, 165, 248, 0.36);
+}
+.consistency-swatch.level-3 {
+  background: rgba(122, 165, 248, 0.58);
+}
+.consistency-swatch.level-4 {
+  background: rgba(122, 165, 248, 0.85);
+}
+
+.consistency-legend-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border-soft);
+  margin: 0 4px;
+}
+
+@media (max-width: 640px) {
+  .consistency-grid {
+    gap: 2px;
+  }
+  .consistency-cell {
+    padding: 2px;
+    border-radius: 4px;
+  }
+  .cc-daynum {
+    font-size: 10px;
+  }
+  .cc-glyph {
+    font-size: 7px;
+  }
+  .cc-glyph.cc-icon {
+    font-size: 8px;
+  }
+}
+
 /* Dashboard Goals/Projects */
 .dash-info-head {
   display: flex;

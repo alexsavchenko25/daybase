@@ -49,6 +49,16 @@ export function dayIndex(iso: string): number {
   return (new Date(iso + "T00:00:00").getDay() + 6) % 7;
 }
 
+// Monatsanfang (Tag 1) um n Monate verschoben (n negativ = zurück). Nur für
+// day=01-Input gedacht (Monatsnavigation) — kein Tages-Rollover-Edgecase,
+// anders als bei Recurrence (siehe utils/recurrence.ts, dort bewusst separat).
+export function addMonthsIso(monthStartIso: string, n: number): string {
+  const d = new Date(monthStartIso + "T00:00:00");
+  d.setMonth(d.getMonth() + n);
+  const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off * 60_000).toISOString().slice(0, 10);
+}
+
 // Aktuelle lokale Uhrzeit als "HH:MM", zum Vergleich mit Weekplan-Blockzeiten.
 export function nowHm(): string {
   const d = new Date();
