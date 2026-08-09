@@ -5,8 +5,11 @@ import { db } from "../db";
 import { entriesRepo } from "../repository";
 import { todayIso } from "../utils/date";
 import PageHeader from "../components/PageHeader";
+import MarkdownPreview from "../components/MarkdownPreview";
 import type { Entry } from "../types";
 import { useI18n } from "../i18n";
+
+type EditorMode = "edit" | "preview";
 
 function parseTags(raw: string): string[] {
   return [...new Set(raw.split(",").map((t) => t.trim()).filter(Boolean))];
@@ -30,6 +33,7 @@ export default function JournalPage() {
   const [content, setContent] = useState("");
   const [tagsRaw, setTagsRaw] = useState("");
   const [dirty, setDirty] = useState(false);
+  const [mode, setMode] = useState<EditorMode>("edit");
 
   const entries = useLiveQuery(
     async () => {
@@ -55,6 +59,7 @@ export default function JournalPage() {
       setContent(selected.content);
       setTagsRaw(selected.tags.join(", "));
       setDirty(false);
+      setMode("edit");
     }
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -199,15 +204,39 @@ export default function JournalPage() {
                   setDirty(true);
                 }}
               />
-              <textarea
-                className="journal-textarea"
-                placeholder={tr("Was war heute…", "What happened today…")}
-                value={content}
-                onChange={(e) => {
-                  setContent(e.target.value);
-                  setDirty(true);
-                }}
-              />
+              <div className="filter-row md-mode-row">
+                <button
+                  className={`chip ${mode === "edit" ? "chip-active" : ""}`}
+                  onClick={() => setMode("edit")}
+                >
+                  {tr("Bearbeiten", "Edit")}
+                </button>
+                <button
+                  className={`chip ${mode === "preview" ? "chip-active" : ""}`}
+                  onClick={() => setMode("preview")}
+                >
+                  {tr("Vorschau", "Preview")}
+                </button>
+              </div>
+              {mode === "edit" ? (
+                <textarea
+                  className="journal-textarea"
+                  placeholder={tr("Was war heute…", "What happened today…")}
+                  value={content}
+                  onChange={(e) => {
+                    setContent(e.target.value);
+                    setDirty(true);
+                  }}
+                />
+              ) : (
+                <div className="journal-preview">
+                  {content.trim() ? (
+                    <MarkdownPreview text={content} />
+                  ) : (
+                    <p className="muted">{tr("Nichts zum Anzeigen.", "Nothing to preview.")}</p>
+                  )}
+                </div>
+              )}
               <input
                 className="task-input full"
                 placeholder={tr("Tags, kommagetrennt (z.B. arbeit, sport)", "Tags, comma-separated (e.g. work, sport)")}
