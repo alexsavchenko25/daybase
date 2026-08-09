@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../db";
 import { openQuickCapture } from "./QuickCapture";
+import { useHiddenModules } from "../hiddenModules";
 import type { Entry } from "../types";
 import { useI18n } from "../i18n";
 
@@ -82,6 +83,7 @@ function haystack(e: Entry): string {
 export default function CommandPalette() {
   const { language, tr } = useI18n();
   const navigate = useNavigate();
+  const hiddenModules = useHiddenModules();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -137,7 +139,15 @@ export default function CommandPalette() {
     const pages = PAGES.filter((p) => {
       const label = language === "en" && "labelEn" in p ? p.labelEn : p.label;
       return !q || label.toLowerCase().includes(q) || p.kw.includes(q);
-    }).map((p) => ({ key: "p" + p.path, icon: p.icon, title: language === "en" && "labelEn" in p ? p.labelEn : p.label, run: () => go(p.path) }));
+    }).map((p) => ({
+      key: "p" + p.path,
+      icon: p.icon,
+      title: language === "en" && "labelEn" in p ? p.labelEn : p.label,
+      // In der Sidebar ausgeblendete Module bleiben hier auffindbar — nur
+      // klar markiert, statt sie komplett unerreichbar zu machen.
+      sub: hiddenModules.has(p.path) ? tr("Ausgeblendet in der Sidebar", "Hidden from sidebar") : undefined,
+      run: () => go(p.path),
+    }));
     if (pages.length) out.push({ label: tr("Seiten", "Pages"), items: pages });
 
     const create = CREATE.filter((c) => {
@@ -176,7 +186,7 @@ export default function CommandPalette() {
       }
     }
     return out;
-  }, [query, data, language]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [query, data, language, hiddenModules]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 

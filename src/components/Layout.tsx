@@ -5,6 +5,7 @@ import { db } from "../db";
 import { MODULES } from "../modules";
 import { isSupabaseConfigured, useSession } from "../supabase";
 import { openQuickCapture, QUICK_CAPTURE_SHORTCUT } from "./QuickCapture";
+import { useHiddenModules } from "../hiddenModules";
 import { useI18n } from "../i18n";
 
 // Sidebar-Gruppen: reine Präsentations-Reihenfolge. Labels/Icons/Routen kommen
@@ -45,6 +46,7 @@ export default function Layout() {
   const { pathname } = useLocation();
   const [navOpen, setNavOpen] = useState(false);
   const syncOn = isSupabaseConfigured && !!session;
+  const hiddenModules = useHiddenModules();
 
   useEffect(() => setNavOpen(false), [pathname]);
 
@@ -111,14 +113,18 @@ export default function Layout() {
           <NavLink to="/consistency" className="nav-link" title={tr("Konsistenz-Kalender", "Consistency Calendar")} onClick={() => setNavOpen(false)}>
             <span className="nav-icon">📆</span> {tr("Konsistenz", "Consistency")}
           </NavLink>
-          {GROUPS.map((g) => (
-            <div key={g.label} style={{ display: "contents" }}>
-              <div className="nav-section">{tr(g.label, g.labelEn)}</div>
-              {g.paths.map((p) => (
-                <ModuleLink key={p} path={p} onNavigate={() => setNavOpen(false)} />
-              ))}
-            </div>
-          ))}
+          {GROUPS.map((g) => {
+            const visiblePaths = g.paths.filter((p) => !hiddenModules.has(p));
+            if (visiblePaths.length === 0) return null;
+            return (
+              <div key={g.label} style={{ display: "contents" }}>
+                <div className="nav-section">{tr(g.label, g.labelEn)}</div>
+                {visiblePaths.map((p) => (
+                  <ModuleLink key={p} path={p} onNavigate={() => setNavOpen(false)} />
+                ))}
+              </div>
+            );
+          })}
           <div className="nav-spacer" />
           <NavLink to="/auth" className="nav-link" title={tr("Konto", "Account")} onClick={() => setNavOpen(false)}>
             <span className="nav-icon">🔐</span> {tr("Konto", "Account")}

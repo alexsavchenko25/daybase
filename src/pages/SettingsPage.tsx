@@ -6,6 +6,7 @@ import type { Backup, BackupSummary } from "../repository";
 import { todayIso } from "../utils/date";
 import { markBackup, lastBackup, daysSinceBackup } from "../utils/backup";
 import { resetOnboarding } from "../components/Onboarding";
+import { TOGGLEABLE_MODULES, useHiddenModules, setModuleHidden } from "../hiddenModules";
 import { loadDemoData, applyYearlyWeekplanTemplate } from "../seed";
 import {
   REMINDER_KINDS,
@@ -36,6 +37,7 @@ export default function SettingsPage() {
   const [yearPending, setYearPending] = useState(false);
   const [yearLoading, setYearLoading] = useState(false);
   const [yearMsg, setYearMsg] = useState<string | null>(null);
+  const hiddenModules = useHiddenModules();
   const [reminderState, setReminderState] = useState(() =>
     Object.fromEntries(
       REMINDER_KINDS.map((k) => [k, { enabled: isReminderEnabled(k), time: getReminderTime(k) }]),
@@ -251,6 +253,29 @@ export default function SettingsPage() {
             ☀️ {tr("Hell", "Light")}
           </button>
         </div>
+      </section>
+
+      <section className="set-card">
+        <div className="set-title">{tr("Sidebar-Module", "Sidebar modules")}</div>
+        <p className="muted set-sub">
+          {tr(
+            "Blende Module aus, die du nicht nutzt. Versteckte Module bleiben voll funktionsfähig — du erreichst sie weiterhin per Link, Command Palette oder direkter URL, nur die Sidebar zeigt sie nicht mehr.",
+            "Hide modules you don't use. Hidden modules stay fully functional — you can still reach them via a link, the command palette, or a direct URL, they just no longer show in the sidebar.",
+          )}
+        </p>
+        {TOGGLEABLE_MODULES.map((m) => {
+          const isHidden = hiddenModules.has(m.path);
+          return (
+            <div key={m.path} className="set-row reminder-row">
+              <div className="set-title">
+                {m.icon} {tr(m.label, m.labelEn)}
+              </div>
+              <button className="chip" onClick={() => setModuleHidden(m.path, !isHidden)}>
+                {isHidden ? tr("Ausgeblendet — einblenden", "Hidden — show") : tr("Sichtbar — ausblenden", "Visible — hide")}
+              </button>
+            </div>
+          );
+        })}
       </section>
 
       <section className="set-card">
