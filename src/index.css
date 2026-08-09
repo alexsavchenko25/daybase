@@ -2745,6 +2745,22 @@ html[data-theme="light"] .pb-editing select {
   line-height: 1;
 }
 
+.reminder-row {
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border-soft);
+  flex-wrap: wrap;
+}
+.reminder-row:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.reminder-row .set-sub {
+  margin: 4px 0 0;
+}
+.reminder-row .task-select {
+  width: auto;
+}
+
 /* ---------- Mobile-Fixes ---------- */
 .content {
   padding-left: max(clamp(var(--sp-4), 4vw, 56px), env(safe-area-inset-left));

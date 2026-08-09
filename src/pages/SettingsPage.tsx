@@ -7,7 +7,17 @@ import { todayIso } from "../utils/date";
 import { markBackup, lastBackup, daysSinceBackup } from "../utils/backup";
 import { resetOnboarding } from "../components/Onboarding";
 import { loadDemoData, applyYearlyWeekplanTemplate } from "../seed";
-import { remindersEnabled, setRemindersEnabled, enableReminders } from "../reminders";
+import {
+  REMINDER_KINDS,
+  isReminderEnabled,
+  setReminderEnabled,
+  getReminderTime,
+  setReminderTime,
+  notificationsSupported,
+  notificationPermission,
+  requestNotificationPermission,
+  type ReminderKind,
+} from "../reminders";
 import PageHeader from "../components/PageHeader";
 import { Link } from "react-router-dom";
 import { supabase, isSupabaseConfigured, useSession } from "../supabase";
@@ -26,23 +36,67 @@ export default function SettingsPage() {
   const [yearPending, setYearPending] = useState(false);
   const [yearLoading, setYearLoading] = useState(false);
   const [yearMsg, setYearMsg] = useState<string | null>(null);
-  const [remindersOn, setRemindersOn] = useState(remindersEnabled);
+  const [reminderState, setReminderState] = useState(() =>
+    Object.fromEntries(
+      REMINDER_KINDS.map((k) => [k, { enabled: isReminderEnabled(k), time: getReminderTime(k) }]),
+    ) as Record<ReminderKind, { enabled: boolean; time: string }>,
+  );
+  const [permission, setPermission] = useState(notificationPermission);
   const [remindersMsg, setRemindersMsg] = useState<string | null>(null);
-  const notificationSupported = typeof Notification !== "undefined";
 
-  async function toggleReminders() {
+  async function toggleReminder(kind: ReminderKind) {
     setRemindersMsg(null);
-    if (remindersOn) {
-      setRemindersEnabled(false);
-      setRemindersOn(false);
+    const current = reminderState[kind];
+    if (current.enabled) {
+      setReminderEnabled(kind, false);
+      setReminderState((s) => ({ ...s, [kind]: { ...s[kind], enabled: false } }));
       return;
     }
-    const perm = await enableReminders();
-    setRemindersOn(perm === "granted");
+    const perm = await requestNotificationPermission();
+    setPermission(perm);
     if (perm !== "granted") {
       setRemindersMsg(tr("Berechtigung verweigert — Reminder bleiben aus.", "Permission denied — reminders remain disabled."));
+      return;
     }
+    setReminderEnabled(kind, true);
+    setReminderState((s) => ({ ...s, [kind]: { ...s[kind], enabled: true } }));
   }
+
+  function changeReminderTime(kind: ReminderKind, time: string) {
+    setReminderTime(kind, time);
+    setReminderState((s) => ({ ...s, [kind]: { ...s[kind], time } }));
+  }
+
+  const reminderLabels: Record<ReminderKind, { title: string; desc: string }> = {
+    dailyReview: {
+      title: "Daily Review",
+      desc: tr(
+        "Erinnert, wenn bis zur gewählten Uhrzeit noch kein Daily Review für heute ausgefüllt ist.",
+        "Reminds you if today's Daily Review hasn't been filled in by the chosen time.",
+      ),
+    },
+    weeklyReview: {
+      title: "Weekly Review",
+      desc: tr(
+        "Erinnert sonntags/montags, wenn bis zur gewählten Uhrzeit noch kein Weekly Review für die Woche ausgefüllt ist.",
+        "Reminds you on Sunday/Monday if the Weekly Review for the week hasn't been filled in by the chosen time.",
+      ),
+    },
+    overdueTasks: {
+      title: tr("Überfällige Tasks", "Overdue tasks"),
+      desc: tr(
+        "Erinnert ab der gewählten Uhrzeit, wenn überfällige Tasks offen sind.",
+        "Reminds you from the chosen time if overdue tasks are still open.",
+      ),
+    },
+    habits: {
+      title: tr("Offene Habits", "Unfinished habits"),
+      desc: tr(
+        "Erinnert ab der gewählten Uhrzeit, wenn noch offene Habits für heute da sind.",
+        "Reminds you from the chosen time if habits are still open for today.",
+      ),
+    },
+  };
   const [resetDone, setResetDone] = useState(false);
   const [theme, setTheme] = useState(
     () => document.documentElement.dataset.theme || "dark",
@@ -202,16 +256,45 @@ export default function SettingsPage() {
       <section className="set-card">
         <div className="set-title">{tr("Erinnerungen", "Reminders")}</div>
         <p className="muted set-sub">
-          {tr("Benachrichtigung beim App-Start, wenn überfällige Tasks oder offene Habits da sind. Nur während die App offen ist — kein Server, kein Push bei geschlossener App.", "Notification on app start when tasks are overdue or habits are still open. Only while the app is open — no server and no push while it is closed.")}
+          {tr(
+            "Benachrichtigungen werden nur zugestellt, solange die App bzw. der Browser-Tab geöffnet ist — kein Server, kein Push bei geschlossener App. Echter Push-Support (auch bei geschlossener App) könnte später ergänzt werden.",
+            "Notifications are only delivered while the app or browser tab is open — no server and no push while it's closed. True push support (even while closed) could be added later.",
+          )}
         </p>
-        {!notificationSupported ? (
+        {!notificationsSupported() ? (
           <p className="muted set-sub">{tr("Browser unterstützt keine Benachrichtigungen.", "This browser does not support notifications.")}</p>
+        ) : permission === "denied" ? (
+          <p className="muted set-sub">
+            {tr(
+              "Benachrichtigungen wurden im Browser blockiert. Erlaube sie in den Browser-Einstellungen für diese Seite, um Erinnerungen zu nutzen.",
+              "Notifications are blocked in the browser. Allow them in the browser's site settings to use reminders.",
+            )}
+          </p>
         ) : (
-          <div className="set-actions">
-            <button className="chip" onClick={toggleReminders}>
-              {remindersOn ? tr("✓ Aktiviert — ausschalten", "✓ Enabled — turn off") : tr("Aktivieren", "Enable")}
-            </button>
-          </div>
+          <>
+            {REMINDER_KINDS.map((kind) => (
+              <div key={kind} className="set-row reminder-row">
+                <div>
+                  <div className="set-title">{reminderLabels[kind].title}</div>
+                  <p className="muted set-sub">{reminderLabels[kind].desc}</p>
+                </div>
+                <div className="set-actions">
+                  <input
+                    className="task-select"
+                    type="time"
+                    value={reminderState[kind].time}
+                    disabled={!reminderState[kind].enabled}
+                    onChange={(e) => changeReminderTime(kind, e.target.value)}
+                  />
+                  <button className="chip" onClick={() => toggleReminder(kind)}>
+                    {reminderState[kind].enabled
+                      ? tr("✓ Aktiviert — ausschalten", "✓ Enabled — turn off")
+                      : tr("Aktivieren", "Enable")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </>
         )}
         {remindersMsg && <p className="set-msg neg">{remindersMsg}</p>}
       </section>

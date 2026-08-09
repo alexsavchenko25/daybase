@@ -26,7 +26,7 @@ import { MODULES } from "./modules";
 import { syncHabitStreaks } from "./repository";
 import { seedIfFirstRun, cleanupDuplicateWeekplan } from "./seed";
 import { initSync } from "./sync";
-import { checkAndNotify } from "./reminders";
+import { startReminderScheduler } from "./reminders";
 import { useI18n } from "./i18n";
 
 // Module mit echter UI. Rest fällt auf ModulePlaceholder zurück.
@@ -59,9 +59,10 @@ export default function App() {
       // die auf einem anderen Gerät gesetzt wurde.
       await initSync();
       await syncHabitStreaks();
-      await checkAndNotify();
     })();
   }, []);
+
+  useEffect(() => startReminderScheduler(), []);
 
   return (
     <>
