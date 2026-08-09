@@ -545,6 +545,16 @@ a {
   color: var(--faint);
 }
 
+/* iOS Safari renders type=date/time values through an internal shadow
+   element that ignores the font-size set on the input itself — without
+   this the date text renders at the system default and looks noticeably
+   bigger than every other form control next to it. */
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  font-size: var(--fs-base);
+  text-align: left;
+}
+
 .task-input:hover,
 .task-select:hover,
 .journal-textarea:hover,
