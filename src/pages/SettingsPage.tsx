@@ -20,6 +20,7 @@ import {
   type ReminderKind,
 } from "../reminders";
 import PageHeader from "../components/PageHeader";
+import { pwaUpdate, usePwaUpdateStatus } from "../pwaUpdate";
 import { Link } from "react-router-dom";
 import { supabase, isSupabaseConfigured, useSession } from "../supabase";
 import { pushAllLocal } from "../sync";
@@ -109,6 +110,34 @@ export default function SettingsPage() {
     localStorage.setItem("daybase.theme", mode);
     setTheme(mode);
   }
+
+  // Update-Zustand kommt aus dem gemeinsamen Store — dieselbe Quelle wie das
+  // globale Banner, keine zweite Service-Worker-Registrierung.
+  const updateStatus = usePwaUpdateStatus();
+  const updateBusy = updateStatus.state === "checking" || updateStatus.state === "installing";
+  const updateLabels: Record<typeof updateStatus.state, { text: string; tone: "" | "pos" | "neg" | "warn" }> = {
+    unavailable: {
+      text: tr(
+        "Update-Prüfung nur in der installierten App bzw. im Produktions-Build verfügbar.",
+        "Update checks are only available in the installed or production app.",
+      ),
+      tone: "",
+    },
+    idle: { text: tr("Bereit.", "Ready."), tone: "" },
+    checking: { text: tr("Suche nach Updates…", "Checking for updates…"), tone: "" },
+    upToDate: { text: tr("Daybase ist aktuell.", "Daybase is up to date."), tone: "pos" },
+    available: { text: tr("Update verfügbar.", "Update available."), tone: "warn" },
+    installing: { text: tr("Update wird installiert…", "Installing update…"), tone: "" },
+    offline: {
+      text: tr("Offline — Prüfung sobald wieder Verbindung besteht.", "Offline — will check once you're back online."),
+      tone: "warn",
+    },
+    error: {
+      text: tr("Prüfung fehlgeschlagen. Bitte später erneut versuchen.", "Check failed. Please try again later."),
+      tone: "neg",
+    },
+  };
+  const updateLabel = updateLabels[updateStatus.state];
 
   const count = useLiveQuery(() => db.entries.count(), [], 0);
   const { session } = useSession();
@@ -221,6 +250,50 @@ export default function SettingsPage() {
             <div className="muted" style={{ fontSize: "var(--fs-xs)", marginTop: 2 }}>{__BUILD_DATE__}</div>
           </div>
         </div>
+      </section>
+
+      <section className="set-card">
+        <div className="set-title">{tr("App-Updates", "App updates")}</div>
+        <p className="muted set-sub">
+          {tr("Installierte Version", "Installed version")}: <strong>v{__APP_VERSION__}</strong> ·{" "}
+          {tr("Build", "Build")}: <strong>{__BUILD_DATE__}</strong>
+        </p>
+
+        <div className="set-row update-row">
+          {/* Live-Region: Statuswechsel werden von Screenreadern angesagt. */}
+          <p className={`update-status ${updateLabel.tone}`} role="status" aria-live="polite">
+            {updateStatus.state === "checking" && <span className="spinner" aria-hidden="true" />}
+            {updateLabel.text}
+          </p>
+          <div className="set-actions">
+            {updateStatus.state === "available" && (
+              <button
+                className="btn"
+                type="button"
+                onClick={() => void pwaUpdate.installUpdate()}
+              >
+                {tr("Update installieren", "Install update")}
+              </button>
+            )}
+            <button
+              className="chip"
+              type="button"
+              disabled={updateBusy || !updateStatus.hasRegistration}
+              aria-label={tr("Jetzt nach App-Updates suchen", "Check for app updates now")}
+              onClick={() => void pwaUpdate.checkForUpdate({ force: true })}
+            >
+              {updateStatus.state === "checking"
+                ? tr("Suche…", "Checking…")
+                : tr("Nach Updates suchen", "Check for updates")}
+            </button>
+          </div>
+        </div>
+
+        <p className="muted set-note">
+          {updateStatus.lastCheckedAt
+            ? `${tr("Zuletzt geprüft", "Last checked")}: ${new Date(updateStatus.lastCheckedAt).toLocaleTimeString(locale)}`
+            : tr("In dieser Sitzung noch nicht geprüft.", "Not checked yet in this session.")}
+        </p>
       </section>
 
       <section className="set-card">

@@ -5471,11 +5471,62 @@ input[type="range"]::-moz-range-thumb {
   border-radius: var(--r-lg);
   padding: var(--sp-3) var(--sp-4);
   box-shadow: var(--sh-pop);
-  white-space: nowrap;
+  /* Kein nowrap: auf schmalen Screens lief das Banner sonst über den
+     Viewport hinaus, statt umzubrechen. */
+  max-width: min(calc(100vw - var(--sp-6)), 420px);
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .pwa-update-banner span {
   color: var(--text);
   font-size: var(--fs-sm);
+}
+
+/* ---------- Settings — App-Updates ---------- */
+.update-row {
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+.update-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.update-status.pos {
+  color: var(--pos);
+}
+.update-status.neg {
+  color: var(--neg);
+}
+.update-status.warn {
+  color: var(--warn);
+}
+.update-row .set-actions {
+  margin-left: auto;
+}
+
+.spinner {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
 }
 
 /* ---------- Today ---------- */

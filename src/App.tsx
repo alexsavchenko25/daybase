@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useRegisterSW } from "virtual:pwa-register/react";
 import Layout from "./components/Layout";
 import CommandPalette from "./components/CommandPalette";
 import QuickCapture from "./components/QuickCapture";
+import PwaUpdater from "./components/PwaUpdater";
 import Onboarding, { isOnboarded } from "./components/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import TodayPage from "./pages/TodayPage";
@@ -49,7 +49,6 @@ const PAGES: Record<string, React.ReactNode> = {
 export default function App() {
   const { tr } = useI18n();
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboarded());
-  const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW();
 
   useEffect(() => {
     (async () => {
@@ -68,14 +67,7 @@ export default function App() {
   return (
     <>
     {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
-    {needRefresh && (
-      <div className="pwa-update-banner">
-        <span>{tr("Neue Version verfügbar.", "A new version is available.")}</span>
-        <button className="btn" onClick={() => updateServiceWorker(true)}>
-          {tr("Update installieren", "Install update")}
-        </button>
-      </div>
-    )}
+    <PwaUpdater />
     <QuickCapture />
     <BrowserRouter
       basename={import.meta.env.BASE_URL.replace(/\/$/, "")}
