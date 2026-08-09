@@ -129,6 +129,11 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  /* Sicherheitsnetz: ein einzelnes zu breites Element (z.B. ein langer
+     Projekt-/Goal-Name in .link-tag) darf nie die ganze Seite horizontal
+     verschieb-/scrollbar machen. Innere Container mit eigenem
+     overflow-x:auto (week-grid, trade-table-wrap, cal) bleiben unberührt. */
+  overflow-x: hidden;
 }
 
 body {
@@ -3924,14 +3929,22 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
 }
 
-/* Verknüpfungs-Tag (Task/Note → Project/Goal) */
+/* Verknüpfungs-Tag (Task/Note → Project/Goal). max-width + ellipsis statt
+   reinem nowrap — ein langer Projekt-/Goal-Name durfte sonst die ganze
+   .task-item-row breiter als der Viewport machen (Horizontal-Scroll der
+   kompletten Seite auf Mobile). */
 .link-tag {
+  display: inline-block;
+  max-width: 100%;
   font-size: var(--fs-xs);
   color: var(--accent);
   background: var(--accent-soft);
   border-radius: var(--r-pill);
   padding: 2px 9px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
 }
 
 .note-links {
