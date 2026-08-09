@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { buildHabitHeatmap } from "./habitHeatmap";
+import {
+  HABIT_HEATMAP_PERIODS,
+  buildHabitHeatmap,
+  normalizeHabitHeatmapPeriod,
+} from "./habitHeatmap";
 import type { Entry, HabitMeta } from "../types";
 
 function habit(
@@ -22,6 +26,23 @@ function habit(
 }
 
 describe("buildHabitHeatmap", () => {
+  test("supports 7, 30 and 90 day presets with the correct boundaries", () => {
+    const expectedStarts = ["2026-08-03", "2026-07-11", "2026-05-12"];
+    HABIT_HEATMAP_PERIODS.forEach((period, index) => {
+      const data = buildHabitHeatmap([], "2026-08-09", period);
+      expect(data.dates).toHaveLength(period);
+      expect(data.dates[0]).toBe(expectedStarts[index]);
+      expect(data.dates[data.dates.length - 1]).toBe("2026-08-09");
+    });
+  });
+
+  test("normalizes stored periods and falls back to 30", () => {
+    expect(normalizeHabitHeatmapPeriod("7")).toBe(7);
+    expect(normalizeHabitHeatmapPeriod(90)).toBe(90);
+    expect(normalizeHabitHeatmapPeriod("365")).toBe(30);
+    expect(normalizeHabitHeatmapPeriod(null)).toBe(30);
+  });
+
   test("returns exactly 30 ordered dates ending at the reference date", () => {
     const data = buildHabitHeatmap([], "2026-08-09");
 
@@ -45,6 +66,11 @@ describe("buildHabitHeatmap", () => {
       "missed",
       "open",
     ]);
+    expect(data.dailyRows[0]).toMatchObject({
+      completedCount: 1,
+      eligibleCount: 4,
+      completionRate: 25,
+    });
   });
 
   test("groups weekly habits by ISO week across a year boundary", () => {
@@ -73,6 +99,11 @@ describe("buildHabitHeatmap", () => {
       "completed",
       "completed",
     ]);
+    expect(data.weeklyRows[0]).toMatchObject({
+      completedCount: 2,
+      eligibleCount: 2,
+      completionRate: 100,
+    });
   });
 
   test("marks weekly periods before creation as not applicable", () => {
@@ -85,6 +116,32 @@ describe("buildHabitHeatmap", () => {
     expect(data.weeklyRows[0].cells.map((cell) => cell.state)).toEqual([
       "notApplicable",
       "open",
+    ]);
+    expect(data.weeklyRows[0]).toMatchObject({
+      completedCount: 0,
+      eligibleCount: 1,
+      completionRate: 0,
+    });
+  });
+
+  test("returns zero statistics when every displayed period predates the habit", () => {
+    const data = buildHabitHeatmap(
+      [habit("future", "daily", "2026-08-10")],
+      "2026-08-09",
+      7,
+    );
+    expect(data.dailyRows[0]).toMatchObject({
+      completedCount: 0,
+      eligibleCount: 0,
+      completionRate: 0,
+    });
+  });
+
+  test("groups daily columns by month across a year boundary", () => {
+    const data = buildHabitHeatmap([], "2026-01-05", 10);
+    expect(data.months).toEqual([
+      { key: "2025-12", start: "2025-12-27", columnCount: 5 },
+      { key: "2026-01", start: "2026-01-01", columnCount: 5 },
     ]);
   });
 

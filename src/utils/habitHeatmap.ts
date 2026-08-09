@@ -3,6 +3,17 @@ import { habitMeta } from "./habit";
 import type { Entry } from "../types";
 
 export type HabitHeatmapState = "completed" | "open" | "missed" | "notApplicable";
+export type HabitHeatmapPeriod = 7 | 30 | 90;
+
+export const HABIT_HEATMAP_PERIODS: readonly HabitHeatmapPeriod[] = [7, 30, 90];
+export const HABIT_HEATMAP_PERIOD_KEY = "daybase.habits.heatmapPeriod";
+
+export function normalizeHabitHeatmapPeriod(value: unknown): HabitHeatmapPeriod {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return HABIT_HEATMAP_PERIODS.includes(parsed as HabitHeatmapPeriod)
+    ? (parsed as HabitHeatmapPeriod)
+    : 30;
+}
 
 export interface HabitHeatmapCell {
   key: string;
@@ -14,6 +25,9 @@ export interface HabitHeatmapRow {
   habitId: string;
   title: string;
   cells: HabitHeatmapCell[];
+  completedCount: number;
+  eligibleCount: number;
+  completionRate: number;
 }
 
 export interface HabitHeatmapWeek {
@@ -23,11 +37,28 @@ export interface HabitHeatmapWeek {
   isCurrent: boolean;
 }
 
+export interface HabitHeatmapMonthGroup {
+  key: string;
+  start: string;
+  columnCount: number;
+}
+
 export interface HabitHeatmapData {
   dates: string[];
+  months: HabitHeatmapMonthGroup[];
   weeks: HabitHeatmapWeek[];
   dailyRows: HabitHeatmapRow[];
   weeklyRows: HabitHeatmapRow[];
+}
+
+function rowStats(cells: HabitHeatmapCell[]) {
+  const completedCount = cells.filter((cell) => cell.state === "completed").length;
+  const eligibleCount = cells.filter((cell) => cell.state !== "notApplicable").length;
+  return {
+    completedCount,
+    eligibleCount,
+    completionRate: eligibleCount ? Math.round((completedCount / eligibleCount) * 100) : 0,
+  };
 }
 
 function habitStartDate(habit: Entry): string {
@@ -64,6 +95,17 @@ function heatmapWeeks(dates: string[], ref: string): HabitHeatmapWeek[] {
   return weeks;
 }
 
+function heatmapMonths(dates: string[]): HabitHeatmapMonthGroup[] {
+  const months: HabitHeatmapMonthGroup[] = [];
+  for (const date of dates) {
+    const key = date.slice(0, 7);
+    const current = months[months.length - 1];
+    if (current?.key === key) current.columnCount++;
+    else months.push({ key, start: date, columnCount: 1 });
+  }
+  return months;
+}
+
 function weeklyState(habit: Entry, week: HabitHeatmapWeek): HabitHeatmapState {
   const startDate = habitStartDate(habit);
   if (week.end < startDate) return "notApplicable";
@@ -82,6 +124,7 @@ export function buildHabitHeatmap(
   dayCount = 30,
 ): HabitHeatmapData {
   const dates = lastNDays(dayCount, ref);
+  const months = heatmapMonths(dates);
   const weeks = heatmapWeeks(dates, ref);
   const dailyRows: HabitHeatmapRow[] = [];
   const weeklyRows: HabitHeatmapRow[] = [];
@@ -89,27 +132,31 @@ export function buildHabitHeatmap(
   for (const habit of habits) {
     const meta = habitMeta(habit);
     if (meta.frequency === "daily") {
+      const cells = dates.map((date) => ({
+        key: date,
+        state: dailyState(habit, date, ref),
+        isCurrent: date === ref,
+      }));
       dailyRows.push({
         habitId: habit.id,
         title: habit.title,
-        cells: dates.map((date) => ({
-          key: date,
-          state: dailyState(habit, date, ref),
-          isCurrent: date === ref,
-        })),
+        cells,
+        ...rowStats(cells),
       });
     } else {
+      const cells = weeks.map((week) => ({
+        key: week.key,
+        state: weeklyState(habit, week),
+        isCurrent: week.isCurrent,
+      }));
       weeklyRows.push({
         habitId: habit.id,
         title: habit.title,
-        cells: weeks.map((week) => ({
-          key: week.key,
-          state: weeklyState(habit, week),
-          isCurrent: week.isCurrent,
-        })),
+        cells,
+        ...rowStats(cells),
       });
     }
   }
 
-  return { dates, weeks, dailyRows, weeklyRows };
+  return { dates, months, weeks, dailyRows, weeklyRows };
 }

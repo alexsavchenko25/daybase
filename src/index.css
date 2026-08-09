@@ -1463,9 +1463,14 @@ a {
 }
 
 .habit-history {
+  position: relative;
   gap: var(--sp-5);
   margin-bottom: var(--sp-4);
   overflow: hidden;
+  background:
+    linear-gradient(135deg, var(--accent-soft), transparent 34%),
+    var(--surface);
+  border-color: var(--accent-line);
 }
 
 .habit-history-head {
@@ -1481,43 +1486,75 @@ a {
   line-height: 1.3;
 }
 
-.habit-history-range {
+.habit-period-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
   flex-shrink: 0;
-  padding: 4px 10px;
-  border: 1px solid var(--accent-line);
+  padding: 3px;
+  border: 1px solid var(--border);
   border-radius: var(--r-pill);
+  background: var(--surface-2);
+}
+
+.habit-period-switch .chip {
+  min-width: 68px;
+  justify-content: center;
+  border-color: transparent;
+  background: transparent;
+}
+
+.habit-period-switch .chip:hover {
+  border-color: var(--border);
+}
+
+.habit-period-switch .chip-active,
+.habit-period-switch .chip-active:hover {
+  border-color: var(--accent-line);
   background: var(--accent-soft);
   color: var(--accent);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
 }
 
 .habit-heatmap-group {
   min-width: 0;
+  padding: var(--sp-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
 }
 
 .habit-heatmap-group + .habit-heatmap-group {
-  padding-top: var(--sp-4);
-  border-top: 1px solid var(--border-soft);
+  padding-top: var(--sp-3);
 }
 
 .habit-heatmap-group-head {
   display: flex;
   align-items: center;
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.habit-heatmap-group-head::before {
+  content: "";
+  width: 4px;
+  height: 14px;
+  margin-right: var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--grad);
 }
 
 .habit-heatmap-scroll {
   overflow-x: auto;
   overscroll-behavior-inline: contain;
-  padding-bottom: var(--sp-1);
+  padding: 0 0 var(--sp-2);
+  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-width: thin;
 }
 
 .habit-heatmap-table {
   width: max-content;
   min-width: 100%;
   border-collapse: separate;
-  border-spacing: 4px;
+  border-spacing: 5px;
   table-layout: fixed;
 }
 
@@ -1542,9 +1579,9 @@ a {
   position: sticky;
   left: 0;
   z-index: 2;
-  width: 164px;
-  max-width: 164px;
-  background: var(--surface);
+  width: 210px;
+  max-width: 210px;
+  background: var(--surface-2);
   text-align: left;
 }
 
@@ -1556,14 +1593,68 @@ a {
   letter-spacing: 0.05em;
 }
 
+.hh-month-corner {
+  color: var(--muted);
+}
+
+.hh-month {
+  padding: 0 0 var(--sp-1);
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.03em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .hh-row-label {
-  height: 22px;
-  padding-right: var(--sp-2);
-  overflow: hidden;
+  height: 42px;
+  padding: 4px var(--sp-3) 4px 0;
   color: var(--text);
   font-size: var(--fs-sm);
+}
+
+.hh-row-title-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.hh-row-title-line strong {
+  flex-shrink: 0;
+  color: var(--accent);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.hh-row-name {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.hh-row-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: 5px;
+}
+
+.hh-row-progress .pbar {
+  height: 4px;
+}
+
+.hh-row-progress > span {
+  flex-shrink: 0;
+  min-width: 28px;
+  color: var(--faint);
+  font-size: 9px;
+  line-height: 1;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .hh-date,
@@ -1576,8 +1667,9 @@ a {
 }
 
 .hh-date {
-  width: 18px;
-  min-width: 18px;
+  width: 22px;
+  min-width: 22px;
+  padding-bottom: 2px;
 }
 
 .hh-date small,
@@ -1592,10 +1684,22 @@ a {
   border-left: 1px solid var(--border-strong);
 }
 
+.hh-date.is-month-start {
+  border-left-color: var(--accent-line);
+}
+
 .hh-date.is-current,
 .hh-week.is-current {
   color: var(--accent);
   font-weight: var(--fw-bold);
+}
+
+.hh-date.is-current span,
+.hh-week.is-current span {
+  display: inline-block;
+  padding: 1px 4px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
 }
 
 .hh-week {
@@ -1604,10 +1708,14 @@ a {
 }
 
 .hh-data-cell {
-  width: 18px;
-  min-width: 18px;
-  height: 18px;
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
   padding: 0;
+}
+
+.hh-data-cell.is-separator {
+  border-left: 1px solid var(--border-strong);
 }
 
 .hh-data-cell.is-weekly {
@@ -1617,12 +1725,18 @@ a {
 
 .hh-cell {
   display: block;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 6px;
   background: var(--surface-3);
-  transition: border-color var(--t), background var(--t), box-shadow var(--t);
+  transition: border-color var(--t), background var(--t), box-shadow var(--t), transform var(--t);
+}
+
+.hh-data-cell:hover .hh-cell {
+  z-index: 1;
+  border-color: var(--accent-line);
+  transform: translateY(-1px) scale(1.08);
 }
 
 .hh-data-cell.is-weekly .hh-cell {
@@ -1632,7 +1746,7 @@ a {
 .hh-cell.state-completed {
   border-color: transparent;
   background: var(--grad);
-  box-shadow: 0 1px 4px rgba(122, 165, 248, 0.24);
+  box-shadow: 0 2px 7px rgba(122, 165, 248, 0.28);
 }
 
 .hh-cell.state-open {
@@ -1641,22 +1755,28 @@ a {
 }
 
 .hh-cell.state-missed {
-  border-color: var(--border);
-  background: var(--surface-3);
+  border-color: var(--border-strong);
+  background: var(--surface-4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .hh-cell.state-notApplicable {
   border-style: dashed;
   border-color: var(--border-soft);
   background: transparent;
+  opacity: 0.62;
 }
 
 .hh-cell.is-current {
-  box-shadow: 0 0 0 2px var(--accent-line);
+  box-shadow: 0 0 0 2px var(--accent), 0 0 10px var(--accent-soft);
 }
 
 .hh-cell.state-completed.is-current {
-  box-shadow: 0 0 0 2px var(--accent-line), 0 1px 4px rgba(122, 165, 248, 0.24);
+  box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(122, 165, 248, 0.3);
+}
+
+.habit-heatmap-table tbody tr:hover .hh-row-name {
+  color: var(--accent);
 }
 
 .habit-heatmap-legend {
@@ -1680,6 +1800,12 @@ a {
   width: 13px;
   height: 13px;
   border-radius: 4px;
+}
+
+.habit-legend-range {
+  margin-left: auto;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
 }
 
 .habit-list {
@@ -4157,23 +4283,53 @@ input[type="range"]::-moz-range-thumb {
     padding: var(--sp-4);
   }
   .habit-history-head {
-    align-items: center;
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .habit-period-switch {
+    width: 100%;
+  }
+  .habit-period-switch .chip {
+    flex: 1;
+    min-width: 0;
+  }
+  .habit-heatmap-group {
+    padding: var(--sp-2);
+  }
+  .habit-heatmap-table {
+    border-spacing: 4px;
   }
   .hh-corner,
   .hh-row-label {
-    width: 96px;
-    max-width: 96px;
+    width: 124px;
+    max-width: 124px;
+  }
+  .hh-row-label {
+    padding-right: var(--sp-2);
+  }
+  .hh-date,
+  .hh-data-cell {
+    width: 20px;
+    min-width: 20px;
+  }
+  .hh-cell {
+    width: 18px;
+    height: 18px;
   }
   .habit-heatmap-table.weekly .hh-week,
   .habit-heatmap-table.weekly .hh-data-cell.is-weekly {
-    width: 34px;
-    min-width: 34px;
+    width: 42px;
+    min-width: 42px;
   }
   .habit-heatmap-table.weekly .hh-week small {
     display: none;
   }
   .habit-heatmap-legend {
     gap: var(--sp-2) var(--sp-3);
+  }
+  .habit-legend-range {
+    width: 100%;
+    margin-left: 0;
   }
   .consistency-grid {
     gap: 2px;
