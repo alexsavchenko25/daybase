@@ -3,9 +3,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import Layout from "./components/Layout";
 import CommandPalette from "./components/CommandPalette";
+import QuickCapture from "./components/QuickCapture";
 import Onboarding, { isOnboarded } from "./components/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import TodayPage from "./pages/TodayPage";
+import InboxPage from "./pages/InboxPage";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
 import TasksPage from "./pages/TasksPage";
 import HabitsPage from "./pages/HabitsPage";
@@ -29,6 +31,7 @@ import { useI18n } from "./i18n";
 
 // Module mit echter UI. Rest fällt auf ModulePlaceholder zurück.
 const PAGES: Record<string, React.ReactNode> = {
+  "/inbox": <InboxPage />,
   "/tasks": <TasksPage />,
   "/habits": <HabitsPage />,
   "/journal": <JournalPage />,
@@ -71,6 +74,7 @@ export default function App() {
         </button>
       </div>
     )}
+    <QuickCapture />
     <BrowserRouter
       basename={import.meta.env.BASE_URL.replace(/\/$/, "")}
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}

@@ -331,6 +331,40 @@ a {
   opacity: 0.9;
 }
 
+.nav-badge {
+  margin-left: auto;
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.nav-capture {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: 8px 12px;
+  margin-top: var(--sp-2);
+  border-radius: var(--r-sm);
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: background var(--t), color var(--t), border-color var(--t);
+}
+.nav-capture:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
 .sidebar-foot {
   display: flex;
   align-items: center;
@@ -2932,7 +2966,15 @@ html[data-theme="light"] .pb-editing select {
   background: var(--surface-2);
 }
 
-.cmdk-foot kbd {
+/* ---------- Quick Capture (reuses .cmdk-overlay/.cmdk-panel) ---------- */
+.qc-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+}
+
+kbd {
   display: inline-block;
   min-width: 18px;
   padding: 1px 5px;

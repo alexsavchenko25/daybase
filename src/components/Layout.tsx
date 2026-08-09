@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../db";
 import { MODULES } from "../modules";
 import { isSupabaseConfigured, useSession } from "../supabase";
+import { openQuickCapture, QUICK_CAPTURE_SHORTCUT } from "./QuickCapture";
 import { useI18n } from "../i18n";
 
 // Sidebar-Gruppen: reine Präsentations-Reihenfolge. Labels/Icons/Routen kommen
 // weiter aus MODULES (Single Source of Truth), hier wird nur gruppiert.
 const GROUPS: { label: string; labelEn: string; paths: string[] }[] = [
-  { label: "Planung", labelEn: "Planning", paths: ["/tasks", "/weekplan", "/goals", "/projects"] },
+  { label: "Planung", labelEn: "Planning", paths: ["/inbox", "/tasks", "/weekplan", "/goals", "/projects"] },
   { label: "Tracking", labelEn: "Tracking", paths: ["/habits", "/focus", "/trades"] },
   { label: "Journal", labelEn: "Journal", paths: ["/journal", "/notes", "/review", "/weekly-review"] },
 ];
@@ -17,11 +20,19 @@ const byPath = new Map(MODULES.map((m) => [m.path, m]));
 function ModuleLink({ path, onNavigate }: { path: string; onNavigate: () => void }) {
   const { tr } = useI18n();
   const m = byPath.get(path);
+  // Ungelesen = noch nicht getriaged: solange ein Capture in der Inbox
+  // liegt, gilt er als offen. Kein eigenes read-Flag nötig.
+  const inboxCount = useLiveQuery(
+    () => (path === "/inbox" ? db.entries.where("type").equals("inbox").count() : 0),
+    [path],
+    0,
+  );
   if (!m) return null;
   const label = tr(m.label, m.labelEn);
   return (
     <NavLink to={m.path} className="nav-link" title={label} onClick={onNavigate}>
       <span className="nav-icon">{m.icon}</span> {label}
+      {!!inboxCount && <span className="nav-badge">{inboxCount}</span>}
     </NavLink>
   );
 }
@@ -113,6 +124,17 @@ export default function Layout() {
             <span className="nav-icon">⚙️</span> {tr("Einstellungen", "Settings")}
           </NavLink>
         </nav>
+        <button
+          type="button"
+          className="nav-capture"
+          onClick={() => {
+            setNavOpen(false);
+            openQuickCapture();
+          }}
+        >
+          <span>📥 {tr("Erfassen", "Capture")}</span>
+          <kbd>{QUICK_CAPTURE_SHORTCUT}</kbd>
+        </button>
         <div className="sidebar-foot">
           <span className={`foot-dot ${syncOn ? "on" : ""}`} />
           {syncOn ? tr("Cloud Sync aktiv", "Cloud sync active") : tr("lokal · IndexedDB", "local · IndexedDB")}

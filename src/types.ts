@@ -12,7 +12,8 @@ export type EntryType =
   | "weeklyreview"
   | "goal"
   | "project"
-  | "focus";
+  | "focus"
+  | "inbox";
 
 export interface Entry {
   id: string;
@@ -138,12 +139,15 @@ export interface WeeklyReviewMeta {
   movedGoalsProjects: string; // welche Goals/Projects bewegt
 }
 
-// journal & note: keine zusätzlichen meta-Felder nötig.
+// journal, note & inbox: keine zusätzlichen meta-Felder nötig. Quick Capture
+// ist bewusst textOnly — die Klassifizierung passiert erst bei der
+// Konvertierung (siehe utils/inbox.ts), nicht bei der Erfassung.
 
 // Mapping Typ -> meta-Shape (für späteren typsicheren Zugriff verfügbar).
 export interface MetaByType {
   journal: Record<string, never>;
   note: Record<string, never>;
+  inbox: Record<string, never>;
   task: TaskMeta;
   habit: HabitMeta;
   trade: TradeMeta;

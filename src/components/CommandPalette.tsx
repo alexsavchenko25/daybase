@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../db";
+import { openQuickCapture } from "./QuickCapture";
 import type { Entry } from "../types";
 import { useI18n } from "../i18n";
 
@@ -19,6 +20,7 @@ interface Group {
 // Statische Befehle (Seiten + Erstellen). keywords für Fuzzy-Match.
 const PAGES = [
   { icon: "🏠", label: "Dashboard", labelEn: "Dashboard", path: "/", kw: "home start" },
+  { icon: "📥", label: "Inbox", labelEn: "Inbox", path: "/inbox", kw: "quick capture eingang" },
   { icon: "✅", label: "Tasks", labelEn: "Tasks", path: "/tasks", kw: "aufgaben" },
   { icon: "🗓️", label: "Wochenplan", labelEn: "Weekly Plan", path: "/weekplan", kw: "week plan" },
   { icon: "📈", label: "Trading Journal", labelEn: "Trading Journal", path: "/trades", kw: "trades" },
@@ -45,6 +47,7 @@ const SEARCH_GROUPS: {
   icon: string;
   to: (e: Entry) => string;
 }[] = [
+  { type: "inbox", label: "Inbox", icon: "📥", to: (e) => `/inbox?sel=${e.id}` },
   { type: "task", label: "Tasks", icon: "✅", to: (e) => `/tasks?date=${e.date}` },
   { type: "note", label: "Notizen", icon: "🗒️", to: (e) => `/notes?sel=${e.id}` },
   { type: "journal", label: "Tagebuch", icon: "📓", to: (e) => `/journal?sel=${e.id}` },
@@ -107,6 +110,7 @@ export default function CommandPalette() {
     db.entries
       .where("type")
       .anyOf([
+        "inbox",
         "task",
         "note",
         "journal",
@@ -140,6 +144,20 @@ export default function CommandPalette() {
       const label = language === "en" ? c.labelEn : c.label;
       return !q || label.toLowerCase().includes(q) || c.kw.includes(q);
     }).map((c) => ({ key: "c" + c.label, icon: c.icon, title: language === "en" ? c.labelEn : c.label, run: () => go(c.path) }));
+    // Quick Capture öffnet das globale Overlay statt zu navigieren — kein
+    // Formular, kein Kategorie-Auswahlzwang (siehe QuickCapture.tsx).
+    const qcLabel = tr("Quick Capture", "Quick capture");
+    if (!q || qcLabel.toLowerCase().includes(q) || "erfassen capture inbox schnell".includes(q)) {
+      create.unshift({
+        key: "quick-capture",
+        icon: "📥",
+        title: qcLabel,
+        run: () => {
+          setOpen(false);
+          openQuickCapture();
+        },
+      });
+    }
     if (create.length) out.push({ label: tr("Erstellen", "Create"), items: create });
 
     if (q) {

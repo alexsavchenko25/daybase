@@ -11,6 +11,7 @@ export interface ModuleDef {
 }
 
 export const MODULES: ModuleDef[] = [
+  { path: "/inbox", label: "Inbox", labelEn: "Inbox", type: "inbox", icon: "📥" },
   { path: "/journal", label: "Tagebuch", labelEn: "Journal", type: "journal", icon: "📓" },
   { path: "/tasks", label: "Tasks", labelEn: "Tasks", type: "task", icon: "✅" },
   { path: "/weekplan", label: "Wochenplan", labelEn: "Weekly Plan", type: "weekplan", icon: "🗓️" },
