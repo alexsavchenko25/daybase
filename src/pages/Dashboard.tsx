@@ -8,7 +8,7 @@ import { fmtDuration, focusMeta } from "../utils/focus";
 import PageHeader from "../components/PageHeader";
 import { useI18n } from "../i18n";
 import { daysSinceBackup } from "../utils/backup";
-import { projectProgress } from "./ProjectsPage";
+import { projectNeedsAttention, projectProgress } from "./ProjectsPage";
 import { goalProgress } from "./GoalsPage";
 import type {
   Entry,
@@ -49,6 +49,17 @@ export default function Dashboard() {
       return t.filter((e: Entry) => !(e.meta as TaskMeta).done && e.date < today).length;
     },
     [today],
+    0,
+  );
+
+  // Projects ohne nächste Aktion oder ohne Task-Aktivität seit 14 Tagen.
+  const staleProjects = useLiveQuery(
+    async () => {
+      const projects = await db.entries.where("type").equals("project").toArray();
+      const tasks = await db.entries.where("type").equals("task").toArray();
+      return projects.filter((p: Entry) => projectNeedsAttention(p, tasks)).length;
+    },
+    [],
     0,
   );
 
@@ -256,6 +267,21 @@ export default function Dashboard() {
                 {tr(`${overdueTasks} überfällige ${overdueTasks === 1 ? "Task" : "Tasks"}.`, `${overdueTasks} overdue ${overdueTasks === 1 ? "task" : "tasks"}.`)}
               </strong>{" "}
               {tr("Erledigen oder neu terminieren.", "Complete or reschedule.")}
+            </span>
+            <span className="dwh-arrow">→</span>
+          </Link>
+        )}
+        {staleProjects > 0 && (
+          <Link to="/projects" className="dash-weekly-hint dash-overdue-hint">
+            <span className="dwh-icon">📂</span>
+            <span>
+              <strong>
+                {tr(
+                  `${staleProjects} ${staleProjects === 1 ? "Project" : "Projects"} ohne nächste Aktion oder Task-Aktivität.`,
+                  `${staleProjects} ${staleProjects === 1 ? "project" : "projects"} missing a next action or task activity.`,
+                )}
+              </strong>{" "}
+              {tr("14 Tage ohne Bewegung — nächste Aktion setzen.", "14 days without movement — set a next action.")}
             </span>
             <span className="dwh-arrow">→</span>
           </Link>

@@ -82,13 +82,16 @@ export interface GoalMeta {
   progress: number; // 0-100, manuell
 }
 
-export type ProjectStatus = "active" | "done" | "paused";
+export type ProjectStatus = "active" | "waiting" | "someday" | "done" | "paused";
 
 export interface ProjectMeta {
   category: string;
   status: ProjectStatus;
   deadline: string; // ISO date, optional ""
   goalId?: string; // optionale Zuordnung zu einem Goal
+  // Nächste konkrete Handlung. Optional — ältere Projects haben das Feld
+  // nicht; überall mit `?? ""` lesen statt hart vorauszusetzen.
+  nextAction?: string;
 }
 
 export interface NoteMeta {

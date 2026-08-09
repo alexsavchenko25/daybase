@@ -3212,6 +3212,14 @@ kbd {
   background: rgba(248, 113, 113, 0.16);
   color: var(--neg);
 }
+.status-waiting {
+  background: rgba(251, 191, 36, 0.16);
+  color: var(--warn);
+}
+.status-someday {
+  background: var(--surface-3);
+  color: var(--muted);
+}
 
 .entity-prog {
   display: flex;
@@ -3313,6 +3321,67 @@ input[type="range"]::-moz-range-thumb {
   flex-wrap: wrap;
   gap: var(--sp-1);
   margin-bottom: var(--sp-1);
+}
+
+.filter-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border-soft);
+  margin: 0 2px;
+}
+
+.project-detail {
+  border-top: 1px solid var(--border-soft);
+  padding-top: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.pd-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--fs-sm);
+}
+.pd-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-3);
+  align-items: start;
+}
+.board-col {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-height: 120px;
+}
+.board-col-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.board-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+  box-shadow: var(--sh-1);
+}
+.task-select.sm {
+  padding: 3px 6px;
+  font-size: var(--fs-xs);
 }
 
 /* Dashboard Goals/Projects */
