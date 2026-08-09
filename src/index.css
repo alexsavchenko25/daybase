@@ -199,7 +199,8 @@ a {
 }
 
 .content {
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: var(--sp-8) clamp(var(--sp-6), 4vw, 56px);
 }
 
@@ -4863,6 +4864,13 @@ input[type="range"]::-moz-range-thumb {
   .task-form .task-select,
   .task-form .btn {
     width: 100%;
+  }
+  .task-form input[type="date"] {
+    min-width: 0;
+    text-align: left;
+  }
+  .task-form input[type="date"]::-webkit-date-and-time-value {
+    text-align: left;
   }
   .ef-grid {
     grid-template-columns: 1fr;
