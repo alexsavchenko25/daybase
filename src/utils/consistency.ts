@@ -19,6 +19,13 @@ export interface DayStats {
   journalExists: boolean;
 }
 
+export interface MonthConsistencySummary {
+  averageScore: number | null;
+  activeDays: number;
+  bestStreak: number;
+  focusMin: number;
+}
+
 export function groupByDate(entries: Entry[]): Map<string, Entry[]> {
   const map = new Map<string, Entry[]>();
   for (const e of entries) {
@@ -120,4 +127,56 @@ export function intensityLevel(score: number | null): number {
   if (score < 0.67) return 2;
   if (score < 1) return 3;
   return 4;
+}
+
+export function hasDayActivity(stats: DayStats): boolean {
+  return (
+    stats.tasksDone > 0 ||
+    stats.habitDone > 0 ||
+    stats.focusSessions > 0 ||
+    stats.reviewExists ||
+    stats.journalExists
+  );
+}
+
+export function summarizeConsistencyMonth(
+  stats: DayStats[],
+  today: string,
+  trackReview: boolean,
+  trackJournal: boolean,
+): MonthConsistencySummary {
+  const elapsed = stats
+    .filter((day) => day.date <= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const scores = elapsed
+    .map((day) => dayScore(day, false, trackReview, trackJournal))
+    .filter((score): score is number => score !== null);
+
+  let bestStreak = 0;
+  let currentStreak = 0;
+  let previousDate: string | null = null;
+  for (const day of elapsed) {
+    const followsPrevious = previousDate === null || addDaysIso(previousDate, 1) === day.date;
+    currentStreak = hasDayActivity(day) && followsPrevious ? currentStreak + 1 : hasDayActivity(day) ? 1 : 0;
+    bestStreak = Math.max(bestStreak, currentStreak);
+    previousDate = day.date;
+  }
+
+  return {
+    averageScore: scores.length
+      ? Math.round((scores.reduce((sum, score) => sum + score, 0) / scores.length) * 100)
+      : null,
+    activeDays: elapsed.filter(hasDayActivity).length,
+    bestStreak,
+    focusMin: elapsed.reduce((sum, day) => sum + day.focusMin, 0),
+  };
+}
+
+export function defaultConsistencyDay(stats: DayStats[], today: string): string | null {
+  if (stats.some((day) => day.date === today)) return today;
+  return (
+    stats
+      .filter((day) => day.date <= today && hasDayActivity(day))
+      .sort((a, b) => b.date.localeCompare(a.date))[0]?.date ?? null
+  );
 }
