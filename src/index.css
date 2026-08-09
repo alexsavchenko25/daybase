@@ -545,14 +545,28 @@ a {
   color: var(--faint);
 }
 
-/* iOS Safari renders type=date/time values through an internal shadow
-   element that ignores the font-size set on the input itself — without
-   this the date text renders at the system default and looks noticeably
-   bigger than every other form control next to it. */
+/* type=date/time values render through internal shadow parts that ignore
+   the font-size set on the input itself. ::-webkit-date-and-time-value is
+   Chromium-only; real Safari/iOS uses the ::-webkit-datetime-edit-* parts
+   below instead — both are needed, or the fix silently no-ops on iPhone. */
 input[type="date"]::-webkit-date-and-time-value,
 input[type="time"]::-webkit-date-and-time-value {
   font-size: var(--fs-base);
   text-align: left;
+}
+input[type="date"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-year-field,
+input[type="time"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit-fields-wrapper,
+input[type="time"]::-webkit-datetime-edit-text,
+input[type="time"]::-webkit-datetime-edit-hour-field,
+input[type="time"]::-webkit-datetime-edit-minute-field,
+input[type="time"]::-webkit-datetime-edit-ampm-field {
+  font-size: var(--fs-base);
 }
 
 .task-input:hover,
