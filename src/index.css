@@ -1203,6 +1203,10 @@ a {
   background: var(--surface-2);
 }
 
+.task-filter-row + .empty {
+  margin-top: var(--sp-3);
+}
+
 .task-bulk-bar {
   display: flex;
   align-items: center;

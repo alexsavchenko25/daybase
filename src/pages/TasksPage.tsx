@@ -472,7 +472,7 @@ export default function TasksPage() {
         </div>
       )}
 
-      <div className="filter-row wrap">
+      <div className="filter-row wrap task-filter-row">
         <button
           className={`chip ${todayActive ? "chip-active" : ""}`}
           onClick={() => setView("today")}
