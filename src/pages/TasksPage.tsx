@@ -17,6 +17,7 @@ import {
   unscheduleTask,
 } from "../utils/task";
 import PageHeader from "../components/PageHeader";
+import NativeDateField from "../components/NativeDateField";
 import { useI18n } from "../i18n";
 import type { Entry, RecurrenceKind, RecurrenceRule, Subtask, TaskMeta } from "../types";
 
@@ -360,11 +361,10 @@ export default function TasksPage() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
-        <input
+        <NativeDateField
           className="task-select"
-          type="date"
           value={formDate}
-          onChange={(e) => setFormDate(e.target.value)}
+          onChange={setFormDate}
           title={tr("Datum der Task", "Task date")}
         />
         <select

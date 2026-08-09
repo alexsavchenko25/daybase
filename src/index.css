@@ -569,6 +569,39 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
   font-size: var(--fs-base);
 }
 
+/* NativeDateField: the shadow-part rules above still didn't reliably match
+   iOS Safari's rendered size, so this hides the native value text outright
+   (color:transparent — unlike font-size, iOS does honor this) and shows our
+   own text on top. The native input stays underneath, fully transparent
+   text-wise but otherwise untouched, so tapping it still opens the OS
+   picker and focus/border styling keeps working normally. */
+.native-date-field {
+  position: relative;
+  display: inline-flex;
+}
+.native-date-input {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+.native-date-input::-webkit-datetime-edit,
+.native-date-input::-webkit-date-and-time-value {
+  color: transparent;
+}
+.native-date-display {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  pointer-events: none;
+  font-size: var(--fs-base);
+  color: var(--text);
+  white-space: nowrap;
+}
+.native-date-display.muted {
+  color: var(--faint);
+}
+
 .task-input:hover,
 .task-select:hover,
 .journal-textarea:hover,
@@ -5010,6 +5043,31 @@ input[type="range"]::-moz-range-thumb {
   .set-actions .btn,
   .set-actions .chip {
     width: 100%;
+    justify-content: center;
+  }
+
+  /* Bulk-Aktionen (Tasks): .task-bulk-group ist intern nicht wrap-fähig —
+     als ein atomarer inline-flex-Block (Select + 2 Buttons) war er breiter
+     als der Viewport und lief rechts aus dem sichtbaren Bereich, statt zu
+     umbrechen. Auf schmalen Screens komplett stapeln. */
+  .task-bulk-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .task-bulk-actions > .btn,
+  .task-bulk-actions > .chip {
+    width: 100%;
+    justify-content: center;
+  }
+  .task-bulk-group {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .task-bulk-group .task-select {
+    width: 100%;
+  }
+  .task-bulk-group .chip {
+    flex: 1 1 auto;
     justify-content: center;
   }
 }
