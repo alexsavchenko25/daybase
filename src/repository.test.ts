@@ -2,6 +2,7 @@ import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, test } from "vitest";
 import { db } from "./db";
 import { entriesRepo, exportBackup, importBackup, validateBackup } from "./repository";
+import { isScheduled, scheduleTask, taskMeta, unscheduleTask } from "./utils/task";
 import type { Subtask, TaskMeta } from "./types";
 
 beforeEach(async () => {
@@ -84,6 +85,75 @@ describe("updateMeta ist atomar", () => {
     const subs = ((await entriesRepo.get(t.id))?.meta as TaskMeta).subtasks ?? [];
     expect(subs).toHaveLength(1);
     expect(subs[0].done).toBe(false); // zweimal gekippt = Ausgangszustand
+  });
+});
+
+// Kernversprechen der Wochenplan-Einplanung: die Task bleibt EIN Entry und
+// Ein-/Ausplanen darf nichts anderes an ihr anfassen.
+describe("Wochenplan-Einplanung", () => {
+  const full = () => ({
+    priority: "high" as const,
+    projectId: "p1",
+    goalId: "g1",
+    subtasks: [{ id: "s1", text: "Teil 1", done: true }],
+    recurrence: { kind: "weekly" as const, interval: 2 },
+  });
+
+  test("einplanen setzt Tag + Uhrzeit, ohne die Task zu duplizieren", async () => {
+    const t = await newTask("Marktanalyse", full());
+    await scheduleTask(t.id, "2026-08-05", "09:00", "10:30");
+
+    expect(await db.entries.where("type").equals("task").count()).toBe(1);
+    expect(await db.entries.where("type").equals("weekplan").count()).toBe(0);
+
+    const after = (await entriesRepo.get(t.id))!;
+    expect(after.date).toBe("2026-08-05");
+    expect(taskMeta(after).schedule).toEqual({ startTime: "09:00", endTime: "10:30" });
+  });
+
+  test("einplanen lässt Titel, Prio, Subtasks, Projekt, Goal und Recurrence unangetastet", async () => {
+    const t = await newTask("Marktanalyse", full());
+    await scheduleTask(t.id, "2026-08-05", "09:00", "10:30");
+
+    const m = taskMeta((await entriesRepo.get(t.id))!);
+    expect((await entriesRepo.get(t.id))!.title).toBe("Marktanalyse");
+    expect(m.priority).toBe("high");
+    expect(m.projectId).toBe("p1");
+    expect(m.goalId).toBe("g1");
+    expect(m.subtasks).toEqual([{ id: "s1", text: "Teil 1", done: true }]);
+    expect(m.recurrence).toEqual({ kind: "weekly", interval: 2 });
+  });
+
+  test("umplanen überschreibt nur Tag/Uhrzeit", async () => {
+    const t = await newTask("Task", full());
+    await scheduleTask(t.id, "2026-08-05", "09:00", "10:30");
+    await scheduleTask(t.id, "2026-08-07", "14:00", "15:00");
+
+    const after = (await entriesRepo.get(t.id))!;
+    expect(after.date).toBe("2026-08-07");
+    expect(taskMeta(after).schedule).toEqual({ startTime: "14:00", endTime: "15:00" });
+    expect(taskMeta(after).subtasks).toHaveLength(1);
+  });
+
+  test("ausplanen entfernt nur die Einplanung, die Task bleibt", async () => {
+    const t = await newTask("Task", full());
+    await scheduleTask(t.id, "2026-08-05", "09:00", "10:30");
+    await unscheduleTask(t.id);
+
+    const after = (await entriesRepo.get(t.id))!;
+    expect(after).toBeDefined();
+    expect(after.date).toBe("2026-08-05"); // Datum bleibt, nur der Plan-Eintrag geht
+    expect(isScheduled(taskMeta(after))).toBe(false);
+    expect(taskMeta(after).projectId).toBe("p1");
+    expect(taskMeta(after).subtasks).toHaveLength(1);
+  });
+
+  test("Einplanung ohne Uhrzeit ist gültig", async () => {
+    const t = await newTask("Task");
+    await scheduleTask(t.id, "2026-08-05");
+    const m = taskMeta((await entriesRepo.get(t.id))!);
+    expect(isScheduled(m)).toBe(true);
+    expect(m.schedule).toEqual({ startTime: "", endTime: "" });
   });
 });
 

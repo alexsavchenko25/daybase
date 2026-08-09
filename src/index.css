@@ -1706,6 +1706,15 @@ a {
   --cat-title: #c2c8d0;
   --cat-note: #7d8490;
 }
+/* Eingeplante Task im Wochenplan — bewusst in der Accent-Farbe statt in einer
+   Plan-Kategorie, damit "Task" auf einen Blick von "Block" unterscheidbar ist.
+   Setzt nur die Tokens, .plan-block bleibt unverändert. */
+.cat-task {
+  --cat-accent: #7aa5f8;
+  --cat-bg: rgba(122, 165, 248, 0.1);
+  --cat-title: #c2d6fc;
+  --cat-note: #6b91da;
+}
 
 /* Light-Theme: Original-Pastelltöne. */
 html[data-theme="light"] .cat-morning {
@@ -1755,6 +1764,12 @@ html[data-theme="light"] .cat-break {
   --cat-bg: #eceef1;
   --cat-title: #2a2f38;
   --cat-note: #5a616c;
+}
+html[data-theme="light"] .cat-task {
+  --cat-accent: #7aa5f8;
+  --cat-bg: #e8f0fe;
+  --cat-title: #10305e;
+  --cat-note: #2f5da8;
 }
 
 .plan-block {
@@ -2964,6 +2979,42 @@ html[data-theme="light"] .pb-editing select {
   font-size: var(--fs-xs);
   color: var(--faint);
   background: var(--surface-2);
+}
+
+/* ---------- Task-Einplanung (Tasks-Seite + Wochenplan) ---------- */
+.sched-panel {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-3);
+}
+.sched-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.sched-field .task-select {
+  width: auto;
+}
+.sched-hint {
+  flex-basis: 100%;
+  font-size: var(--fs-xs);
+}
+/* Eingeplante Task in der Liste: dezenter Accent-Rand links. */
+.task-scheduled .task-item-row {
+  border-left: 3px solid var(--accent-line);
+  padding-left: calc(var(--sp-4) - 3px);
+}
+/* Task-Karte im Wochenplan: Titel im Edit-Modus (nur Info, nicht editierbar). */
+.pb-task-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--cat-title);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------- Quick Capture (reuses .cmdk-overlay/.cmdk-panel) ---------- */

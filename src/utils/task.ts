@@ -1,6 +1,6 @@
 import { entriesRepo } from "../repository";
 import { planRecurrenceSpawn } from "./recurrence";
-import type { Entry, TaskMeta } from "../types";
+import type { Entry, TaskMeta, TaskSchedule } from "../types";
 
 const PRIORITIES: TaskMeta["priority"][] = ["low", "medium", "high"];
 export const PRIORITY_ORDER: Record<TaskMeta["priority"], number> = {
@@ -51,4 +51,43 @@ export async function toggleTaskDone(id: string): Promise<void> {
       meta: { ...out.spawn.m, recurrenceSpawned: undefined } satisfies TaskMeta,
     });
   }
+}
+
+// ---- Wochenplan-Einplanung ----
+// Eine eingeplante Task bleibt EIN Entry: der Tag steckt in `Entry.date`, die
+// Uhrzeit in `meta.schedule`. Der Wochenplan rendert sie mit, statt einen
+// zweiten (weekplan-)Eintrag zu spiegeln — sonst müssten Titel, Erledigt-Status
+// und Löschungen dauerhaft synchron gehalten werden.
+
+export function isScheduled(m: TaskMeta): boolean {
+  return !!m.schedule;
+}
+
+// Sortierschlüssel für die Tagesspalte. Ohne Startzeit ans Ende — identisch
+// zur Regel für weekplan-Blöcke.
+export function scheduleSortKey(s: TaskSchedule | undefined): string {
+  return s?.startTime || "99:99";
+}
+
+// Task für `date` (+ optionale Uhrzeit) einplanen. Datum und meta wandern in
+// EINEM atomaren Write, damit kein Zwischenzustand entsteht.
+export async function scheduleTask(
+  id: string,
+  date: string,
+  startTime = "",
+  endTime = "",
+): Promise<void> {
+  await entriesRepo.updateAtomic(id, (current) => ({
+    date,
+    meta: { ...taskMeta(current), schedule: { startTime, endTime } } satisfies TaskMeta,
+  }));
+}
+
+// Einplanung entfernen. Die Task selbst bleibt (inkl. Datum) erhalten — sie
+// verschwindet nur aus dem Wochenplan.
+export async function unscheduleTask(id: string): Promise<void> {
+  await entriesRepo.updateAtomic(id, (current) => {
+    const { schedule: _removed, ...rest } = taskMeta(current);
+    return { meta: rest satisfies TaskMeta };
+  });
 }

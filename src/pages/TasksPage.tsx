@@ -9,7 +9,13 @@ import {
   normalizeRecurrence,
   recurrenceLabel,
 } from "../utils/recurrence";
-import { PRIORITY_ORDER, taskMeta, toggleTaskDone } from "../utils/task";
+import {
+  PRIORITY_ORDER,
+  scheduleTask,
+  taskMeta,
+  toggleTaskDone,
+  unscheduleTask,
+} from "../utils/task";
 import PageHeader from "../components/PageHeader";
 import { useI18n } from "../i18n";
 import type { Entry, RecurrenceKind, RecurrenceRule, Subtask, TaskMeta } from "../types";
@@ -166,6 +172,34 @@ export default function TasksPage() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  }
+
+  // Einplanen: offenes Panel + Draft (Datum/Uhrzeit) für genau eine Task.
+  const [schedFor, setSchedFor] = useState<string | null>(null);
+  const [schedDate, setSchedDate] = useState(today);
+  const [schedStart, setSchedStart] = useState("");
+  const [schedEnd, setSchedEnd] = useState("");
+
+  function openSchedule(entry: Entry) {
+    if (schedFor === entry.id) {
+      setSchedFor(null);
+      return;
+    }
+    const s = meta(entry).schedule;
+    setSchedDate(entry.date || today);
+    setSchedStart(s?.startTime ?? "");
+    setSchedEnd(s?.endTime ?? "");
+    setSchedFor(entry.id);
+  }
+
+  async function saveSchedule(entry: Entry) {
+    await scheduleTask(entry.id, schedDate, schedStart, schedEnd);
+    setSchedFor(null);
+  }
+
+  async function clearSchedule(id: string) {
+    await unscheduleTask(id);
+    setSchedFor(null);
   }
 
   async function addSubtask(entry: Entry, text: string) {
@@ -386,10 +420,13 @@ export default function TasksPage() {
             const subs = m.subtasks ?? [];
             const subsDone = subs.filter((s) => s.done).length;
             const isExpanded = expanded.has(entry.id);
+            const sched = m.schedule;
             return (
               <li
                 key={entry.id}
-                className={`task-item ${m.done ? "task-done" : ""} ${overdue ? "task-overdue" : ""}`}
+                className={`task-item ${m.done ? "task-done" : ""} ${overdue ? "task-overdue" : ""} ${
+                  sched ? "task-scheduled" : ""
+                }`}
               >
                 <div className="task-item-row">
                   <label className="task-check">
@@ -416,6 +453,17 @@ export default function TasksPage() {
                     </span>
                   )}
                   <button
+                    className={`chip subtask-toggle ${sched ? "chip-active" : ""}`}
+                    title={
+                      sched
+                        ? tr("Im Wochenplan eingeplant", "Scheduled in the weekly plan")
+                        : tr("In den Wochenplan einplanen", "Schedule in the weekly plan")
+                    }
+                    onClick={() => openSchedule(entry)}
+                  >
+                    🗓️{sched?.startTime ? ` ${sched.startTime}` : ""}
+                  </button>
+                  <button
                     className={`chip subtask-toggle ${isExpanded ? "chip-active" : ""}`}
                     title="Subtasks"
                     onClick={() => toggleExpand(entry.id)}
@@ -430,6 +478,56 @@ export default function TasksPage() {
                     ✕
                   </button>
                 </div>
+                {schedFor === entry.id && (
+                  <div className="subtask-panel sched-panel">
+                    <label className="sched-field">
+                      <span>{tr("Tag", "Day")}</span>
+                      <input
+                        className="task-select"
+                        type="date"
+                        value={schedDate}
+                        onChange={(e) => setSchedDate(e.target.value)}
+                      />
+                    </label>
+                    <label className="sched-field">
+                      <span>{tr("Von", "From")}</span>
+                      <input
+                        className="task-select"
+                        type="time"
+                        value={schedStart}
+                        onChange={(e) => setSchedStart(e.target.value)}
+                      />
+                    </label>
+                    <label className="sched-field">
+                      <span>{tr("Bis", "To")}</span>
+                      <input
+                        className="task-select"
+                        type="time"
+                        value={schedEnd}
+                        onChange={(e) => setSchedEnd(e.target.value)}
+                      />
+                    </label>
+                    <div className="rv-actions">
+                      <button className="btn sm" onClick={() => saveSchedule(entry)}>
+                        {sched ? tr("Aktualisieren", "Update") : tr("Einplanen", "Schedule")}
+                      </button>
+                      {sched && (
+                        <button className="chip sm" onClick={() => clearSchedule(entry.id)}>
+                          {tr("Ausplanen", "Unschedule")}
+                        </button>
+                      )}
+                      <button className="chip sm" onClick={() => setSchedFor(null)}>
+                        {tr("Abbrechen", "Cancel")}
+                      </button>
+                    </div>
+                    <span className="muted sched-hint">
+                      {tr(
+                        "Uhrzeit optional — ohne Zeit erscheint die Task am Tagesende im Wochenplan.",
+                        "Time is optional — without one the task appears at the end of the day in the weekly plan.",
+                      )}
+                    </span>
+                  </div>
+                )}
                 {isExpanded && (
                   <div className="subtask-panel">
                     {subs.map((s) => (

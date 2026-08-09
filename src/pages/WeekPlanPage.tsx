@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
 import { entriesRepo } from "../repository";
@@ -9,6 +10,14 @@ import {
   catClass,
   type CategoryId,
 } from "../data/weekplanCategories";
+import {
+  isScheduled,
+  scheduleSortKey,
+  scheduleTask,
+  taskMeta,
+  toggleTaskDone,
+  unscheduleTask,
+} from "../utils/task";
 import PageHeader from "../components/PageHeader";
 import type { Entry } from "../types";
 import { useI18n } from "../i18n";
@@ -36,6 +45,13 @@ function planMeta(e: Entry): PlanMeta {
   };
 }
 
+// Eine Tagesspalte mischt echte weekplan-Blöcke mit eingeplanten Tasks.
+// Die Task bleibt dabei ihr eigener Entry (kein gespiegelter Block) — siehe
+// utils/task.ts. `sort` ist die gemeinsame Startzeit für die Sortierung.
+type DayItem =
+  | { kind: "block"; entry: Entry; sort: string }
+  | { kind: "task"; entry: Entry; sort: string };
+
 export default function WeekPlanPage() {
   const { tr } = useI18n();
   const today = todayIso();
@@ -61,19 +77,37 @@ export default function WeekPlanPage() {
     [] as Entry[],
   );
 
+  // Eingeplante Tasks derselben Woche. Nur Tasks mit meta.schedule tauchen im
+  // Wochenplan auf — der Rest bleibt allein auf der Tasks-Seite.
+  const scheduledTasks = useLiveQuery(
+    async () => {
+      const list = await db.entries
+        .where("[type+date]")
+        .between(["task", monday], ["task", sunday], true, true)
+        .toArray();
+      return list.filter((e) => isScheduled(taskMeta(e)));
+    },
+    [monday, sunday],
+    [] as Entry[],
+  );
+
   const byDay = useMemo(() => {
-    const map: Record<number, Entry[]> = {};
+    const map: Record<number, DayItem[]> = {};
     for (let i = 0; i < 7; i++) map[i] = [];
-    items.forEach((e) => map[planMeta(e).dayOfWeek]?.push(e));
-    Object.values(map).forEach((list) =>
-      list.sort((a, b) =>
-        (planMeta(a).startTime || "99").localeCompare(
-          planMeta(b).startTime || "99",
-        ),
-      ),
-    );
+    items.forEach((e) => {
+      const m = planMeta(e);
+      map[m.dayOfWeek]?.push({ kind: "block", entry: e, sort: m.startTime || "99:99" });
+    });
+    scheduledTasks.forEach((e) => {
+      // Tag kommt beim Task aus dem Datum (kein dayOfWeek in TaskMeta).
+      const di = weekDates.indexOf(e.date);
+      if (di >= 0) {
+        map[di]?.push({ kind: "task", entry: e, sort: scheduleSortKey(taskMeta(e).schedule) });
+      }
+    });
+    Object.values(map).forEach((list) => list.sort((a, b) => a.sort.localeCompare(b.sort)));
     return map;
-  }, [items]);
+  }, [items, scheduledTasks, weekDates]);
 
   async function addBlock(di: number) {
     const date = weekDates[di];
@@ -145,9 +179,29 @@ export default function WeekPlanPage() {
     await entriesRepo.remove(id);
   }
 
+  // Eingeplante Task auf einen anderen Tag ziehen: nur das Datum ändert sich,
+  // die Uhrzeit bleibt. Titel/Prio/Subtasks/Verknüpfungen werden nicht angefasst.
+  async function moveTask(entry: Entry, toDay: number) {
+    const s = taskMeta(entry).schedule;
+    await scheduleTask(entry.id, weekDates[toDay], s?.startTime ?? "", s?.endTime ?? "");
+  }
+
+  // Aus dem Wochenplan heraus darf an einer Task NUR die Uhrzeit geändert
+  // werden — Titel, Prio, Subtasks, Projekt/Goal und Recurrence bleiben der
+  // Tasks-Seite vorbehalten und können hier gar nicht überschrieben werden.
+  async function saveTaskSchedule(entry: Entry, startTime: string, endTime: string) {
+    await scheduleTask(entry.id, entry.date, startTime, endTime);
+    setEditingId(null);
+  }
+
   function dropToDay(id: string, toDay: number) {
-    const entry = items.find((i) => i.id === id);
-    if (entry) moveItem(entry, toDay);
+    const block = items.find((i) => i.id === id);
+    if (block) {
+      moveItem(block, toDay);
+      return;
+    }
+    const task = scheduledTasks.find((t) => t.id === id);
+    if (task) moveTask(task, toDay);
   }
 
   return (
@@ -215,6 +269,8 @@ export default function WeekPlanPage() {
             onToggle={toggleDone}
             onRemove={remove}
             onDropToDay={dropToDay}
+            onSaveTask={saveTaskSchedule}
+            onUnscheduleTask={unscheduleTask}
           />
         ))}
       </div>
@@ -226,7 +282,7 @@ function DayColumn(props: {
   date: string;
   dayIdx: number;
   isToday: boolean;
-  items: Entry[];
+  items: DayItem[];
   editingId: string | null;
   compact: boolean;
   onAdd: (di: number) => void;
@@ -245,6 +301,8 @@ function DayColumn(props: {
   onToggle: (entry: Entry) => void;
   onRemove: (id: string) => void;
   onDropToDay: (id: string, toDay: number) => void;
+  onSaveTask: (entry: Entry, startTime: string, endTime: string) => void;
+  onUnscheduleTask: (id: string) => void;
 }) {
   const { language, tr } = useI18n();
   const { date, dayIdx, isToday, items, editingId } = props;
@@ -273,26 +331,132 @@ function DayColumn(props: {
       </div>
 
       <ul className="day-items">
-        {items.map((entry) => (
-          <BlockCard
-            key={entry.id}
-            entry={entry}
-            dayIdx={dayIdx}
-            editing={editingId === entry.id}
-            compact={props.compact}
-            onEdit={props.onEdit}
-            onSave={props.onSave}
-            onMove={props.onMove}
-            onToggle={props.onToggle}
-            onRemove={props.onRemove}
-          />
-        ))}
+        {items.map((item) =>
+          item.kind === "task" ? (
+            <TaskBlockCard
+              key={item.entry.id}
+              entry={item.entry}
+              editing={editingId === item.entry.id}
+              compact={props.compact}
+              onEdit={props.onEdit}
+              onSave={props.onSaveTask}
+              onUnschedule={props.onUnscheduleTask}
+            />
+          ) : (
+            <BlockCard
+              key={item.entry.id}
+              entry={item.entry}
+              dayIdx={dayIdx}
+              editing={editingId === item.entry.id}
+              compact={props.compact}
+              onEdit={props.onEdit}
+              onSave={props.onSave}
+              onMove={props.onMove}
+              onToggle={props.onToggle}
+              onRemove={props.onRemove}
+            />
+          ),
+        )}
       </ul>
 
       <button className="day-add-btn" onClick={() => props.onAdd(dayIdx)}>
         + {tr("Block", "Block")}
       </button>
     </div>
+  );
+}
+
+// Eingeplante Task im Wochenplan. Bewusst NUR Uhrzeit + Erledigt + Ausplanen:
+// alles andere (Titel, Prio, Subtasks, Projekt/Goal, Recurrence) gehört der
+// Task und wird auf der Tasks-Seite bearbeitet — so kann der Wochenplan sie
+// gar nicht überschreiben.
+function TaskBlockCard(props: {
+  entry: Entry;
+  editing: boolean;
+  compact: boolean;
+  onEdit: (id: string | null) => void;
+  onSave: (entry: Entry, startTime: string, endTime: string) => void;
+  onUnschedule: (id: string) => void;
+}) {
+  const { tr } = useI18n();
+  const { entry, editing, compact } = props;
+  const m = taskMeta(entry);
+  const s = m.schedule ?? { startTime: "", endTime: "" };
+  const [startTime, setStartTime] = useState(s.startTime);
+  const [endTime, setEndTime] = useState(s.endTime);
+
+  function openEdit() {
+    setStartTime(s.startTime);
+    setEndTime(s.endTime);
+    props.onEdit(entry.id);
+  }
+
+  if (editing) {
+    return (
+      <li className="plan-block cat-task pb-editing">
+        <div className="pb-times">
+          <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+          <span>–</span>
+          <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+        </div>
+        <div className="pb-task-name">✅ {entry.title}</div>
+        <div className="pb-edit-actions">
+          <button className="btn sm" onClick={() => props.onSave(entry, startTime, endTime)}>
+            {tr("Speichern", "Save")}
+          </button>
+          <button className="chip sm" onClick={() => props.onEdit(null)}>
+            {tr("Abbrechen", "Cancel")}
+          </button>
+          <button
+            className="plan-del"
+            title={tr("Aus Wochenplan entfernen", "Remove from weekly plan")}
+            onClick={() => {
+              props.onUnschedule(entry.id);
+              props.onEdit(null);
+            }}
+          >
+            ⤺
+          </button>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li
+      className={`plan-block cat-task ${m.done ? "plan-done" : ""} ${
+        compact ? "pb-compact" : "pb-detailed"
+      }`}
+      draggable
+      onDragStart={(e) => e.dataTransfer.setData("text/plain", entry.id)}
+      title={tr("Eingeplante Task", "Scheduled task")}
+    >
+      <input
+        type="checkbox"
+        className="pb-check"
+        checked={m.done}
+        onChange={() => toggleTaskDone(entry.id)}
+      />
+      <div className="pb-main" onClick={openEdit}>
+        <div className="pb-line">
+          {(s.startTime || s.endTime) && (
+            <span className="pb-time">
+              {s.startTime}
+              {s.endTime && `–${s.endTime}`}
+            </span>
+          )}
+          <span className="pb-title">✅ {entry.title}</span>
+        </div>
+      </div>
+      <Link
+        className="pb-edit-btn"
+        to={`/tasks?date=${entry.date}`}
+        title={tr("In Tasks öffnen", "Open in tasks")}
+        onClick={(e) => e.stopPropagation()}
+      >
+        ↗
+      </Link>
+    </li>
   );
 }
 

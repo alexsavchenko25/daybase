@@ -85,24 +85,40 @@ export const entriesRepo = {
     return updated;
   },
 
-  // UPDATE von `meta` auf Basis des GESPEICHERTEN Stands, nicht des gerade
-  // gerenderten Props. Zwei schnelle Aktionen am selben Entry (Doppelklick,
-  // Subtask + Checkbox) haben sonst denselben Ausgangsstand gelesen und die
-  // erste Änderung geht verloren. Read-modify-write läuft in einer Dexie-
-  // rw-Transaktion, ist also atomar.
-  async updateMeta(
+  // UPDATE auf Basis des GESPEICHERTEN Stands, nicht des gerade gerenderten
+  // Props. Zwei schnelle Aktionen am selben Entry (Doppelklick, Subtask +
+  // Checkbox) haben sonst denselben Ausgangsstand gelesen und die erste
+  // Änderung geht verloren. Read-modify-write läuft in einer Dexie-
+  // rw-Transaktion, ist also atomar. id/createdAt bleiben unveränderlich.
+  async updateAtomic(
     id: string,
-    mutate: (meta: Record<string, any>, entry: Entry) => Record<string, any>,
+    mutate: (entry: Entry) => UpdateEntryInput,
   ): Promise<Entry | undefined> {
     let updated: Entry | undefined;
     await db.transaction("rw", db.entries, async () => {
       const current = await db.entries.get(id);
       if (!current) return;
-      updated = { ...current, meta: mutate(current.meta ?? {}, current), updatedAt: nowIso() };
+      updated = {
+        ...current,
+        ...mutate(current),
+        id: current.id,
+        createdAt: current.createdAt,
+        updatedAt: nowIso(),
+      };
       await db.entries.put(updated);
     });
     if (updated) entryUpsertHook?.(updated);
     return updated;
+  },
+
+  // Nur `meta` atomar ändern — der häufigste Fall (siehe updateAtomic).
+  async updateMeta(
+    id: string,
+    mutate: (meta: Record<string, any>, entry: Entry) => Record<string, any>,
+  ): Promise<Entry | undefined> {
+    return entriesRepo.updateAtomic(id, (current) => ({
+      meta: mutate(current.meta ?? {}, current),
+    }));
   },
 
   // DELETE

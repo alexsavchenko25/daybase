@@ -46,6 +46,15 @@ export interface RecurrenceRule {
   weekdays?: number[]; // 0=Mo..6=So, nur bei kind "weekdays"
 }
 
+// Einplanung einer Task in den Wochenplan. Der TAG steckt weiterhin in
+// `Entry.date` (kein zweites Datumsfeld, das auseinanderlaufen könnte) —
+// hier liegt nur die Uhrzeit. Beide Zeiten dürfen "" sein: dann ist die Task
+// für den Tag eingeplant, aber ohne feste Uhrzeit (sortiert ans Tagesende).
+export interface TaskSchedule {
+  startTime: string; // "HH:MM" oder ""
+  endTime: string; // "HH:MM" oder ""
+}
+
 export interface TaskMeta {
   done: boolean;
   priority: "low" | "medium" | "high";
@@ -56,6 +65,10 @@ export interface TaskMeta {
   // Datum der bereits erzeugten Folge-Instanz. Verhindert, dass erneutes
   // Ab-/Anhaken einer wiederkehrenden Task weitere Kopien anlegt.
   recurrenceSpawned?: string;
+  // Vorhanden = im Wochenplan eingeplant (an Entry.date). Fehlt = nicht
+  // eingeplant. Es gibt bewusst KEINEN separaten weekplan-Eintrag: die Task
+  // bleibt genau ein Entry, der Wochenplan rendert sie nur mit.
+  schedule?: TaskSchedule;
 }
 
 export type GoalPeriod = "weekly" | "monthly" | "yearly";

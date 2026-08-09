@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { nextRecurDate, normalizeRecurrence, planRecurrenceSpawn } from "./recurrence";
 import { addDaysIso, isoWeekKey, mondayOfIso, todayIso } from "./date";
+import { scheduleSortKey } from "./task";
 
 describe("nextRecurDate", () => {
   test("daily / weekly / monthly", () => {
@@ -70,6 +71,23 @@ describe("planRecurrenceSpawn", () => {
 
   test("Task ohne Wiederholung erzeugt nichts", () => {
     expect(planRecurrenceSpawn({}, "2026-08-03", true)).toBeNull();
+  });
+});
+
+describe("scheduleSortKey (Reihenfolge in der Wochenplan-Tagesspalte)", () => {
+  test("sortiert nach Startzeit, Einträge ohne Zeit ans Ende", () => {
+    const keys = [
+      { startTime: "", endTime: "" },
+      { startTime: "09:00", endTime: "10:00" },
+      { startTime: "07:30", endTime: "" },
+    ]
+      .map(scheduleSortKey)
+      .sort((a, b) => a.localeCompare(b));
+    expect(keys).toEqual(["07:30", "09:00", "99:99"]);
+  });
+
+  test("nicht eingeplant sortiert ebenfalls ans Ende", () => {
+    expect(scheduleSortKey(undefined)).toBe("99:99");
   });
 });
 
