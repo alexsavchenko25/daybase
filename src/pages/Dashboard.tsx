@@ -10,6 +10,7 @@ import { useI18n } from "../i18n";
 import { daysSinceBackup } from "../utils/backup";
 import { projectNeedsAttention, projectProgress } from "./ProjectsPage";
 import { goalProgress } from "./GoalsPage";
+import { deriveInsights, type Insight } from "../utils/insights";
 import type {
   Entry,
   TaskMeta,
@@ -52,15 +53,24 @@ export default function Dashboard() {
     0,
   );
 
-  // Projects ohne nächste Aktion oder ohne Task-Aktivität seit 14 Tagen.
-  const staleProjects = useLiveQuery(
+  // Projects ohne nächste Aktion oder ohne Task-Aktivität seit 14 Tagen +
+  // Insights-Panel — teilen sich denselben Projects/Tasks-Fetch, um die
+  // Tabellen nicht doppelt zu laden.
+  const { staleProjects, insights } = useLiveQuery(
     async () => {
-      const projects = await db.entries.where("type").equals("project").toArray();
-      const tasks = await db.entries.where("type").equals("task").toArray();
-      return projects.filter((p: Entry) => projectNeedsAttention(p, tasks)).length;
+      const [habits, focusEntries, reviews, projects, tasks] = await Promise.all([
+        db.entries.where("type").equals("habit").toArray(),
+        db.entries.where("type").equals("focus").toArray(),
+        db.entries.where("type").equals("review").toArray(),
+        db.entries.where("type").equals("project").toArray(),
+        db.entries.where("type").equals("task").toArray(),
+      ]);
+      const staleProjects = projects.filter((p: Entry) => projectNeedsAttention(p, tasks)).length;
+      const insights = deriveInsights({ today, habits, focus: focusEntries, reviews, projects, tasks });
+      return { staleProjects, insights };
     },
-    [],
-    0,
+    [today],
+    { staleProjects: 0, insights: [] as Insight[] },
   );
 
   // Heutiges Review (Status).
@@ -325,8 +335,21 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {(topGoals.length > 0 || activeProjects.length > 0) && (
+      {(topGoals.length > 0 || activeProjects.length > 0 || insights.length > 0) && (
         <div className="dash-grid dash-grid-2">
+          {insights.length > 0 && (
+            <div className="dash-info dash-insights">
+              <div className="dash-info-head">
+                <span className="dash-label">Insights</span>
+              </div>
+              {insights.map((ins) => (
+                <div key={ins.id} className="dash-insight-row">
+                  <span className="dwh-icon">{ins.icon}</span>
+                  <span>{tr(ins.de, ins.en)}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="dash-info">
             <div className="dash-info-head">
               <span className="dash-label">Top Goals</span>

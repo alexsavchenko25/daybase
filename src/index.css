@@ -3384,6 +3384,17 @@ input[type="range"]::-moz-range-thumb {
   font-size: var(--fs-xs);
 }
 
+.dash-insight-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+.dash-insight-row .dwh-icon {
+  flex-shrink: 0;
+}
+
 /* Dashboard Goals/Projects */
 .dash-info-head {
   display: flex;
