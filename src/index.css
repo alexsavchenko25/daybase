@@ -1208,6 +1208,7 @@ a {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--sp-3);
+  margin-top: var(--sp-3);
   margin-bottom: var(--sp-3);
   padding: var(--sp-1) 0;
   border-radius: var(--r-md);
