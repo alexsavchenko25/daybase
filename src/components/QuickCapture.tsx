@@ -29,8 +29,11 @@ function useQuickCaptureOpen(): boolean {
 }
 
 // Sichtbarer globaler Shortcut, unabhängig vom Command Palette-Weg.
-export const QUICK_CAPTURE_SHORTCUT = "⌘⇧C";
-export const QUICK_CAPTURE_SHORTCUT_WIN = "Strg+Umschalt+C";
+// Plattform-abhängig beschriftet — ⌘-Glyphen auf Windows/Linux waren schlicht
+// falsch (der Handler hört ohnehin auf metaKey ODER ctrlKey).
+const IS_APPLE = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
+export const MOD_KEY = IS_APPLE ? "⌘" : "Strg";
+export const QUICK_CAPTURE_SHORTCUT = IS_APPLE ? "⌘⇧C" : "Strg+⇧+C";
 
 export default function QuickCapture() {
   const { tr } = useI18n();
@@ -93,7 +96,7 @@ export default function QuickCapture() {
           <span className="dash-label">📥 {tr("Quick Capture", "Quick capture")}</span>
           <textarea
             ref={ref}
-            className="journal-textarea sm full"
+            className="journal-textarea sm full qc-textarea"
             placeholder={tr(
               "Kurz notieren — sortieren kommt später…",
               "Jot it down — sort it out later…",
@@ -112,8 +115,9 @@ export default function QuickCapture() {
           </div>
         </div>
         <div className="cmdk-foot">
-          <span><kbd>⌘</kbd>+<kbd>↵</kbd> {tr("speichern", "save")}</span>
+          <span><kbd>{MOD_KEY}</kbd>+<kbd>↵</kbd> {tr("speichern", "save")}</span>
           <span><kbd>esc</kbd> {tr("schließen", "close")}</span>
+          <span className="qc-foot-hint">{tr("landet in der Inbox", "lands in your inbox")}</span>
         </div>
       </div>
     </div>

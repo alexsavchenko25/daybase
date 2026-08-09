@@ -248,6 +248,9 @@ export default function NotesPage() {
                 >
                   {tr("Vorschau", "Preview")}
                 </button>
+                <span className="md-hint">
+                  {tr("Markdown: **fett**, # Überschrift, - Liste", "Markdown: **bold**, # heading, - list")}
+                </span>
               </div>
               {mode === "edit" ? (
                 <textarea

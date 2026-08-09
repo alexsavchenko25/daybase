@@ -547,7 +547,7 @@ export default function TasksPage() {
         </div>
       ) : (
         <>
-        <div className="task-bulk-bar">
+        <div className={`task-bulk-bar ${selected.size > 0 ? "is-active" : ""}`}>
           <label className="task-bulk-selectall">
             <input
               type="checkbox"
@@ -556,15 +556,15 @@ export default function TasksPage() {
               aria-label={tr("Alle sichtbaren auswählen", "Select all visible")}
             />
             {selected.size > 0
-              ? tr(`${selected.size} ausgewählt`, `${selected.size} selected`)
+              ? tr(
+                  `${selected.size} von ${tasks.length} ausgewählt`,
+                  `${selected.size} of ${tasks.length} selected`,
+                )
               : tr("Alle auswählen", "Select all")}
           </label>
           {selected.size > 0 && (
             <div className="task-bulk-actions">
-              <button className="chip sm" onClick={clearSelection}>
-                {tr("Auswahl aufheben", "Clear selection")}
-              </button>
-              <button className="chip sm" onClick={bulkComplete}>
+              <button className="btn sm" onClick={bulkComplete}>
                 ✓ {tr("Erledigen", "Complete")}
               </button>
               <span className="task-bulk-group">
@@ -600,6 +600,9 @@ export default function TasksPage() {
                   {tr("Projekt entfernen", "Remove project")}
                 </button>
               </span>
+              <button className="chip sm task-bulk-clear" onClick={clearSelection}>
+                {tr("Auswahl aufheben", "Clear selection")}
+              </button>
             </div>
           )}
         </div>
@@ -617,15 +620,19 @@ export default function TasksPage() {
                 key={entry.id}
                 className={`task-item ${m.done ? "task-done" : ""} ${overdue ? "task-overdue" : ""} ${
                   sched ? "task-scheduled" : ""
-                }`}
+                } ${selected.has(entry.id) ? "task-selected" : ""}`}
               >
                 <div className="task-item-row">
+                  {/* Auswahl-Checkbox bewusst anders gestylt als die
+                      Erledigt-Checkbox daneben — zwei identische Boxen pro
+                      Zeile waren nicht unterscheidbar. */}
                   <input
                     type="checkbox"
                     className="task-bulk-check"
                     checked={selected.has(entry.id)}
                     onChange={() => toggleSelect(entry.id)}
-                    aria-label={tr("Auswählen", "Select")}
+                    title={tr("Für Sammelaktionen auswählen", "Select for bulk actions")}
+                    aria-label={tr(`${entry.title} auswählen`, `Select ${entry.title}`)}
                   />
                   <label className="task-check">
                     <input

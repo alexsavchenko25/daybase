@@ -81,9 +81,12 @@ export default function InboxPage() {
         icon="📥"
         title="Inbox"
         subtitle={
-          <>
-            {items.length} {tr("unsortiert", "unsorted")}
-          </>
+          items.length === 0
+            ? tr("Nichts zu triagen.", "Nothing to triage.")
+            : tr(
+                `${items.length} ${items.length === 1 ? "Eintrag" : "Einträge"} unsortiert — in Task, Notiz oder Tagebuch umwandeln.`,
+                `${items.length} ${items.length === 1 ? "item" : "items"} unsorted — convert each into a task, note or journal entry.`,
+              )
         }
         actions={
           <button className="btn sm" onClick={openQuickCapture}>
@@ -99,10 +102,13 @@ export default function InboxPage() {
           <strong>{tr("Inbox leer", "Inbox is empty")}</strong>
           <span>
             {tr(
-              "Drücke ⌘⇧C (oder Strg+Umschalt+C) oder öffne den Command Palette (⌘K), um etwas festzuhalten.",
-              "Press ⌘⇧C (or Ctrl+Shift+C) or open the command palette (⌘K) to jot something down.",
+              `Alles getriaged. Neues festhalten mit ${QUICK_CAPTURE_SHORTCUT} — sortieren kannst du später.`,
+              `All triaged. Capture something new with ${QUICK_CAPTURE_SHORTCUT} — sort it out later.`,
             )}
           </span>
+          <button className="btn sm" onClick={openQuickCapture}>
+            + {tr("Erfassen", "Capture")}
+          </button>
         </div>
       ) : (
         <ul className="task-list">
@@ -131,27 +137,42 @@ export default function InboxPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="task-item-row">
-                    <span className="task-title" style={{ flex: 1, whiteSpace: "pre-wrap" }}>
-                      {entry.content}
-                    </span>
-                    <span className="task-date">{entry.createdAt.slice(0, 10)}</span>
-                    <button className="chip sm" onClick={() => doConvert(entry, "task")}>
-                      ✅ {tr("Task", "Task")}
-                    </button>
-                    <button className="chip sm" onClick={() => doConvert(entry, "note")}>
-                      🗒️ {tr("Notiz", "Note")}
-                    </button>
-                    <button className="chip sm" onClick={() => doConvert(entry, "journal")}>
-                      📓 {tr("Tagebuch", "Journal")}
-                    </button>
-                    <button className="pb-edit-btn" title={tr("Bearbeiten", "Edit")} onClick={() => startEdit(entry)}>
-                      ✎
-                    </button>
-                    <button className="task-del" title={tr("Löschen", "Delete")} onClick={() => remove(entry.id)}>
-                      ✕
-                    </button>
-                  </div>
+                  <>
+                    {/* Text zuerst, Triage-Aktionen darunter: 5 gleichrangige
+                        Controls neben dem Text waren auf schmalen Screens
+                        unlesbar gequetscht. */}
+                    <div className="task-item-row inbox-text-row">
+                      <span className="inbox-text">{entry.content}</span>
+                      <span className="task-date">{entry.createdAt.slice(0, 10)}</span>
+                    </div>
+                    <div className="inbox-actions">
+                      <span className="inbox-actions-label">{tr("Umwandeln in", "Convert to")}</span>
+                      <button className="chip sm" onClick={() => doConvert(entry, "task")}>
+                        ✅ {tr("Task", "Task")}
+                      </button>
+                      <button className="chip sm" onClick={() => doConvert(entry, "note")}>
+                        🗒️ {tr("Notiz", "Note")}
+                      </button>
+                      <button className="chip sm" onClick={() => doConvert(entry, "journal")}>
+                        📓 {tr("Tagebuch", "Journal")}
+                      </button>
+                      <button
+                        className="chip sm inbox-secondary"
+                        title={tr("Bearbeiten", "Edit")}
+                        onClick={() => startEdit(entry)}
+                      >
+                        ✎ <span className="inbox-btn-text">{tr("Bearbeiten", "Edit")}</span>
+                      </button>
+                      <button
+                        className="task-del inbox-del"
+                        title={tr("Löschen", "Delete")}
+                        aria-label={tr("Löschen", "Delete")}
+                        onClick={() => remove(entry.id)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </>
                 )}
               </li>
             );

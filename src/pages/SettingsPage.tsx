@@ -265,17 +265,35 @@ export default function SettingsPage() {
         </p>
         {TOGGLEABLE_MODULES.map((m) => {
           const isHidden = hiddenModules.has(m.path);
+          const label = tr(m.label, m.labelEn);
           return (
             <div key={m.path} className="set-row reminder-row">
               <div className="set-title">
-                {m.icon} {tr(m.label, m.labelEn)}
+                <span className="set-row-icon" aria-hidden="true">{m.icon}</span> {label}
               </div>
-              <button className="chip" onClick={() => setModuleHidden(m.path, !isHidden)}>
-                {isHidden ? tr("Ausgeblendet — einblenden", "Hidden — show") : tr("Sichtbar — ausblenden", "Visible — hide")}
+              {/* Zustand am Chip (aktiv = sichtbar), Aktion im Text — vorher
+                  trug ein Control beides und wechselte dabei die Breite. */}
+              <button
+                className={`chip ${isHidden ? "" : "chip-active"}`}
+                aria-pressed={!isHidden}
+                title={
+                  isHidden
+                    ? tr(`${label} in der Sidebar einblenden`, `Show ${label} in the sidebar`)
+                    : tr(`${label} aus der Sidebar ausblenden`, `Hide ${label} from the sidebar`)
+                }
+                onClick={() => setModuleHidden(m.path, !isHidden)}
+              >
+                {isHidden ? tr("Ausgeblendet", "Hidden") : tr("✓ Sichtbar", "✓ Visible")}
               </button>
             </div>
           );
         })}
+        <p className="muted set-note">
+          {tr(
+            "Dashboard, Heute, Inbox, Tasks, Wochenplan und Einstellungen sind Kernnavigation und lassen sich nicht ausblenden.",
+            "Dashboard, Today, Inbox, Tasks, Weekly plan and Settings are core navigation and cannot be hidden.",
+          )}
+        </p>
       </section>
 
       <section className="set-card">
@@ -309,12 +327,20 @@ export default function SettingsPage() {
                     type="time"
                     value={reminderState[kind].time}
                     disabled={!reminderState[kind].enabled}
+                    aria-label={tr(`Uhrzeit für ${reminderLabels[kind].title}`, `Time for ${reminderLabels[kind].title}`)}
                     onChange={(e) => changeReminderTime(kind, e.target.value)}
                   />
-                  <button className="chip" onClick={() => toggleReminder(kind)}>
-                    {reminderState[kind].enabled
-                      ? tr("✓ Aktiviert — ausschalten", "✓ Enabled — turn off")
-                      : tr("Aktivieren", "Enable")}
+                  <button
+                    className={`chip ${reminderState[kind].enabled ? "chip-active" : ""}`}
+                    aria-pressed={reminderState[kind].enabled}
+                    title={
+                      reminderState[kind].enabled
+                        ? tr("Erinnerung ausschalten", "Turn reminder off")
+                        : tr("Erinnerung einschalten", "Turn reminder on")
+                    }
+                    onClick={() => toggleReminder(kind)}
+                  >
+                    {reminderState[kind].enabled ? tr("✓ Aktiv", "✓ On") : tr("Aus", "Off")}
                   </button>
                 </div>
               </div>

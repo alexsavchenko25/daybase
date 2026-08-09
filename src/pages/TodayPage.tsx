@@ -32,6 +32,10 @@ function blockMeta(e: Entry): BlockMeta {
   };
 }
 
+// Überfällige Tasks werden hier nur angerissen — Today soll handlungsfähig
+// bleiben und nicht zur zweiten Tasks-Seite werden.
+const OVERDUE_PREVIEW = 4;
+
 type NextUp =
   | { kind: "block"; entry: Entry; meta: BlockMeta }
   | { kind: "task"; entry: Entry; meta: TaskMeta }
@@ -89,10 +93,12 @@ export default function TodayPage() {
     [allTasks, today],
   );
 
+  // Datum muss gesetzt sein: "" sortiert lexikografisch vor jedem echten
+  // Datum und würde sonst als überfällig gezählt (siehe TasksPage).
   const overdue = useMemo(
     () =>
       allTasks
-        .filter((e) => e.date < today && !taskMeta(e).done)
+        .filter((e) => !!e.date && e.date < today && !taskMeta(e).done)
         .sort((a, b) => a.date.localeCompare(b.date) || PRIORITY_ORDER[taskMeta(a).priority] - PRIORITY_ORDER[taskMeta(b).priority]),
     [allTasks, today],
   );
@@ -223,9 +229,16 @@ export default function TodayPage() {
       {/* Überfällig — klar getrennt, damit es nicht mit heutigen Tasks verschwimmt. */}
       {overdue.length > 0 && (
         <>
-          <p className="section-label">{tr("Überfällig", "Overdue")}</p>
+          <div className="section-head">
+            <p className="section-label">
+              {tr("Überfällig", "Overdue")} <span className="section-count">{overdue.length}</span>
+            </p>
+            <Link to="/tasks" className="dash-link">
+              {tr("in Tasks bearbeiten", "handle in tasks")} →
+            </Link>
+          </div>
           <ul className="task-list">
-            {overdue.map((entry) => {
+            {overdue.slice(0, OVERDUE_PREVIEW).map((entry) => {
               const m = taskMeta(entry);
               return (
                 <li key={entry.id} className="task-item task-overdue">
@@ -245,6 +258,15 @@ export default function TodayPage() {
               );
             })}
           </ul>
+          {overdue.length > OVERDUE_PREVIEW && (
+            <Link to="/tasks" className="dash-link today-more">
+              {tr(
+                `+ ${overdue.length - OVERDUE_PREVIEW} weitere überfällige Tasks`,
+                `+ ${overdue.length - OVERDUE_PREVIEW} more overdue tasks`,
+              )}{" "}
+              →
+            </Link>
+          )}
         </>
       )}
 
@@ -346,11 +368,28 @@ export default function TodayPage() {
       </div>
 
       {/* Habits */}
-      <p className="section-label">{tr("Habits heute", "Today's habits")}</p>
+      <div className="section-head">
+        <p className="section-label">
+          {tr("Habits heute", "Today's habits")}
+          {openHabits.length > 0 && <span className="section-count">{openHabits.length}</span>}
+        </p>
+        <Link to="/habits" className="dash-link">
+          {tr("alle", "all")} →
+        </Link>
+      </div>
       {habits.length === 0 ? (
-        <span className="muted">{tr("Noch keine Habits angelegt.", "No habits yet.")}</span>
+        <div className="empty" data-icon="🔁">
+          <strong>{tr("Noch keine Habits", "No habits yet")}</strong>
+          <span>{tr("Lege eine Gewohnheit an, um sie hier täglich abzuhaken.", "Create a habit to check it off here every day.")}</span>
+          <Link className="btn sm" to="/habits">
+            {tr("Habit anlegen", "Create habit")}
+          </Link>
+        </div>
       ) : openHabits.length === 0 ? (
-        <span className="muted">{tr("Alle Habits heute erledigt. 🔥", "All habits done today. 🔥")}</span>
+        <div className="empty" data-icon="🔥">
+          <strong>{tr("Alle Habits erledigt", "All habits done")}</strong>
+          <span>{tr("Streak gehalten — nichts mehr offen für heute.", "Streak kept — nothing left for today.")}</span>
+        </div>
       ) : (
         <ul className="habit-list">
           {openHabits.map((habit) => {

@@ -250,6 +250,12 @@ export default function WeekPlanPage() {
             {c.label}
           </span>
         ))}
+        {/* Eingeplante Tasks sind keine Kategorie, tauchen aber als eigene
+            Kartenfarbe auf — ohne Legendeneintrag wäre das Blau unerklärt. */}
+        <span className="legend-item">
+          <span className="legend-dot cat-task legend-dot-task" />
+          {tr("Eingeplante Task", "Scheduled task")}
+        </span>
       </div>
 
       <div className="week-grid">
@@ -393,13 +399,28 @@ function TaskBlockCard(props: {
 
   if (editing) {
     return (
-      <li className="plan-block cat-task pb-editing">
-        <div className="pb-times">
-          <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-          <span>–</span>
-          <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+      <li className="plan-block cat-task pb-task pb-editing">
+        <div className="pb-task-name" title={entry.title}>
+          {entry.title}
         </div>
-        <div className="pb-task-name">✅ {entry.title}</div>
+        <div className="pb-times">
+          <input
+            type="time"
+            aria-label={tr("Startzeit", "Start time")}
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+          />
+          <span>–</span>
+          <input
+            type="time"
+            aria-label={tr("Endzeit", "End time")}
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+          />
+        </div>
+        <span className="pb-task-hint">
+          {tr("Nur Zeit — Rest in Tasks.", "Time only — everything else in tasks.")}
+        </span>
         <div className="pb-edit-actions">
           <button className="btn sm" onClick={() => props.onSave(entry, startTime, endTime)}>
             {tr("Speichern", "Save")}
@@ -424,7 +445,7 @@ function TaskBlockCard(props: {
 
   return (
     <li
-      className={`plan-block cat-task ${m.done ? "plan-done" : ""} ${
+      className={`plan-block cat-task pb-task ${m.done ? "plan-done" : ""} ${
         compact ? "pb-compact" : "pb-detailed"
       }`}
       draggable
@@ -445,13 +466,14 @@ function TaskBlockCard(props: {
               {s.endTime && `–${s.endTime}`}
             </span>
           )}
-          <span className="pb-title">✅ {entry.title}</span>
+          <span className="pb-title">{entry.title}</span>
         </div>
       </div>
       <Link
         className="pb-edit-btn"
         to={`/tasks?date=${entry.date}`}
         title={tr("In Tasks öffnen", "Open in tasks")}
+        aria-label={tr(`${entry.title} in Tasks öffnen`, `Open ${entry.title} in tasks`)}
         onClick={(e) => e.stopPropagation()}
       >
         ↗

@@ -170,7 +170,14 @@ export default function ProjectsPage() {
 
   return (
     <div className="page goals-page">
-      <PageHeader icon="📂" title="Projects" />
+      <PageHeader
+        icon="📂"
+        title="Projects"
+        subtitle={tr(
+          "Fortschritt kommt aus verknüpften Tasks. Jedes aktive Projekt braucht eine nächste Aktion.",
+          "Progress is derived from linked tasks. Every active project needs a next action.",
+        )}
+      />
 
       <form className="entity-form" onSubmit={save}>
         <input
@@ -323,17 +330,19 @@ export default function ProjectsPage() {
                       <span className="entity-dl">🔗 {linkedNotes.length} {tr("Notizen", "notes")}</span>
                     )}
                   </div>
-                  <div className="entity-meta">
-                    {m.nextAction ? (
-                      <span className="link-tag">→ {m.nextAction}</span>
-                    ) : (
-                      attention && (
+                  {/* Nur rendern, wenn es etwas zu zeigen gibt — eine leere
+                      Meta-Zeile hinterließ sonst eine Lücke in der Karte. */}
+                  {(m.nextAction || attention) && (
+                    <div className="entity-meta">
+                      {m.nextAction ? (
+                        <span className="link-tag">→ {m.nextAction}</span>
+                      ) : (
                         <span className="pill status-paused">
-                          {tr("Nächste Aktion fehlt", "Missing next action")}
+                          ⚠ {tr("Nächste Aktion fehlt", "Missing next action")}
                         </span>
-                      )
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                   <div className="entity-prog">
                     <ProgressBar value={prog.pct} />
                     <span className="entity-prog-val">{Math.round(prog.pct)}%</span>
@@ -394,31 +403,47 @@ export default function ProjectsPage() {
               <div key={status} className="board-col">
                 <div className="board-col-head">
                   <span className={`pill status-${status}`}>{statusLabel(status)}</span>
-                  <span className="muted">{col.length}</span>
+                  <span className="board-col-count">{col.length}</span>
                 </div>
+                {col.length === 0 && (
+                  <p className="board-col-empty">{tr("leer", "empty")}</p>
+                )}
                 {col.map((p) => {
                   const m = pm(p);
                   const prog = projectProgress(p.id, tasks);
                   const attention = projectNeedsAttention(p, tasks);
                   return (
-                    <div key={p.id} className="board-card">
-                      <span className="entity-title">{p.title}</span>
+                    <div key={p.id} className={`board-card ${attention ? "board-card-attention" : ""}`}>
+                      <span className="board-card-title">{p.title}</span>
                       {m.nextAction ? (
-                        <span className="link-tag">→ {m.nextAction}</span>
+                        <span className="board-next">
+                          <span className="board-next-label">{tr("Nächste Aktion", "Next action")}</span>
+                          {m.nextAction}
+                        </span>
                       ) : (
                         attention && (
                           <span className="pill status-paused">
-                            {tr("Keine nächste Aktion", "No next action")}
+                            ⚠ {tr("Keine nächste Aktion", "No next action")}
                           </span>
                         )
                       )}
-                      <div className="entity-prog">
-                        <ProgressBar value={prog.pct} />
-                        <span className="entity-prog-val">{prog.done}/{prog.total}</span>
+                      <div className="board-card-meta">
+                        {m.deadline && <span className="entity-dl">⏱ {m.deadline}</span>}
+                        <span className="entity-dl">
+                          {prog.done}/{prog.total} Tasks
+                        </span>
                       </div>
+                      {prog.total > 0 && (
+                        <div className="entity-prog">
+                          <ProgressBar value={prog.pct} />
+                          <span className="entity-prog-val">{Math.round(prog.pct)}%</span>
+                        </div>
+                      )}
                       <select
                         className="task-select sm"
                         value={status}
+                        aria-label={tr(`Status von ${p.title}`, `Status of ${p.title}`)}
+                        title={tr("Status ändern", "Change status")}
                         onChange={(e) => setStatus(p.id, e.target.value as ProjectStatus)}
                       >
                         {STATUSES.map((s) => (

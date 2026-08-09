@@ -43,11 +43,12 @@ export default function Dashboard() {
     0,
   );
 
-  // Überfällige Tasks: offen + Datum vor heute.
+  // Überfällige Tasks: offen + Datum GESETZT + vor heute. Ohne die
+  // !!e.date-Prüfung zählt ein leerer String ("" < jedes Datum) mit.
   const overdueTasks = useLiveQuery(
     async () => {
       const t = await db.entries.where("type").equals("task").toArray();
-      return t.filter((e: Entry) => !(e.meta as TaskMeta).done && e.date < today).length;
+      return t.filter((e: Entry) => !(e.meta as TaskMeta).done && !!e.date && e.date < today).length;
     },
     [today],
     0,
@@ -335,21 +336,30 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {(topGoals.length > 0 || activeProjects.length > 0 || insights.length > 0) && (
-        <div className="dash-grid dash-grid-2">
-          {insights.length > 0 && (
-            <div className="dash-info dash-insights">
-              <div className="dash-info-head">
-                <span className="dash-label">Insights</span>
+      {/* Insights sind stille Beobachtungen, keine KPI-Kacheln: eigene ruhige
+          Zeile über den Fortschritts-Cards statt als dritte Spalte, in der
+          jeder Satz auf sechs Zeilen umbricht. */}
+      {insights.length > 0 && (
+        <div className="dash-info dash-insights">
+          <div className="dash-info-head">
+            <span className="dash-label">Insights</span>
+            <span className="dash-insights-hint">
+              {tr("aus deinen Daten der letzten Wochen", "from your data over recent weeks")}
+            </span>
+          </div>
+          <div className="dash-insight-list">
+            {insights.map((ins) => (
+              <div key={ins.id} className="dash-insight-row">
+                <span className="dwh-icon" aria-hidden="true">{ins.icon}</span>
+                <span>{tr(ins.de, ins.en)}</span>
               </div>
-              {insights.map((ins) => (
-                <div key={ins.id} className="dash-insight-row">
-                  <span className="dwh-icon">{ins.icon}</span>
-                  <span>{tr(ins.de, ins.en)}</span>
-                </div>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(topGoals.length > 0 || activeProjects.length > 0) && (
+        <div className="dash-grid dash-grid-2">
           <div className="dash-info">
             <div className="dash-info-head">
               <span className="dash-label">Top Goals</span>

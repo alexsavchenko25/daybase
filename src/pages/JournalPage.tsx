@@ -217,6 +217,9 @@ export default function JournalPage() {
                 >
                   {tr("Vorschau", "Preview")}
                 </button>
+                <span className="md-hint">
+                  {tr("Markdown: **fett**, # Überschrift, - Liste", "Markdown: **bold**, # heading, - list")}
+                </span>
               </div>
               {mode === "edit" ? (
                 <textarea

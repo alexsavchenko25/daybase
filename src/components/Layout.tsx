@@ -133,16 +133,21 @@ export default function Layout() {
             <span className="nav-icon">⚙️</span> {tr("Einstellungen", "Settings")}
           </NavLink>
         </nav>
+        {/* Label + Shortcut werden in der schmalen Icon-Sidebar per CSS
+            ausgeblendet — sonst läuft der Button aus der 64px-Spalte. */}
         <button
           type="button"
           className="nav-capture"
+          title={`${tr("Erfassen", "Capture")} · ${QUICK_CAPTURE_SHORTCUT}`}
+          aria-label={tr("Quick Capture öffnen", "Open quick capture")}
           onClick={() => {
             setNavOpen(false);
             openQuickCapture();
           }}
         >
-          <span>📥 {tr("Erfassen", "Capture")}</span>
-          <kbd>{QUICK_CAPTURE_SHORTCUT}</kbd>
+          <span className="nav-capture-icon" aria-hidden="true">📥</span>
+          <span className="nav-capture-label">{tr("Erfassen", "Capture")}</span>
+          <kbd className="nav-capture-kbd">{QUICK_CAPTURE_SHORTCUT}</kbd>
         </button>
         <div className="sidebar-foot">
           <span className={`foot-dot ${syncOn ? "on" : ""}`} />

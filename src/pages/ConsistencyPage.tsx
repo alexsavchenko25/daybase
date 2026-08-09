@@ -171,17 +171,29 @@ export default function ConsistencyPage() {
             >
               <span className="cc-daynum">{Number(day.slice(8, 10))}</span>
               {!isFuture && (
-                <span className="cc-glyphs">
-                  {stats.tasksTotal > 0 && (
-                    <span className="cc-glyph">
-                      {stats.tasksDone}/{stats.tasksTotal}
+                <>
+                  {/* Nur die beiden Zahlen, die in einer Zelle dieser Größe
+                      lesbar bleiben. Review/Journal als Punkte statt Emoji
+                      (bei 9px unlesbar) — die Volltext-Erklärung steckt im
+                      title/aria-label der Zelle. */}
+                  <span className="cc-glyphs">
+                    {stats.tasksTotal > 0 && (
+                      <span className="cc-glyph">
+                        {stats.tasksDone}/{stats.tasksTotal}
+                      </span>
+                    )}
+                    {stats.tasksTotal === 0 && habitPct !== null && (
+                      <span className="cc-glyph">{habitPct}%</span>
+                    )}
+                    {stats.focusSessions > 0 && <span className="cc-glyph">{stats.focusMin}m</span>}
+                  </span>
+                  {(stats.reviewExists || stats.journalExists) && (
+                    <span className="cc-dots" aria-hidden="true">
+                      {stats.reviewExists && <span className="cc-dot cc-dot-review" />}
+                      {stats.journalExists && <span className="cc-dot cc-dot-journal" />}
                     </span>
                   )}
-                  {habitPct !== null && <span className="cc-glyph">{habitPct}%</span>}
-                  {stats.focusSessions > 0 && <span className="cc-glyph">{stats.focusMin}m</span>}
-                  {stats.reviewExists && <span className="cc-glyph cc-icon">📝</span>}
-                  {stats.journalExists && <span className="cc-glyph cc-icon">📓</span>}
-                </span>
+                </>
               )}
             </Link>
           );
@@ -195,12 +207,14 @@ export default function ConsistencyPage() {
         ))}
         <span className="muted">{tr("Mehr", "More")}</span>
         <span className="consistency-legend-sep" />
-        <span className="muted">
-          {tr(
-            "Klick auf einen Tag öffnet die Tagesansicht in Tasks. 📝 Review · 📓 Journal vorhanden.",
-            "Click a day to open its day view in Tasks. 📝 Review · 📓 Journal present.",
-          )}
+        <span className="cc-leg">
+          <span className="cc-dot cc-dot-review" /> Review
         </span>
+        <span className="cc-leg">
+          <span className="cc-dot cc-dot-journal" /> Journal
+        </span>
+        <span className="consistency-legend-sep" />
+        <span className="muted">{tr("Tag anklicken für Details", "Click a day for details")}</span>
       </div>
     </div>
   );
