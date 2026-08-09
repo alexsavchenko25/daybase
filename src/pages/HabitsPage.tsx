@@ -5,6 +5,7 @@ import { entriesRepo } from "../repository";
 import { todayIso, lastNDays } from "../utils/date";
 import { computeStreak, isDoneForPeriod, habitMeta, toggleCompletion } from "../utils/habit";
 import PageHeader from "../components/PageHeader";
+import HabitHeatmap from "../components/HabitHeatmap";
 import { useI18n } from "../i18n";
 import type { Entry, HabitMeta } from "../types";
 
@@ -88,13 +89,15 @@ export default function HabitsPage() {
           <span>{tr("Lege oben deine erste Gewohnheit an — täglich oder wöchentlich.", "Create your first habit above — daily or weekly.")}</span>
         </div>
       ) : (
-        <ul className="habit-list">
-          {habits.map((habit) => {
-            const m = habitMeta(habit);
-            const done = isDoneForPeriod(m.completedDates, m.frequency, today);
-            const doneSet = new Set(m.completedDates);
-            return (
-              <li key={habit.id} className="habit-item">
+        <>
+          <HabitHeatmap habits={habits} today={today} />
+          <ul className="habit-list">
+            {habits.map((habit) => {
+              const m = habitMeta(habit);
+              const done = isDoneForPeriod(m.completedDates, m.frequency, today);
+              const doneSet = new Set(m.completedDates);
+              return (
+                <li key={habit.id} className="habit-item">
                 <label className="habit-check">
                   <input
                     type="checkbox"
@@ -131,10 +134,11 @@ export default function HabitsPage() {
                 >
                   ✕
                 </button>
-              </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
     </div>
   );
