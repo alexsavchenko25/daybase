@@ -20,8 +20,29 @@ import PageHeader from "../components/PageHeader";
 import { useI18n } from "../i18n";
 import type { Entry, RecurrenceKind, RecurrenceRule, Subtask, TaskMeta } from "../types";
 
-type View = "today" | "week" | "later" | "all" | "done" | "day";
+type View =
+  | "today"
+  | "next7"
+  | "week"
+  | "later"
+  | "overdue"
+  | "highPriority"
+  | "noProject"
+  | "all"
+  | "done"
+  | "day";
 type Priority = TaskMeta["priority"];
+
+// Views, in denen überfällige Tasks zuerst sortiert werden sollen (unabhängig
+// vom Datumsbereich der View selbst).
+const OVERDUE_FIRST_VIEWS = new Set<View>([
+  "all",
+  "week",
+  "next7",
+  "overdue",
+  "highPriority",
+  "noProject",
+]);
 
 const PRIO_ORDER = PRIORITY_ORDER;
 const meta = taskMeta;
@@ -90,11 +111,20 @@ export default function TasksPage() {
   const monday = mondayOfIso(today);
   const sunday = addDaysIso(monday, 6);
 
+  const next7End = addDaysIso(today, 6);
+
   const tasks = useMemo(() => {
     let list: Entry[];
     if (view === "today") list = all.filter((e) => e.date === today);
+    else if (view === "next7") list = all.filter((e) => e.date >= today && e.date <= next7End);
     else if (view === "week") list = all.filter((e) => e.date >= monday && e.date <= sunday);
     else if (view === "later") list = all.filter((e) => e.date > sunday && !meta(e).done);
+    // Überfällig: offen + Datum gesetzt + vor heute. Tasks ohne Datum (leerer
+    // String) dürfen hier NICHT mitzählen — "" < jedes Datum wäre sonst
+    // fälschlich "überfällig".
+    else if (view === "overdue") list = all.filter((e) => !meta(e).done && e.date && e.date < today);
+    else if (view === "highPriority") list = all.filter((e) => !meta(e).done && meta(e).priority === "high");
+    else if (view === "noProject") list = all.filter((e) => !meta(e).done && !meta(e).projectId);
     else if (view === "all") list = all.filter((e) => !meta(e).done);
     else if (view === "done") list = all.filter((e) => meta(e).done);
     else list = all.filter((e) => e.date === viewDate); // "day"
@@ -104,8 +134,8 @@ export default function TasksPage() {
       // done immer ans Ende (außer in "done"-View)
       const dn = Number(ma.done) - Number(mb.done);
       if (dn !== 0) return dn;
-      // in "all": überfällig zuerst
-      if (view === "all" || view === "week") {
+      // überfällig zuerst
+      if (OVERDUE_FIRST_VIEWS.has(view)) {
         const aOver = a.date < today ? 0 : a.date === today ? 1 : 2;
         const bOver = b.date < today ? 0 : b.date === today ? 1 : 2;
         if (aOver !== bOver) return aOver - bOver;
@@ -122,7 +152,7 @@ export default function TasksPage() {
       if (dp !== 0) return dp;
       return b.createdAt.localeCompare(a.createdAt);
     });
-  }, [all, view, viewDate, today, monday, sunday]);
+  }, [all, view, viewDate, today, monday, sunday, next7End]);
 
   // Dashboard-Logik: immer echtes heute, unabhängig von viewDate.
   const openTodayCount = useMemo(
@@ -172,6 +202,82 @@ export default function TasksPage() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  }
+
+  // ---- Mehrfachauswahl + Bulk-Aktionen ----
+  // Reine UI-State, nicht persistiert. Wechselt die View, könnte die Auswahl
+  // sonst auf inzwischen unsichtbare Tasks zeigen — deshalb bei Wechsel leeren.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDate, setBulkDate] = useState("");
+  const [bulkProjectId, setBulkProjectId] = useState("");
+
+  useEffect(() => {
+    setSelected(new Set());
+  }, [view, viewDate]);
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  const allVisibleSelected = tasks.length > 0 && tasks.every((t) => selected.has(t.id));
+
+  function toggleSelectAllVisible() {
+    setSelected(allVisibleSelected ? new Set() : new Set(tasks.map((t) => t.id)));
+  }
+
+  function clearSelection() {
+    setSelected(new Set());
+  }
+
+  // Erledigen respektiert dieselbe Spawn-once-Recurrence-Logik wie das
+  // einzelne Abhaken (toggleTaskDone) — bereits erledigte Tasks werden
+  // übersprungen, damit sie nicht versehentlich wieder geöffnet werden.
+  async function bulkComplete() {
+    const ids = [...selected];
+    await Promise.all(
+      ids.map(async (id) => {
+        const entry = all.find((t) => t.id === id);
+        if (entry && !meta(entry).done) await toggleTaskDone(id);
+      }),
+    );
+    clearSelection();
+  }
+
+  async function bulkReschedule() {
+    if (!bulkDate) return;
+    const ids = [...selected];
+    await Promise.all(ids.map((id) => entriesRepo.update(id, { date: bulkDate })));
+    setBulkDate("");
+    clearSelection();
+  }
+
+  async function bulkAssignProject() {
+    if (!bulkProjectId) return;
+    const ids = [...selected];
+    await Promise.all(
+      ids.map((id) =>
+        entriesRepo.updateMeta(id, (_m, current) => ({ ...meta(current), projectId: bulkProjectId })),
+      ),
+    );
+    setBulkProjectId("");
+    clearSelection();
+  }
+
+  async function bulkRemoveProject() {
+    const ids = [...selected];
+    await Promise.all(
+      ids.map((id) =>
+        entriesRepo.updateMeta(id, (_m, current) => {
+          const { projectId: _removed, ...rest } = meta(current);
+          return rest;
+        }),
+      ),
+    );
+    clearSelection();
   }
 
   // Einplanen: offenes Panel + Draft (Datum/Uhrzeit) für genau eine Task.
@@ -366,12 +472,18 @@ export default function TasksPage() {
         </div>
       )}
 
-      <div className="filter-row">
+      <div className="filter-row wrap">
         <button
           className={`chip ${todayActive ? "chip-active" : ""}`}
           onClick={() => setView("today")}
         >
           {tr("Heute", "Today")}
+        </button>
+        <button
+          className={`chip ${view === "next7" ? "chip-active" : ""}`}
+          onClick={() => setView("next7")}
+        >
+          {tr("Nächste 7 Tage", "Next 7 days")}
         </button>
         <button
           className={`chip ${view === "week" ? "chip-active" : ""}`}
@@ -386,6 +498,24 @@ export default function TasksPage() {
           {tr("Später", "Later")}
         </button>
         <button
+          className={`chip ${view === "overdue" ? "chip-active" : ""}`}
+          onClick={() => setView("overdue")}
+        >
+          {tr("Überfällig", "Overdue")}
+        </button>
+        <button
+          className={`chip ${view === "highPriority" ? "chip-active" : ""}`}
+          onClick={() => setView("highPriority")}
+        >
+          {tr("Hohe Priorität", "High priority")}
+        </button>
+        <button
+          className={`chip ${view === "noProject" ? "chip-active" : ""}`}
+          onClick={() => setView("noProject")}
+        >
+          {tr("Ohne Projekt", "No project")}
+        </button>
+        <button
           className={`chip ${view === "all" ? "chip-active" : ""}`}
           onClick={() => setView("all")}
         >
@@ -395,7 +525,7 @@ export default function TasksPage() {
           className={`chip ${view === "done" ? "chip-active" : ""}`}
           onClick={() => setView("done")}
         >
-          {tr("Erledigt", "Done")}
+          {tr("Erledigt", "Completed")}
         </button>
       </div>
 
@@ -403,8 +533,12 @@ export default function TasksPage() {
         <div className="empty" data-icon="✅">
           <strong>
             {view === "today" && tr("Keine Tasks für heute", "No tasks for today")}
+            {view === "next7" && tr("Keine Tasks in den nächsten 7 Tagen", "No tasks in the next 7 days")}
             {view === "week" && tr("Keine Tasks diese Woche", "No tasks this week")}
             {view === "later" && tr("Keine zukünftigen Tasks", "No future tasks")}
+            {view === "overdue" && tr("Keine überfälligen Tasks", "No overdue tasks")}
+            {view === "highPriority" && tr("Keine offenen Tasks mit hoher Priorität", "No open high-priority tasks")}
+            {view === "noProject" && tr("Alle offenen Tasks haben ein Projekt", "Every open task has a project")}
             {view === "all" && tr("Alle Tasks erledigt", "All tasks completed")}
             {view === "done" && tr("Noch keine Tasks abgehakt", "No completed tasks yet")}
             {view === "day" && tr("Keine Tasks für diesen Tag", "No tasks for this day")}
@@ -412,11 +546,68 @@ export default function TasksPage() {
           <span>{tr("Neuen Task oben im Formular anlegen.", "Create a new task using the form above.")}</span>
         </div>
       ) : (
+        <>
+        <div className="task-bulk-bar">
+          <label className="task-bulk-selectall">
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              onChange={toggleSelectAllVisible}
+              aria-label={tr("Alle sichtbaren auswählen", "Select all visible")}
+            />
+            {selected.size > 0
+              ? tr(`${selected.size} ausgewählt`, `${selected.size} selected`)
+              : tr("Alle auswählen", "Select all")}
+          </label>
+          {selected.size > 0 && (
+            <div className="task-bulk-actions">
+              <button className="chip sm" onClick={clearSelection}>
+                {tr("Auswahl aufheben", "Clear selection")}
+              </button>
+              <button className="chip sm" onClick={bulkComplete}>
+                ✓ {tr("Erledigen", "Complete")}
+              </button>
+              <span className="task-bulk-group">
+                <input
+                  className="task-select sm"
+                  type="date"
+                  value={bulkDate}
+                  onChange={(e) => setBulkDate(e.target.value)}
+                  title={tr("Neues Datum", "New date")}
+                />
+                <button className="chip sm" onClick={bulkReschedule} disabled={!bulkDate}>
+                  {tr("Verschieben", "Reschedule")}
+                </button>
+              </span>
+              <span className="task-bulk-group">
+                <select
+                  className="task-select sm"
+                  value={bulkProjectId}
+                  onChange={(e) => setBulkProjectId(e.target.value)}
+                  title={tr("Projekt zuweisen", "Assign project")}
+                >
+                  <option value="">— {tr("Projekt", "Project")} —</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </select>
+                <button className="chip sm" onClick={bulkAssignProject} disabled={!bulkProjectId}>
+                  {tr("Zuweisen", "Assign")}
+                </button>
+                <button className="chip sm" onClick={bulkRemoveProject}>
+                  {tr("Projekt entfernen", "Remove project")}
+                </button>
+              </span>
+            </div>
+          )}
+        </div>
         <ul className="task-list">
           {tasks.map((entry) => {
             const m = meta(entry);
             const showDate = view !== "today" && view !== "day";
-            const overdue = !m.done && entry.date < today;
+            const overdue = !m.done && !!entry.date && entry.date < today;
             const subs = m.subtasks ?? [];
             const subsDone = subs.filter((s) => s.done).length;
             const isExpanded = expanded.has(entry.id);
@@ -429,6 +620,13 @@ export default function TasksPage() {
                 }`}
               >
                 <div className="task-item-row">
+                  <input
+                    type="checkbox"
+                    className="task-bulk-check"
+                    checked={selected.has(entry.id)}
+                    onChange={() => toggleSelect(entry.id)}
+                    aria-label={tr("Auswählen", "Select")}
+                  />
                   <label className="task-check">
                     <input
                       type="checkbox"
@@ -585,6 +783,7 @@ export default function TasksPage() {
             );
           })}
         </ul>
+        </>
       )}
     </div>
   );

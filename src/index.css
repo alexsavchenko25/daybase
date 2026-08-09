@@ -1194,6 +1194,43 @@ a {
   background: var(--surface-2);
 }
 
+.task-bulk-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.task-bulk-selectall {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.task-bulk-selectall input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.task-bulk-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.task-bulk-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.task-bulk-group .task-select {
+  width: auto;
+}
+
 .task-item-row {
   display: flex;
   align-items: center;
@@ -1260,7 +1297,8 @@ a {
 }
 
 .task-check input,
-.habit-check input {
+.habit-check input,
+.task-bulk-check {
   width: 17px;
   height: 17px;
   accent-color: var(--accent);
