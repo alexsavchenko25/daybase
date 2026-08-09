@@ -1,3 +1,4 @@
+import { Fragment, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
@@ -11,6 +12,18 @@ import { daysSinceBackup } from "../utils/backup";
 import { projectNeedsAttention, projectProgress } from "./ProjectsPage";
 import { goalProgress } from "./GoalsPage";
 import { deriveInsights, type Insight } from "../utils/insights";
+import {
+  canMoveDashboardSection,
+  defaultDashboardLayout,
+  groupDashboardRows,
+  moveDashboardSection,
+  readDashboardLayout,
+  setDashboardSectionHidden,
+  visibleDashboardSections,
+  writeDashboardLayout,
+  type DashboardLayout,
+  type DashboardSectionId,
+} from "../utils/dashboardLayout";
 import type {
   Entry,
   TaskMeta,
@@ -19,9 +32,75 @@ import type {
   GoalMeta,
 } from "../types";
 
+// Bearbeitungs-Rahmen um einen Dashboard-Bereich. Wird NUR im
+// Anpassen-Modus gerendert — außerhalb bleibt das Dashboard-Markup exakt
+// wie vorher, damit die normale Ansicht unverändert aussieht.
+function SectionEditor(props: {
+  label: string;
+  canUp: boolean;
+  canDown: boolean;
+  onMove: (direction: -1 | 1) => void;
+  onHide: () => void;
+  children: ReactNode;
+  tr: (de: string, en: string) => string;
+}) {
+  const { label, canUp, canDown, tr } = props;
+  return (
+    <section className="dash-section-edit" aria-label={label}>
+      <div className="dash-section-edit-head">
+        <span className="dash-section-title">{label}</span>
+        <div className="dash-section-controls">
+          <button
+            className="chip sm"
+            type="button"
+            disabled={!canUp}
+            aria-label={tr(`${label} nach oben verschieben`, `Move ${label} up`)}
+            title={tr("Nach oben", "Move up")}
+            onClick={() => props.onMove(-1)}
+          >
+            ↑
+          </button>
+          <button
+            className="chip sm"
+            type="button"
+            disabled={!canDown}
+            aria-label={tr(`${label} nach unten verschieben`, `Move ${label} down`)}
+            title={tr("Nach unten", "Move down")}
+            onClick={() => props.onMove(1)}
+          >
+            ↓
+          </button>
+          <button
+            className="chip sm"
+            type="button"
+            aria-label={tr(`${label} ausblenden`, `Hide ${label}`)}
+            title={tr("Ausblenden", "Hide")}
+            onClick={props.onHide}
+          >
+            ✕ {tr("Ausblenden", "Hide")}
+          </button>
+        </div>
+      </div>
+      <div className="dash-section-body">{props.children}</div>
+    </section>
+  );
+}
+
 export default function Dashboard() {
   const { locale, tr } = useI18n();
   const today = todayIso();
+
+  // Anpassung ist reine Geräte-Einstellung: nur localStorage, kein Entry,
+  // kein Sync. Nur das Dashboard liest sie — daher schlichtes useState statt
+  // des useSyncExternalStore-Stores aus hiddenModules.ts.
+  const [layout, setLayout] = useState<DashboardLayout>(() => readDashboardLayout());
+  const [customizing, setCustomizing] = useState(false);
+  const [resetPending, setResetPending] = useState(false);
+
+  function updateLayout(next: DashboardLayout) {
+    setLayout(next);
+    writeDashboardLayout(next);
+  }
 
   const openTasks = useLiveQuery(
     async () => {
@@ -201,12 +280,17 @@ export default function Dashboard() {
     year: "numeric",
   });
 
-  return (
-    <div className="page dashboard">
-      <PageHeader icon="🏠" title="Dashboard" subtitle={dateLabel} />
-
-      {/* Primär: heutiger Fokus + nächster Block */}
-      <div className="dash-hero">
+  // Bereichs-Definitionen. `hasContent` spiegelt exakt die bisherigen
+  // Render-Bedingungen — außerhalb des Anpassen-Modus verschwindet ein leerer
+  // Bereich also weiterhin von selbst. Im Anpassen-Modus wird er trotzdem
+  // gezeigt, sonst ließe er sich nie sortieren oder ausblenden.
+  const sections: Record<DashboardSectionId, { label: string; hasContent: boolean; node: ReactNode }> = {
+    focus: {
+      label: tr("Fokus & nächster Block", "Focus & next block"),
+      hasContent: true,
+      node: (
+        /* Primär: heutiger Fokus + nächster Block */
+        <div className="dash-hero">
         <div className="dash-hero-card dash-hero-focus">
           <span className="dash-label">{tr("Heutiger Fokus", "Today's focus")}</span>
           {focus ? (
@@ -242,10 +326,17 @@ export default function Dashboard() {
             {tr("Wochenplan", "Weekly plan")} →
           </Link>
         </div>
-      </div>
+        </div>
+      ),
+    },
 
-      {/* Kompakte Hinweise */}
-      <div className="dash-hints">
+    hints: {
+      label: tr("Hinweise", "Action hints"),
+      hasContent:
+        showBackupHint || showWeeklyHint || overdueTasks > 0 || staleProjects > 0 || !review || openHabits > 0,
+      node: (
+        /* Kompakte Hinweise */
+        <div className="dash-hints">
         {showBackupHint && (
           <Link to="/settings" className="dash-weekly-hint dash-backup-hint">
             <span className="dwh-icon">💾</span>
@@ -318,10 +409,16 @@ export default function Dashboard() {
             <span className="dwh-arrow">→</span>
           </Link>
         )}
-      </div>
+        </div>
+      ),
+    },
 
-      {/* Sekundäre KPIs */}
-      <div className="dash-kpis">
+    kpis: {
+      label: tr("Kennzahlen", "Statistics"),
+      hasContent: true,
+      node: (
+        /* Sekundäre KPIs */
+        <div className="dash-kpis">
         <Link to="/tasks" className="dash-kpi">
           <span className="dash-kpi-value">{openTasks}</span>
           <span className="dash-kpi-label">{tr("Tasks offen", "Open tasks")}</span>
@@ -334,12 +431,17 @@ export default function Dashboard() {
           <span className="dash-kpi-value">{fmtDuration(focusSummary.totalSec)}</span>
           <span className="dash-kpi-label">{tr("Fokuszeit", "Focus time")} · {focusSummary.count} {tr("Sessions", "sessions")}</span>
         </Link>
-      </div>
+        </div>
+      ),
+    },
 
-      {/* Insights sind stille Beobachtungen, keine KPI-Kacheln: eigene ruhige
-          Zeile über den Fortschritts-Cards statt als dritte Spalte, in der
-          jeder Satz auf sechs Zeilen umbricht. */}
-      {insights.length > 0 && (
+    insights: {
+      label: "Insights",
+      hasContent: insights.length > 0,
+      node: (
+        /* Insights sind stille Beobachtungen, keine KPI-Kacheln: eigene ruhige
+           Zeile über den Fortschritts-Cards statt als dritte Spalte, in der
+           jeder Satz auf sechs Zeilen umbricht. */
         <div className="dash-info dash-insights">
           <div className="dash-info-head">
             <span className="dash-label">Insights</span>
@@ -356,54 +458,206 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+      ),
+    },
+
+    // Goals & Projects standen bisher gemeinsam in EINEM 2-Spalten-Grid und
+    // erschienen immer zusammen. Beide behalten daher dieselbe
+    // hasContent-Bedingung wie vorher (sonst würde ein leeres Goals-Panel
+    // plötzlich verschwinden) — sortier- und ausblendbar sind sie trotzdem
+    // einzeln; groupDashboardRows setzt sie nebeneinander, solange sie
+    // benachbart sind.
+    goals: {
+      label: "Top Goals",
+      hasContent: topGoals.length > 0 || activeProjects.length > 0,
+      node: (
+        <div className="dash-info">
+          <div className="dash-info-head">
+            <span className="dash-label">Top Goals</span>
+            <Link to="/goals" className="dash-link">
+              {tr("alle", "all")} →
+            </Link>
+          </div>
+          {topGoals.length === 0 ? (
+            <span className="muted">{tr("Keine aktiven Ziele.", "No active goals.")}</span>
+          ) : (
+            topGoals.map(({ g, pct }) => (
+              <div key={g.id} className="dash-prog-row">
+                <span className="dash-prog-title">
+                  {g.title}
+                  <span className="dash-prog-sub">{Math.round(pct)}%</span>
+                </span>
+                <ProgressBar value={pct} />
+              </div>
+            ))
+          )}
+        </div>
+      ),
+    },
+
+    projects: {
+      label: tr("Aktive Projects", "Active projects"),
+      hasContent: topGoals.length > 0 || activeProjects.length > 0,
+      node: (
+        <div className="dash-info">
+          <div className="dash-info-head">
+            <span className="dash-label">{tr("Aktive Projects", "Active projects")}</span>
+            <Link to="/projects" className="dash-link">
+              {tr("alle", "all")} →
+            </Link>
+          </div>
+          {activeProjects.length === 0 ? (
+            <span className="muted">{tr("Keine aktiven Projekte.", "No active projects.")}</span>
+          ) : (
+            activeProjects.map(({ p, prog }) => (
+              <div key={p.id} className="dash-prog-row">
+                <span className="dash-prog-title">
+                  {p.title}
+                  <span className="dash-prog-sub">
+                    {prog.done}/{prog.total}
+                  </span>
+                </span>
+                <ProgressBar value={prog.pct} />
+              </div>
+            ))
+          )}
+        </div>
+      ),
+    },
+  };
+
+  const visible = visibleDashboardSections(layout);
+  // Im Anpassen-Modus wird jeder sichtbare Bereich gezeigt (auch ein gerade
+  // leerer), sonst ließe er sich nicht verschieben oder ausblenden.
+  const rendered = customizing ? visible : visible.filter((id) => sections[id].hasContent);
+  const hiddenIds = layout.hidden;
+
+  return (
+    <div className={`page dashboard ${customizing ? "is-customizing" : ""}`.trim()}>
+      <PageHeader
+        icon="🏠"
+        title="Dashboard"
+        subtitle={dateLabel}
+        actions={
+          <button
+            className={`chip ${customizing ? "chip-active" : ""}`}
+            type="button"
+            aria-pressed={customizing}
+            onClick={() => {
+              setCustomizing((on) => !on);
+              setResetPending(false);
+            }}
+          >
+            {customizing ? tr("Fertig", "Done") : tr("⚙ Dashboard anpassen", "⚙ Customize dashboard")}
+          </button>
+        }
+      />
+
+      {customizing && (
+        <div className="dash-customize-bar">
+          <span className="dash-customize-text">
+            {tr(
+              "Bereiche sortieren oder ausblenden. Gilt nur auf diesem Gerät.",
+              "Reorder or hide sections. Applies to this device only.",
+            )}
+          </span>
+          <div className="dash-customize-actions">
+            {resetPending ? (
+              <>
+                <span className="dash-customize-confirm">
+                  {tr("Standard wiederherstellen?", "Restore the default?")}
+                </span>
+                <button
+                  className="btn sm"
+                  type="button"
+                  onClick={() => {
+                    updateLayout(defaultDashboardLayout());
+                    setResetPending(false);
+                  }}
+                >
+                  {tr("Zurücksetzen", "Reset")}
+                </button>
+                <button className="chip sm" type="button" onClick={() => setResetPending(false)}>
+                  {tr("Abbrechen", "Cancel")}
+                </button>
+              </>
+            ) : (
+              <button className="chip sm" type="button" onClick={() => setResetPending(true)}>
+                {tr("Zurücksetzen", "Reset")}
+              </button>
+            )}
+            <button className="btn sm" type="button" onClick={() => setCustomizing(false)}>
+              {tr("Fertig", "Done")}
+            </button>
+          </div>
+        </div>
       )}
 
-      {(topGoals.length > 0 || activeProjects.length > 0) && (
-        <div className="dash-grid dash-grid-2">
-          <div className="dash-info">
-            <div className="dash-info-head">
-              <span className="dash-label">Top Goals</span>
-              <Link to="/goals" className="dash-link">
-                {tr("alle", "all")} →
-              </Link>
-            </div>
-            {topGoals.length === 0 ? (
-              <span className="muted">{tr("Keine aktiven Ziele.", "No active goals.")}</span>
-            ) : (
-              topGoals.map(({ g, pct }) => (
-                <div key={g.id} className="dash-prog-row">
-                  <span className="dash-prog-title">
-                    {g.title}
-                    <span className="dash-prog-sub">{Math.round(pct)}%</span>
-                  </span>
-                  <ProgressBar value={pct} />
-                </div>
-              ))
+      {customizing && rendered.length === 0 && (
+        <div className="empty" data-icon="🧩">
+          <strong>{tr("Alle Bereiche ausgeblendet", "Every section is hidden")}</strong>
+          <span>
+            {tr(
+              "Blende unten mindestens einen Bereich wieder ein oder setze das Dashboard zurück.",
+              "Restore at least one section below, or reset the dashboard.",
             )}
-          </div>
-          <div className="dash-info">
-            <div className="dash-info-head">
-              <span className="dash-label">{tr("Aktive Projects", "Active projects")}</span>
-              <Link to="/projects" className="dash-link">
-                {tr("alle", "all")} →
-              </Link>
+          </span>
+        </div>
+      )}
+
+      {groupDashboardRows(rendered).map((row) => {
+        const rowKey = row.join("-");
+        // Anpassen-Modus: gestapelt, damit die Reihenfolge eindeutig lesbar
+        // ist. Normalansicht: unverändertes Grid-Verhalten wie bisher.
+        if (customizing) {
+          return row.map((id) => (
+            <SectionEditor
+              key={id}
+              label={sections[id].label}
+              tr={tr}
+              canUp={canMoveDashboardSection(layout, id, -1)}
+              canDown={canMoveDashboardSection(layout, id, 1)}
+              onMove={(direction) => updateLayout(moveDashboardSection(layout, id, direction))}
+              onHide={() => updateLayout(setDashboardSectionHidden(layout, id, true))}
+            >
+              {sections[id].node}
+            </SectionEditor>
+          ));
+        }
+        // Fragmente statt Wrapper-Divs: die .dash-info-Cards müssen direkte
+        // Kinder von .dash-grid bleiben, sonst greift das Grid nicht mehr.
+        if (row.length > 1) {
+          return (
+            <div key={rowKey} className="dash-grid dash-grid-2">
+              {row.map((id) => (
+                <Fragment key={id}>{sections[id].node}</Fragment>
+              ))}
             </div>
-            {activeProjects.length === 0 ? (
-              <span className="muted">{tr("Keine aktiven Projekte.", "No active projects.")}</span>
-            ) : (
-              activeProjects.map(({ p, prog }) => (
-                <div key={p.id} className="dash-prog-row">
-                  <span className="dash-prog-title">
-                    {p.title}
-                    <span className="dash-prog-sub">
-                      {prog.done}/{prog.total}
-                    </span>
-                  </span>
-                  <ProgressBar value={prog.pct} />
-                </div>
-              ))
-            )}
-          </div>
+          );
+        }
+        return <Fragment key={rowKey}>{sections[row[0]].node}</Fragment>;
+      })}
+
+      {customizing && (
+        <div className="dash-hidden-area">
+          <span className="dash-label">{tr("Ausgeblendete Bereiche", "Hidden sections")}</span>
+          {hiddenIds.length === 0 ? (
+            <span className="muted">{tr("Keine — alles sichtbar.", "None — everything is visible.")}</span>
+          ) : (
+            <div className="dash-hidden-list">
+              {hiddenIds.map((id) => (
+                <button
+                  key={id}
+                  className="chip sm"
+                  type="button"
+                  aria-label={tr(`${sections[id].label} wieder einblenden`, `Restore ${sections[id].label}`)}
+                  onClick={() => updateLayout(setDashboardSectionHidden(layout, id, false))}
+                >
+                  + {sections[id].label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

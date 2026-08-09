@@ -4816,6 +4816,104 @@ input[type="range"]::-moz-range-thumb {
   }
 }
 
+/* ---------- Dashboard — Anpassen-Modus ----------
+   Bewusst ein Bearbeitungs-Zustand des Dashboards, keine eigene
+   Einstellungs-Seite: gleiche Cards, nur mit dezentem Accent-Rahmen und
+   kompakten Controls. Außerhalb des Modus greift nichts davon. */
+.dash-customize-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-1);
+}
+.dash-customize-text {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.dash-customize-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+.dash-customize-confirm {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.dash-section-edit {
+  position: relative;
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3);
+  border: 1px dashed var(--accent-line);
+  border-radius: var(--r-lg);
+  background: var(--accent-soft);
+  transition: border-color var(--t), background var(--t);
+}
+.dash-section-edit:hover {
+  border-color: var(--accent);
+}
+.dash-section-edit-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+.dash-section-title {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.dash-section-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-left: auto;
+}
+/* Im Anpassen-Modus tragen die Karten den Abstand über den Rahmen — die
+   eigenen margin-bottom der Bereiche würden sonst doppelt zählen. */
+.dash-section-body > * {
+  margin-bottom: 0;
+}
+
+.dash-hidden-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px dashed var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+.dash-hidden-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* Deaktivierte Move-Buttons: .btn hat das schon, .chip bisher nicht. */
+.chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.chip:disabled:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--muted);
+}
+
 /* Dashboard Goals/Projects */
 .dash-info-head {
   display: flex;
